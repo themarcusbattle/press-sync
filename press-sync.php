@@ -397,6 +397,18 @@ class Press_Sync {
 
 		}
 
+		// Check for post parent and update
+		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
+
+			$post_parent_args['post_type'] = $post_args['post_type'];
+			$post_parent_args['meta_input']['orig_post_id'] = $post_parent_id;
+
+			$parent_post = $this->post_exists( $post_parent_args );
+
+			$post_args['post_parent'] = ( $parent_post ) ? $parent_post['ID'] : 0;
+
+		}
+
 		$post_id = wp_insert_post( $post_args );
 
 		if ( is_wp_error( $post_id ) ) {
