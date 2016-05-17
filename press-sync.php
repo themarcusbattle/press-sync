@@ -317,10 +317,13 @@ class Press_Sync {
 
 	public function prepare_attachment_args_to_sync( $object_args ) {
 
-		$attachment_url = $object_args->guid;
+		$attachment_url = $object_args['guid'];
 
 		$args = array(
-			'attachment_url'	=> $attachment_url
+			'post_date' => $object_args['post_date'],
+			'post_title'	=> $object_args['post_title'],
+			'post_name'	=> $object_args['post_name'],
+			'attachment_url'	=> $attachment_url,
 		);
 
 		return $args;
@@ -445,7 +448,10 @@ class Press_Sync {
 	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
 	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
-		$attachment_url = $request->get_param('attachment_url');
+	    $attachment_args = $request->get_params();
+		$attachment_url = $attachment_args['attachment_url'];
+
+		unset( $attachment_args['attachment_url'] );
 
 		if ( $media_id = $this->media_exists( $attachment_url ) ) {
 
@@ -467,7 +473,7 @@ class Press_Sync {
 	        return wp_send_json_error( $data );
 	    }
 
-		$attachment_id = media_handle_sideload( $file_array, 0 );
+		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
 
 		// Check for handle sideload errors.
 	    if ( is_wp_error( $attachment_id ) ) {
