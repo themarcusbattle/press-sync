@@ -231,8 +231,8 @@ class Press_Sync {
 
 	public function init_connection() {
 
-		$this->current_domain = home_url();
-		$this->new_domain = cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$this->current_domain = untrailingslashit( home_url() );
+		$this->new_domain = untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
 
 	}
 
@@ -242,7 +242,9 @@ class Press_Sync {
 			'post_type' => $objects_to_sync,
 			'posts_per_page' => 10,
 			'post_status' => 'any',
-			'paged' => $paged
+			'paged' => $paged,
+			'order'	=> 'ASC',
+			'orderby'	=> 'post_parent'
 		);
 
 		$query = new WP_Query( $query_args );
@@ -506,15 +508,6 @@ class Press_Sync {
 		return 0;
 
 	}
-
-	public function replace_domain_in_text( $old_domain, $new_domain, $text ) {
-
-		$text = str_ireplace( $old_domain, $new_domain, $text );
-
-		return $text;
-
-	}
-
 
 	public function insert_woo_order_items( $post_id, $post_args ) {
 
