@@ -259,7 +259,7 @@ class Press_Sync {
 
 				$object['tax_input'] = $this->get_relationships( $object['ID'], $taxonomies );
 				$object['meta_input'] = get_post_meta( $object['ID'] );
-				$object['meta_input']['orig_post_id'] = $object['ID'];
+				$object['meta_input']['press_sync_post_id'] = $object['ID'];
 
 				array_push( $objects, $object );
 
@@ -339,11 +339,11 @@ class Press_Sync {
 		// Get Order Items
 		global $wpdb;
 
-		$orig_post_id = isset( $object_args['meta_input']['orig_post_id'] ) ? $object_args['meta_input']['orig_post_id'] : 0;
+		$press_sync_post_id = isset( $object_args['meta_input']['press_sync_post_id'] ) ? $object_args['meta_input']['press_sync_post_id'] : 0;
 		$order_items_table = $wpdb->prefix . 'woocommerce_order_items';
 		$order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
 
-		$sql = "SELECT * FROM $order_items_table WHERE order_id = $orig_post_id";
+		$sql = "SELECT * FROM $order_items_table WHERE order_id = $press_sync_post_id";
 		$order_items = $wpdb->get_results( $sql, ARRAY_A );
 
 		$object_args['meta_input']['_woocommerce_order_items'] = $order_items;
@@ -404,7 +404,7 @@ class Press_Sync {
 		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
 
 			$post_parent_args['post_type'] = $post_args['post_type'];
-			$post_parent_args['meta_input']['orig_post_id'] = $post_parent_id;
+			$post_parent_args['meta_input']['press_sync_post_id'] = $post_parent_id;
 
 			$parent_post = $this->post_exists( $post_parent_args );
 
@@ -489,13 +489,14 @@ class Press_Sync {
 
 	public function post_exists( $post_args ) {
 
-		$orig_post_id = isset( $post_args['meta_input']['orig_post_id'] ) ? $post_args['meta_input']['orig_post_id'] : 0;
+		$press_sync_post_id = isset( $post_args['meta_input']['press_sync_post_id'] ) ? $post_args['meta_input']['press_sync_post_id'] : 0;
 
 		$query_args = array(
 			'post_type' 		=> $post_args['post_type'],
 			'posts_per_page' 	=> 1,
-			'meta_key'			=> 'orig_post_id',
-			'meta_value'		=> $orig_post_id
+			'meta_key'			=> 'press_sync_post_id',
+			'meta_value'		=> $press_sync_post_id,
+			'post_status'		=> 'any',
 		);
 
 		$post = get_posts( $query_args );
@@ -566,11 +567,11 @@ class Press_Sync {
 
 	}
 
-	public function get_post_by_orig_id( $orig_post_id ) {
+	public function get_post_by_orig_id( $press_sync_post_id ) {
 
 		global $wpdb;
 
-		$sql = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'orig_post_id' AND meta_value = $orig_post_id";
+		$sql = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'press_sync_post_id' AND meta_value = $press_sync_post_id";
 
 		return $wpdb->get_var( $sql );
 
