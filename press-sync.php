@@ -220,7 +220,7 @@ class Press_Sync {
 				$args = $this->$sync_class( $object );
 				$this->send_data_to_remote_server( $url, $args );
 			}
-
+			echo "done"; exit;
 			$paged++;
 
 		}
@@ -257,9 +257,11 @@ class Press_Sync {
 
 				$object = (array) $object;
 
-				$object['tax_input'] = $this->get_relationships( $object['ID'], $taxonomies );
-				$object['meta_input'] = get_post_meta( $object['ID'] );
-				$object['meta_input']['press_sync_post_id'] = $object['ID'];
+				$object['tax_input'] 							= $this->get_relationships( $object['ID'], $taxonomies );
+				$object['meta_input'] 							= get_post_meta( $object['ID'] );
+				$object['meta_input']['press_sync_post_id'] 	= $object['ID'];
+				$object['meta_input']['press_sync_source']		= home_url();
+				$object['meta_input']['press_sync_gmt_offset'] 	= get_option('gmt_offset');
 
 				array_push( $objects, $object );
 
