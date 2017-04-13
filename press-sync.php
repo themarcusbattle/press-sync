@@ -78,9 +78,9 @@ class Press_Sync {
 			'callback' => array( $this, 'insert_new_media' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/user', array(
+		register_rest_route( 'press-sync/v1', '/users', array(
 			'methods' => 'POST',
-			'callback' => array( $this, 'insert_new_user' ),
+			'callback' => array( $this, 'insert_new_users' ),
 		) );
 
 	}
@@ -211,7 +211,6 @@ class Press_Sync {
 
 		$total_objects = $this->count_objects_to_sync( $objects_to_sync );
 
-		$paged = 1;
 		$taxonomies = get_object_taxonomies( $objects_to_sync );
 
 		while ( $objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies ) ) {
@@ -220,7 +219,7 @@ class Press_Sync {
 				$args = $this->$sync_class( $object );
 				$this->send_data_to_remote_server( $url, $args );
 			}
-			echo "done"; exit;
+
 			$paged++;
 
 		}
@@ -238,6 +237,18 @@ class Press_Sync {
 
 	public function get_objects_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
 
+		if ( 'user' == $objects_to_sync ) {
+			$objects = $this->get_users_to_sync( $paged );
+		} else {
+			$objects = $this->get_posts_to_sync( $objects_to_sync, $paged, $taxonomies );
+		}
+
+		return $objects;
+
+	}
+
+	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
+
 		$query_args = array(
 			'post_type' => $objects_to_sync,
 			'posts_per_page' => 10,
@@ -249,7 +260,7 @@ class Press_Sync {
 
 		$query = new WP_Query( $query_args );
 
-		$objects = array();
+		$posts = array();
 
 		if ( $query->posts ) {
 
@@ -263,13 +274,58 @@ class Press_Sync {
 				$object['meta_input']['press_sync_source']		= home_url();
 				$object['meta_input']['press_sync_gmt_offset'] 	= get_option('gmt_offset');
 
-				array_push( $objects, $object );
+				array_push( $posts, $object );
 
 			}
 
 		}
 
-		return $objects;
+		return $posts;
+
+	}
+
+	/**
+	 * Returns the users to sync
+	 *
+	 * @since 0.1.0
+	 * @param int $paged
+	 *
+	 * @return WP_Users
+	 */
+	public function get_users_to_sync( $paged ) {
+
+		$query_args = array(
+			'paged'	=> $paged
+		);
+
+		$query = new WP_User_Query( $query_args );
+
+		$results 	= $query->get_results();
+		$users 		= array();
+
+		if ( $results ) {
+
+			foreach ( $results as $user ) {
+
+				$user = (array) $user->data;
+				$user_meta = get_user_meta( $user['ID'] );
+
+				foreach ( $user_meta as $key => $value ) {
+					$user['meta_input'][ $key ] = $value[0];
+				}
+
+				$user['meta_input']['press_sync_user_id']	= $user['ID'];
+				$user['meta_input']['press_sync_source']	= home_url();
+
+				unset( $user['ID'] );
+
+				array_push( $users, $user );
+
+			}
+
+		}
+
+		return $users;
 
 	}
 
