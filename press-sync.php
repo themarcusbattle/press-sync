@@ -78,9 +78,9 @@ class Press_Sync {
 			'callback' => array( $this, 'insert_new_media' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/users', array(
+		register_rest_route( 'press-sync/v1', '/user', array(
 			'methods' => 'POST',
-			'callback' => array( $this, 'insert_new_users' ),
+			'callback' => array( $this, 'insert_new_user' ),
 		) );
 
 	}
@@ -92,7 +92,7 @@ class Press_Sync {
 	public function show_press_sync_menu_page() {
 
 		?>
-		<div class="wrap cmb2-options-page <?php echo $this->key; ?>">
+		<div class="wrap cmb2-options-page">
 			<h2><?php echo esc_html( get_admin_page_title() ); ?></h2>
 			<?php cmb2_metabox_form( 'press_sync_metabox', 'press-sync-options' ); ?>
 			<h2>Sync Data</h2>
