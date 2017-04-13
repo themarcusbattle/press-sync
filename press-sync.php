@@ -438,11 +438,15 @@ class Press_Sync {
 
 	public function insert_new_post( $request ) {
 
-		$post_args = $request->get_params();
+		$post_args 	= $request->get_params();
+
+		global $wpdb;
+		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
 
 		if ( $post = $this->post_exists( $post_args ) ) {
 
 			// Check if the post has been modified
+			// Properly compare the time
 			if ( strtotime( $post_args['post_modified'] ) > strtotime( $post['post_modified'] ) ) {
 
 				$post_args['ID'] = $post['ID'];
@@ -488,6 +492,9 @@ class Press_Sync {
 			}
 
 		}
+
+		$wpdb->query( 'COMMIT;' );
+		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
 
 		// Run any secondary commands
 		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
@@ -545,10 +552,22 @@ class Press_Sync {
 
 	}
 
+	/**
+	 * Checks to see where or not a post exists in WP
+	 *
+	 * @since 0.1.0
+	 * @param array $post_args
+	 *
+	 * @return WP_Post
+	 */
 	public function post_exists( $post_args ) {
 
+		// Capture the variables
 		$press_sync_post_id = isset( $post_args['meta_input']['press_sync_post_id'] ) ? $post_args['meta_input']['press_sync_post_id'] : 0;
+		$post_type 	= isset( $post_args['post_type'] ) ? $post_args['post_type'] : '';
+		$post_name 	= isset( $post_args['post_name'] ) ? $post_args['post_name'] : '';
 
+		// Check to see if the post exists by press_sync_post_id
 		$query_args = array(
 			'post_type' 		=> $post_args['post_type'],
 			'posts_per_page' 	=> 1,
@@ -562,6 +581,12 @@ class Press_Sync {
 		if ( $post ) {
 			return (array) $post[0];
 		}
+
+		// Check to see if this post exists by slug name
+		if ( $post = get_page_by_path( $post_name, ARRAY_A, $post_type ) ) {
+			return $post;
+		}
+
 
 		return false;
 
