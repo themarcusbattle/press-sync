@@ -28,10 +28,8 @@ class Press_Sync {
 
 	public function __construct() {
 
-		$cmb2_path = plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php';
-
-		if ( ! class_exists('CMB2_Bootstrap_221' ) && file_exists( $cmb2_path ) ) {
-			require_once( $cmb2_path );
+		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
+			file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
 		}
 
 	}
@@ -184,7 +182,11 @@ class Press_Sync {
 
 	public function check_connection( $url ) {
 
-		$response = wp_remote_get( $url );
+		$remote_get_args = array(
+			'timeout'	=> 30
+		);
+
+		$response = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 == $response_code ) {
@@ -209,12 +211,11 @@ class Press_Sync {
 		$url = untrailingslashit( $url ) . '/wp-json/press-sync/v1/' . $prepare_object;
 
 		// Prepare the correct sync method
-		$sync_class = 'prepare_' . $prepare_object . '_args_to_sync';
+		$sync_class 	= 'prepare_' . $prepare_object . '_args_to_sync';
 
-		$total_objects = $this->count_objects_to_sync( $objects_to_sync );
-
-		$taxonomies = get_object_taxonomies( $objects_to_sync );
-		$paged 		= 1;
+		$total_objects 	= $this->count_objects_to_sync( $objects_to_sync );
+		$taxonomies 	= get_object_taxonomies( $objects_to_sync );
+		$paged 			= 1;
 
 		while ( $objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies ) ) {
 
@@ -224,7 +225,6 @@ class Press_Sync {
 			}
 
 			$paged++;
-
 		}
 
 		wp_die();
@@ -295,10 +295,12 @@ class Press_Sync {
 	 *
 	 * @return WP_Users
 	 */
-	public function get_users_to_sync( $paged ) {
+	public function get_users_to_sync( $paged = 1 ) {
 
 		$query_args = array(
-			'paged'	=> $paged
+			'number'	=> 10,
+			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 0,
+			'paged'		=> $paged
 		);
 
 		$query = new WP_User_Query( $query_args );
@@ -349,6 +351,10 @@ class Press_Sync {
 	 */
 	public function count_objects_to_sync( $objects_to_sync ) {
 
+		if ( 'user' == $objects_to_sync) {
+			return $this->count_users_to_sync();
+		}
+
 		global $wpdb;
 
 		$sql = "SELECT count(*) FROM $wpdb->posts WHERE post_type = %s";
@@ -358,6 +364,11 @@ class Press_Sync {
 
 		return $total_objects;
 
+	}
+
+	public function count_users_to_sync() {
+		$result = count_users();
+		return $result['total_users'];
 	}
 
 	public function prepare_post_args_to_sync( $object_args ) {
@@ -432,12 +443,11 @@ class Press_Sync {
 
 		$args = array(
 			'timeout'	=> 30,
-			'body'	=> $args
+			'body'	=> $args,
 		);
 
-		$response = wp_remote_post( $url, $args );
-
-		$body = wp_remote_retrieve_body( $response );
+		$response 	= wp_remote_post( $url, $args );
+		$body 		= wp_remote_retrieve_body( $response );
 
 		print_r( $body );
 
@@ -629,7 +639,7 @@ class Press_Sync {
 	}
 
 	public function insert_new_user( $request ) {
-
+		
 		$user_args = $request->get_params();
 		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
 
