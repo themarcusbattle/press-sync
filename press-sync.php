@@ -463,7 +463,6 @@ class Press_Sync {
 		$body 		= wp_remote_retrieve_body( $response );
 
 		print_r( $body );
-
 	}
 
 	public function insert_new_post( $request ) {
@@ -725,7 +724,7 @@ class Press_Sync {
 		}
 
 		$media 						= get_post( $thumbnail_id, ARRAY_A );
-		$media['attachment_url'] 	= home_url( get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
+		$media['attachment_url'] 	= home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
 
 		return $media;
 
