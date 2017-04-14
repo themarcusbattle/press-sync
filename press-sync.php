@@ -225,6 +225,7 @@ class Press_Sync {
 			}
 
 			$paged++;
+
 		}
 
 		wp_die();
@@ -302,7 +303,7 @@ class Press_Sync {
 			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 0,
 			'paged'		=> $paged
 		);
-		
+
 		$query = new WP_User_Query( $query_args );
 
 		$results 	= $query->get_results();
@@ -312,6 +313,10 @@ class Press_Sync {
 
 			foreach ( $results as $user ) {
 
+				// Get user ro;e
+				$role = $user->roles[0];
+
+				// Get user data
 				$user = (array) $user->data;
 				$user_meta = get_user_meta( $user['ID'] );
 
@@ -321,6 +326,7 @@ class Press_Sync {
 
 				$user['meta_input']['press_sync_user_id']	= $user['ID'];
 				$user['meta_input']['press_sync_source']	= home_url();
+				$user['role'] = $role;
 
 				unset( $user['ID'] );
 
@@ -373,8 +379,6 @@ class Press_Sync {
 
 	public function prepare_post_args_to_sync( $object_args ) {
 
-		unset( $object_args['ID'] );
-
 		foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
  			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
 		}
@@ -382,6 +386,11 @@ class Press_Sync {
 		$object_args = $this->update_links( $object_args );
 
 		$object_args = apply_filters( 'press_sync_prepare_post_args_to_sync', $object_args );
+
+		// Send Featured image information along to be imported
+		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
+
+		unset( $object_args['ID'] );
 
 		return $object_args;
 
@@ -665,6 +674,21 @@ class Press_Sync {
 		}
 
 		return $object_args;
+
+	}
+
+	public function get_featured_image( $post_id ) {
+
+		$thumbnail_id 				= get_post_meta( $post_id, '_thumbnail_id', true );
+
+		if ( ! $thumbnail_id ) {
+			return false;
+		}
+
+		$media 						= get_post( $thumbnail_id, ARRAY_A );
+		$media['attachment_url'] 	= home_url( get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
+
+		return $media;
 
 	}
 
