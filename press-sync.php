@@ -28,10 +28,8 @@ class Press_Sync {
 
 	public function __construct() {
 
-		$cmb2_path = plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php';
-
-		if ( ! class_exists('CMB2_Bootstrap_221' ) && file_exists( $cmb2_path ) ) {
-			require_once( $cmb2_path );
+		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
+			file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
 		}
 
 	}
@@ -297,14 +295,14 @@ class Press_Sync {
 	 *
 	 * @return WP_Users
 	 */
-	public function get_users_to_sync( $paged ) {
+	public function get_users_to_sync( $paged = 1 ) {
 
 		$query_args = array(
 			'number'	=> 10,
-			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 1,
+			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 0,
 			'paged'		=> $paged
 		);
-
+		
 		$query = new WP_User_Query( $query_args );
 
 		$results 	= $query->get_results();
@@ -445,7 +443,7 @@ class Press_Sync {
 
 		$args = array(
 			'timeout'	=> 30,
-			'body'	=> array( 'stuff' => 'other' )
+			'body'	=> $args,
 		);
 
 		$response 	= wp_remote_post( $url, $args );
@@ -640,7 +638,9 @@ class Press_Sync {
 
 	}
 
-	public function insert_new_user( $request ) { }
+	public function insert_new_user( $request ) {
+
+	}
 
 	public function get_post_by_orig_id( $press_sync_post_id ) {
 
