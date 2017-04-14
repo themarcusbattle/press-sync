@@ -487,6 +487,8 @@ class Press_Sync {
 
 		}
 
+		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
+
 		$post_id = wp_insert_post( $post_args );
 
 		if ( is_wp_error( $post_id ) ) {
@@ -639,7 +641,7 @@ class Press_Sync {
 	}
 
 	public function insert_new_user( $request ) {
-		
+
 		$user_args = $request->get_params();
 		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
 
@@ -654,8 +656,16 @@ class Press_Sync {
 				return wp_send_json_error();
 			}
 
+		} else {
+			$user_id = $user->ID;
 		}
 
+		// Update the meta
+		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
+			update_user_meta( $user_id, $usermeta_key, $usermeta_value );
+		}
+
+		// Prepare response
 		$data['user_id'] = $user_id;
 
 		return wp_send_json_success( $data );
@@ -685,6 +695,23 @@ class Press_Sync {
 		}
 
 		return $object_args;
+
+	}
+
+	public function get_press_sync_author_id( $user_id ) {
+		$args = array(
+			'fields'		=> array('ID'),
+			'meta_key'		=> 'press_sync_user_id',
+			'meta_value'	=> $user_id
+		);
+
+		$user = get_users( $args );
+
+		if ( $user ) {
+			return $user[0]->ID; 
+		}
+
+		return $user_id;
 
 	}
 
