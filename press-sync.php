@@ -28,8 +28,10 @@ class Press_Sync {
 
 	public function __construct() {
 
-		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
-			file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
+		$cmb2_path = plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php';
+
+		if ( ! class_exists('CMB2_Bootstrap_221' ) && file_exists( $cmb2_path ) ) {
+			require_once( $cmb2_path );
 		}
 
 	}
@@ -626,9 +628,7 @@ class Press_Sync {
 
 	}
 
-	public function insert_new_user( $request ) {
-
-	}
+	public function insert_new_user( $request ) { }
 
 	public function get_post_by_orig_id( $press_sync_post_id ) {
 
