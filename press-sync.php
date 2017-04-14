@@ -471,6 +471,9 @@ class Press_Sync {
 
 		if ( $post = $this->post_exists( $post_args ) ) {
 
+			// Attach featured image
+			$this->attach_featured_image( $post['ID'], $post_args );
+
 			// Check if the post has been modified
 			if ( strtotime( $post_args['post_modified'] ) > strtotime( $post['post_modified'] ) ) {
 
@@ -520,6 +523,9 @@ class Press_Sync {
 
 		}
 
+		// Attach featured image
+		$this->attach_featured_image( $post_id, $post_args );
+
 		// Run any secondary commands
 		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
 
@@ -529,7 +535,7 @@ class Press_Sync {
 
 	}
 
-	public function insert_new_media( $request ) {
+	public function insert_new_media( $request, $return_local = false ) {
 
 		$data['id'] = 0;
 
@@ -547,7 +553,7 @@ class Press_Sync {
 			$data['id'] = $media_id;
 			$data['message'] = 'file already exists';
 
-			return wp_send_json_error( $data );
+			return ( $return_local ) ? $data : wp_send_json_error( $data );
 
 		}
 
@@ -745,6 +751,19 @@ class Press_Sync {
 
 		return $user_id;
 
+	}
+
+	public function attach_featured_image( $post_id, $post_args ) {
+
+		$request = new WP_REST_Request( 'POST' );
+		$request->set_body_params( $post_args['featured_image'] );
+
+		// Download the attachment
+		$attachment 	= $this->insert_new_media( $request, true );
+		$thumbnail_id 	= isset( $attachment['id'] ) ? $attachment['id'] : 0;
+
+		$response = set_post_thumbnail( $post_id, $thumbnail_id );
+		
 	}
 
 }
