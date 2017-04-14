@@ -396,8 +396,12 @@ class Press_Sync {
 
 	}
 
-	public function prepare_user_args_to_sync( $object_args ) {
-		return $object_args;
+	public function prepare_user_args_to_sync( $user_args ) {
+
+		// Remove the user password
+		$user_args['user_pass'] = NULL;
+
+		return $user_args;
 	}
 
 	public function prepare_attachment_args_to_sync( $object_args ) {
@@ -495,6 +499,8 @@ class Press_Sync {
 			$post_args['post_parent'] = ( $parent_post ) ? $parent_post['ID'] : 0;
 
 		}
+
+		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
 
 		$post_id = wp_insert_post( $post_args );
 
@@ -649,6 +655,39 @@ class Press_Sync {
 
 	public function insert_new_user( $request ) {
 
+		$user_args = $request->get_params();
+		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
+
+		// Check to see if the user exists
+		$user = get_user_by( 'login', $username );
+
+		if ( ! $user ) {
+
+			$user_id = wp_insert_user( $user_args );
+
+			if ( is_wp_error( $user_id ) ) {
+				return wp_send_json_error();
+			}
+
+			$user = get_user_by( 'id', $user_id );
+
+		} else {
+			$user_id = $user->ID;
+		}
+
+		// Update the meta
+		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
+			update_user_meta( $user_id, $usermeta_key, $usermeta_value );
+		}
+
+		// Asign user role
+		$user->add_role( $user_args['role'] );
+
+		// Prepare response
+		$data['user_id'] = $user_id;
+
+		return wp_send_json_success( $data );
+
 	}
 
 	public function get_post_by_orig_id( $press_sync_post_id ) {
@@ -689,6 +728,23 @@ class Press_Sync {
 		$media['attachment_url'] 	= home_url( get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
 
 		return $media;
+
+	}
+
+	public function get_press_sync_author_id( $user_id ) {
+		$args = array(
+			'fields'		=> array('ID'),
+			'meta_key'		=> 'press_sync_user_id',
+			'meta_value'	=> $user_id
+		);
+
+		$user = get_users( $args );
+
+		if ( $user ) {
+			return $user[0]->ID;
+		}
+
+		return $user_id;
 
 	}
 

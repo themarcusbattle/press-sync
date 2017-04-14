@@ -1,5 +1,7 @@
-# press-sync
+# Press Sync by Marcus Battle
 
-Finally a better way to move your WordPress site to another server. Uses the WP-API. Custom Post Type Support. Alpha Version. Use at own risk.
+An easy and straightforward way to syncrchonize users, posts and more between multiple WordPress sites. Activate the plugin on both sites that you want to sync content with and you immediately will have a connection to push content to.
 
-For support, email marcus@marcusbattle.com
+Uses the WP-API. Custom Post Type Support. Currently supports push only. Alpha Version. Use at own risk.
+
+For support, email plugins@marcusbattle.com
