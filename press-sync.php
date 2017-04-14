@@ -628,7 +628,29 @@ class Press_Sync {
 
 	}
 
-	public function insert_new_user( $request ) { }
+	public function insert_new_user( $request ) {
+
+		$user_args = $request->get_params();
+		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
+
+		// Check to see if the user exists
+		$user = get_user_by( 'login', $username );
+
+		if ( ! $user ) {
+
+			$user_id = wp_insert_user( $user_args );
+
+			if ( is_wp_error( $user_id ) ) {
+				return wp_send_json_error();
+			}
+
+		}
+
+		$data['user_id'] = $user_id;
+
+		return wp_send_json_success( $data );
+
+	}
 
 	public function get_post_by_orig_id( $press_sync_post_id ) {
 
