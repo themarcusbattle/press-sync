@@ -45,6 +45,7 @@ class Press_Sync {
 		add_action( 'cmb2_render_sync_button', array( $this, 'render_sync_button_field' ), 10, 5 );
 
 		add_action( 'wp_ajax_sync_wp_data', array( $this, 'sync_wp_data_via_ajax' ) );
+		add_action( 'wp_ajax_get_objects_to_sync_count', array( $this, 'get_objects_to_sync_count_via_ajax' ) );
 
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
 
@@ -97,6 +98,13 @@ class Press_Sync {
 			<?php cmb2_metabox_form( 'press_sync_metabox', 'press-sync-options' ); ?>
 			<h2>Sync Data</h2>
 			<button class="press-sync-button">Sync</button>
+			<div class="progress-stats" style="display: none;">
+				Loading...
+			</div>
+			<div class="progress-bar-wrapper" style="height: 24px; display: none; width: 100%; background-color: #DDD; border-radius: 6px; overflow: hidden; box-sizing: border-box;">
+				<div class="progress-bar" style="height:24px; width: 0px; background-color: #666; color: #fff; line-height: 24px; padding: 0 10px;"></div>
+			</div>
+
 		</div>
 		<?php
 
@@ -197,6 +205,23 @@ class Press_Sync {
 
 	}
 
+	public function get_objects_to_sync_count_via_ajax() {
+
+		$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$prepare_object 	= ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
+
+		$total_objects 	= $this->count_objects_to_sync( $objects_to_sync );
+
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
+
+		wp_send_json_success( array(
+			'objects_to_sync'	=> $wp_object,
+			'total_objects' 	=> $total_objects
+		) );
+
+	}
+
 	public function sync_wp_data_via_ajax() {
 
 		$this->init_connection();
@@ -205,6 +230,8 @@ class Press_Sync {
 		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
 
 		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url
 		$url = cmb2_get_option( 'press-sync-options', 'connected_server' );
@@ -215,9 +242,24 @@ class Press_Sync {
 
 		$total_objects 	= $this->count_objects_to_sync( $objects_to_sync );
 		$taxonomies 	= get_object_taxonomies( $objects_to_sync );
-		$paged 			= 1;
+		$paged 			= isset( $_POST['paged'] ) ? (int) $_POST['paged'] : 1;
 
-		while ( $objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies ) ) {
+		$objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+
+		// Send parsed objects to target server
+		foreach ( $objects as $object ) {
+			$args = $this->$sync_class( $object );
+			$this->send_data_to_remote_server( $url, $args );
+		}
+
+		wp_send_json_success( array(
+			'objects_to_sync'			=> $wp_object,
+			'total_objects'				=> $total_objects,
+			'total_objects_processed'	=> count( $objects ) ? count( $objects ) * $paged : 10 * $paged,
+			'next_page'					=> $paged + 1
+		) );
+
+		/* while ( $objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies ) ) {
 
 			foreach ( $objects as $object ) {
 				$args = $this->$sync_class( $object );
@@ -225,10 +267,12 @@ class Press_Sync {
 			}
 
 			$paged++;
-
+			exit;
 		}
 
 		wp_die();
+		*/
+
 
 	}
 
@@ -462,7 +506,6 @@ class Press_Sync {
 		$response 	= wp_remote_post( $url, $args );
 		$body 		= wp_remote_retrieve_body( $response );
 
-		print_r( $body );
 	}
 
 	public function insert_new_post( $request ) {
@@ -763,7 +806,7 @@ class Press_Sync {
 		$thumbnail_id 	= isset( $attachment['id'] ) ? $attachment['id'] : 0;
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
-		
+
 	}
 
 }
