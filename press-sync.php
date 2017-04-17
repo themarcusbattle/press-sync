@@ -87,7 +87,7 @@ class Press_Sync {
 	}
 
 	public function admin_pages() {
-		add_management_page( __( 'Press Sync','press-sync' ), __( 'Sync Site','press-sync' ), 'manage_options', 'press-sync', array( $this, 'show_press_sync_menu_page' ) );
+		add_management_page( __( 'Press Sync','press-sync' ), __( 'Press Sync','press-sync' ), 'manage_options', 'press-sync', array( $this, 'show_press_sync_menu_page' ) );
 	}
 
 	public function show_press_sync_menu_page() {
@@ -158,17 +158,19 @@ class Press_Sync {
 	public function objects_to_sync( $objects = array() ) {
 
 		$objects = array(
-			'post' => 'Posts',
-			'page' => 'Pages',
-			'attachment' => 'Media',
-			'user'	=> 'Users',
+			'comment'		=> 'Comments',
+			'attachment' 	=> 'Media',
+			'page' 			=> 'Pages',
+			'post' 			=> 'Posts',
+			'user'			=> 'Users',
 		);
 
-		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
+		/* $custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
 
 		foreach ( $custom_post_types as $cpt ) {
 			$objects[ $cpt->name ] = $cpt->label;
 		}
+		*/
 
 		return $objects;
 
