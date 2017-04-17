@@ -29,7 +29,7 @@ class Press_Sync {
 	public function __construct() {
 
 		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
-			file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
+			require_once( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
 		}
 
 	}
