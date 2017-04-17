@@ -26,17 +26,17 @@ class Press_Sync {
 
 	}
 
-	public function __construct() {
-
-		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
-		}
-
-	}
+	public function __construct() { }
 
 	public function hooks() {
 
-		add_action( 'admin_menu', array( $this, 'admin_pages' ), 10, 1 );
+		// Include other files.
+		$this->includes();
+
+		// Initialize plugin classes.
+		$this->plugin_classes();
+
+
 		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
 
 		// CMB2 Fields | Fields to save sync data
@@ -53,6 +53,104 @@ class Press_Sync {
 
 		add_action( 'press_sync_insert_new_post', array( $this, 'insert_woo_order_items' ), 10, 2 );
 
+	}
+
+	/**
+	 * Include a file from the includes directory.
+	 *
+	 * @since  0.1.0
+	 *
+	 * @param  string $filename Name of the file to be included.
+	 * @return boolean          Result of include call.
+	 */
+	public static function include_file( $filename ) {
+
+		$file = self::dir( $filename . '.php' );
+
+		if ( file_exists( $file ) ) {
+			return include_once( $file );
+		}
+
+		return false;
+	}
+
+	/**
+	 * This plugin's directory.
+	 *
+	 * @since  0.1.0
+	 *
+	 * @param  string $path (optional) appended path.
+	 * @return string       Directory and path.
+	 */
+	public static function dir( $path = '' ) {
+		static $dir;
+		$dir = $dir ? $dir : trailingslashit( dirname( __FILE__ ) );
+		return $dir . $path;
+	}
+
+	/**
+	 * Files to be loaded when the base plugin class loads.
+	 *
+	 * @since 0.1.0
+	 */
+	public function includes() {
+
+		// Load CMB2 support for fields
+		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
+			require_once( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
+		}
+
+	}
+
+	/**
+	 * Attach other plugin classes to the base plugin class.
+	 *
+	 * @since  0.1.0
+	 */
+	public function plugin_classes() {
+		$this->dashboard = new Press_Sync_Dashboard( $this );
+	}
+
+	/**
+	 * Includes a page for display in the WP Admin
+	 *
+	 * @since 0.1.0
+	 * @return boolean
+	 */
+	public function include_page( $filename ) {
+
+		$filename_parts = explode( '/', $filename );
+		$controller 	= isset( $filename_parts[0] ) ? $filename_parts[0] : '';
+		$file			= isset( $filename_parts[1] ) ? $filename_parts[1] : $controller;
+
+		$filename = plugin_dir_path( __FILE__ ) . "views/{$controller}/html-" . $file . '.php';
+
+		if ( ! file_exists( $filename ) ) {
+			return false;
+		}
+
+		ob_start();
+		include( $filename );
+		$res = ob_get_contents();
+		ob_end_clean();
+
+		echo $res;
+
+		return true;
+
+	}
+
+	/**
+	 * Returns the specified press sync option
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param
+	 * @return string
+	 */
+	public function press_sync_option( $option ) {
+		$press_sync_options = get_option( 'press-sync-options' );
+		return isset( $press_sync_options[ $option ] ) ? $press_sync_options[ $option ] : '';
 	}
 
 	public function load_scripts() {
@@ -83,30 +181,6 @@ class Press_Sync {
 			'methods' => 'POST',
 			'callback' => array( $this, 'insert_new_user' ),
 		) );
-
-	}
-
-	public function admin_pages() {
-		add_management_page( __( 'Press Sync','press-sync' ), __( 'Press Sync','press-sync' ), 'manage_options', 'press-sync', array( $this, 'show_press_sync_menu_page' ) );
-	}
-
-	public function show_press_sync_menu_page() {
-
-		?>
-		<div class="wrap cmb2-options-page">
-			<h2><?php echo esc_html( get_admin_page_title() ); ?></h2>
-			<?php cmb2_metabox_form( 'press_sync_metabox', 'press-sync-options' ); ?>
-			<h2>Sync Data</h2>
-			<button class="press-sync-button">Sync</button>
-			<div class="progress-stats" style="display: none;">
-				Loading...
-			</div>
-			<div class="progress-bar-wrapper" style="height: 24px; display: none; width: 100%; background-color: #DDD; border-radius: 6px; overflow: hidden; box-sizing: border-box;">
-				<div class="progress-bar" style="height:24px; width: 0px; background-color: #666; color: #fff; line-height: 24px; padding: 0 10px;"></div>
-			</div>
-
-		</div>
-		<?php
 
 	}
 
@@ -813,5 +887,26 @@ class Press_Sync {
 
 }
 
-
 add_action( 'plugins_loaded', array( Press_Sync::init(), 'hooks' ), 10, 1 );
+
+/**
+ * Autoloads files with classes when needed.
+ *
+ * @since  0.1.0
+ * @param  string $class_name Name of the class being requested.
+ */
+function press_sync_autoload_classes( $class_name ) {
+
+	// If our class doesn't have our prefix, don't load it.
+	if ( 0 !== strpos( $class_name, 'Press_Sync_' ) ) {
+		return;
+	}
+
+	// Set up our filename.
+	$filename = strtolower( str_replace( '_', '-', substr( $class_name, strlen( 'Press_Sync_' ) ) ) );
+
+	// Include our file.
+	Press_Sync::include_file( 'includes/class-' . $filename );
+}
+
+spl_autoload_register( 'press_sync_autoload_classes' );
