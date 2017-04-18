@@ -40,8 +40,6 @@ class Press_Sync {
 		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
 
 		// CMB2 Fields | Fields to save sync data
-		add_action( 'cmb2_admin_init', array( $this, 'press_sync_metabox' ) );
-		add_action( 'cmb2_render_connection_status', array( $this, 'render_connection_status_field' ), 10, 5 );
 		add_action( 'cmb2_render_sync_button', array( $this, 'render_sync_button_field' ), 10, 5 );
 
 		add_action( 'wp_ajax_sync_wp_data', array( $this, 'sync_wp_data_via_ajax' ) );
@@ -184,91 +182,16 @@ class Press_Sync {
 
 	}
 
-	public function press_sync_metabox() {
-
-		$option_key = 'press_sync_';
-
-		$cmb_options = new_cmb2_box( array(
-			'id'      => $option_key . 'metabox',
-			'title'   => __( 'Press Sync Metabox', 'press-sync' ),
-			'hookup'  => false, // Do not need the normal user/post hookup
-			'show_on' => array(
-				// These are important, don't remove
-				'key'   => 'options-page',
-				'value' => array( 'press_sync_options' )
-			),
-		) );
-
-		$cmb_options->add_field( array(
-			'name'    => __( 'Connected Server', 'press-sync' ),
-			'id'      => 'connected_server',
-			'type'    => 'text',
-		) );
-
-		$cmb_options->add_field( array(
-			'name'    => __( 'Connection Status', 'press-sync' ),
-			'id'      => 'connection_status',
-			'type'    => 'connection_status',
-		) );
-
-		$cmb_options->add_field( array(
-			'name'    => __( 'Sync Method', 'press-sync' ),
-			'id'      => 'sync_method',
-			'type'    => 'select',
-			'options' => array(
-				'push' => 'Push'
-			)
-		) );
-
-		$cmb_options->add_field( array(
-			'name'    => __( 'Objects to Sync', 'press-sync' ),
-			'id'      => 'objects_to_sync',
-			'type'    => 'select',
-			'options' => array( $this, 'objects_to_sync' )
-		) );
-
-	}
-
-	public function objects_to_sync( $objects = array() ) {
-
-		$objects = array(
-			'comment'		=> 'Comments',
-			'attachment' 	=> 'Media',
-			'page' 			=> 'Pages',
-			'post' 			=> 'Posts',
-			'user'			=> 'Users',
-		);
-
-		/* $custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
-
-		foreach ( $custom_post_types as $cpt ) {
-			$objects[ $cpt->name ] = $cpt->label;
-		}
-		*/
-
-		return $objects;
-
-	}
-
-	public function render_connection_status_field( $field, $escaped_value, $object_id, $object_type, $field_type_object ) {
-
-		$url = cmb2_get_option( 'press-sync-options', 'connected_server' );
-
-		$is_connected = $this->check_connection( $url );
-
-		if ( $is_connected ) {
-			echo "<div><p>Connected</p></div>";
-		} else {
-			echo "<div><p>Not Connected</p></div>";
-		}
-
-	}
-
 	public function check_connection( $url ) {
+
+		$url 			= cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
 
 		$remote_get_args = array(
 			'timeout'	=> 30
 		);
+
+		$url .= "?press_sync_key=$press_sync_key";
 
 		$response = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
