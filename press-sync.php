@@ -419,6 +419,11 @@ class Press_Sync {
 		// Send Featured image information along to be imported
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 
+		// Get the comments for the post
+		if ( $object_args['comment_count'] ) {
+			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
+		}
+
 		unset( $object_args['ID'] );
 
 		return $object_args;
@@ -455,7 +460,26 @@ class Press_Sync {
 		return $media;
 
 	}
-	
+
+	/**
+	 * Get all of the comments for a post
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $post_id
+	 * @return array
+	 */
+	public function get_comments( $post_id ) {
+
+		$query_args = array(
+			'post_id'	=> $post_id
+		);
+
+		$comments = get_comments( $query_args );
+
+		return $comments;
+	}
+
 	public function prepare_user_args_to_sync( $user_args ) {
 
 		// Remove the user password
