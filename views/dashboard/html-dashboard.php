@@ -6,7 +6,11 @@
 	</h2>
 	<?php cmb2_metabox_form( 'press_sync_dashboard_metabox', 'press-sync-options' ); ?>
 	<h2>Sync Data</h2>
-	<button class="press-sync-button">Sync</button>
+	<?php if ( Press_Sync::check_connection() ): ?>
+		<button class="press-sync-button">Sync</button>
+	<?php else: ?>
+		<p>Check your PressSync key. You are not connected to the target server.</p>
+	<?php endif; ?>
 	<div class="progress-stats" style="display: none;">
 		Loading...
 	</div>
