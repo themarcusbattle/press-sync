@@ -46,6 +46,11 @@ class Press_Sync_API {
 	 */
 	public function register_api_endpoints() {
 
+		register_rest_route( 'press-sync/v1', '/status', array(
+			'methods' => 'GET',
+			'callback' => array( $this, 'get_connection_status_via_api' ),
+		) );
+
 		register_rest_route( 'press-sync/v1', '/post', array(
 			'methods' => 'POST',
 			'callback' => array( $this, 'insert_new_post' ),
@@ -70,6 +75,21 @@ class Press_Sync_API {
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
+	}
+
+	/**
+	 * Gets the connection status via API request
+	 *
+	 * @since 0.1.0
+	 * @return JSON
+	 */
+	public function get_connection_status_via_api() {
+
+		if ( ! $this->validate_sync_key() ) {
+			wp_send_json_error();
+		}
+
+		wp_send_json_success();
 	}
 
 	/**
