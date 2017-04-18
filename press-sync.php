@@ -218,8 +218,9 @@ class Press_Sync {
 		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url
-		$url = cmb2_get_option( 'press-sync-options', 'connected_server' );
-		$url = untrailingslashit( $url ) . '/wp-json/press-sync/v1/' . $prepare_object;
+		$url 			= cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
+		$url			= untrailingslashit( $url ) . '/wp-json/press-sync/v1/' . $prepare_object . '?press_sync_key=' . $press_sync_key;
 
 		// Prepare the correct sync method
 		$sync_class 	= 'prepare_' . $prepare_object . '_args_to_sync';
@@ -489,7 +490,7 @@ class Press_Sync {
 
 		$response 	= wp_remote_post( $url, $args );
 		$body 		= wp_remote_retrieve_body( $response );
-
+		
 	}
 
 	public function insert_woo_order_items( $post_id, $post_args ) {
