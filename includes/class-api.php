@@ -320,37 +320,6 @@ class Press_Sync_API {
 
 	}
 
-	public function update_links( $object_args ) {
-
-		$post_content = isset( $object_args['post_content'] ) ? $object_args['post_content'] : '';
-
-		if ( $post_content ) {
-
-			$post_content = str_ireplace( $this->current_domain, $this->new_domain, $post_content );
-
-			$object_args['post_content'] = $post_content;
-
-		}
-
-		return $object_args;
-
-	}
-
-	public function get_featured_image( $post_id ) {
-
-		$thumbnail_id 				= get_post_meta( $post_id, '_thumbnail_id', true );
-
-		if ( ! $thumbnail_id ) {
-			return false;
-		}
-
-		$media 						= get_post( $thumbnail_id, ARRAY_A );
-		$media['attachment_url'] 	= home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
-
-		return $media;
-
-	}
-
 	public function get_press_sync_author_id( $user_id ) {
 		$args = array(
 			'fields'		=> array('ID'),
