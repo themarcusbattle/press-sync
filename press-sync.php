@@ -157,22 +157,32 @@ class Press_Sync {
 
 	}
 
-	public function check_connection( $url ) {
+	/**
+	 * Checks the connection to the remote server and returns the connection status
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $url
+	 * @return boolean
+	 */
+	public function check_connection( $url = '' ) {
 
-		$url 			= cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$url = ( $url ) ? $url : cmb2_get_option( 'press-sync-options', 'connected_server' );
 		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
 
 		$remote_get_args = array(
 			'timeout'	=> 30
 		);
 
-		$url .= "?press_sync_key=$press_sync_key";
+		$url .= "wp-json/press-sync/v1/status?press_sync_key=$press_sync_key";
 
 		$response = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 == $response_code ) {
-			return true;
+			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			return isset( $response_body['success'] ) ? $response_body['success'] : false;
 		}
 
 		return false;
