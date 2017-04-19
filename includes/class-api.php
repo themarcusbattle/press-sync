@@ -349,6 +349,9 @@ class Press_Sync_API {
 			return false;
 		}
 
+		// Allow download_url() to use an external host to retrieve featured image.
+		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
+
 		$request = new WP_REST_Request( 'POST' );
 		$request->set_body_params( $post_args['featured_image'] );
 
@@ -358,6 +361,13 @@ class Press_Sync_API {
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
 
+		// Remove filter that allowed download_url() to use an external host.
+		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
+
+	}
+
+	public function allow_sync_external_host( $allow, $host, $url ) {
+		return true;
 	}
 
 }
