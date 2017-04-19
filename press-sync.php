@@ -472,10 +472,19 @@ class Press_Sync {
 	public function get_comments( $post_id ) {
 
 		$query_args = array(
-			'post_id'	=> $post_id
+			'post_id'	=> $post_id,
 		);
 
-		$comments = get_comments( $query_args );
+		$comments =  get_comments( $query_args );
+
+		if ( ! $comments ) {
+			return false;
+		}
+
+		foreach ( $comments as $key => $comment_args ) {
+			$comment_args = (array) $comment_args;
+			$comments[ $key ] = $this->prepare_comment_args_to_sync( $comment_args );
+		}
 
 		return $comments;
 	}
@@ -501,6 +510,31 @@ class Press_Sync {
 
 		return $args;
 
+	}
+
+	public function prepare_comment_args_to_sync( $comment_args ) {
+
+		$args = array();
+
+		$args['comment_post_ID'] 						= $comment_args['comment_post_ID'];
+		$args['comment_author'] 						= $comment_args['comment_author'];
+		$args['comment_author_email'] 					= $comment_args['comment_author_email'];
+		$args['comment_author_url'] 					= $comment_args['comment_author_url'];
+		$args['comment_author_IP'] 						= $comment_args['comment_author_IP'];
+		$args['comment_date'] 							= $comment_args['comment_date'];
+		$args['comment_date_gmt'] 						= $comment_args['comment_date_gmt'];
+		$args['comment_content'] 						= $comment_args['comment_content'];
+		$args['comment_karma'] 							= $comment_args['comment_karma'];
+		$args['comment_approved'] 						= $comment_args['comment_approved'];
+		$args['comment_agent'] 							= $comment_args['comment_agent'];
+		$args['comment_type'] 							= $comment_args['comment_type'];
+		$args['comment_parent'] 						= $comment_args['comment_parent'];
+		$args['user_id'] 								= $comment_args['user_id'];
+		$args['meta_input']['press_sync_comment_id'] 	= $comment_args['comment_ID'];
+		$args['meta_input']['press_sync_post_id'] 		= $comment_args['comment_post_ID'];
+		$args['meta_input']['press_sync_source']		= home_url();
+
+		return $args;
 	}
 
 	public function prepare_woo_order_args_to_sync( $object_args ) {
@@ -545,7 +579,6 @@ class Press_Sync {
 
 		$response 	= wp_remote_post( $url, $args );
 		$body 		= wp_remote_retrieve_body( $response );
-
 	}
 
 	public function insert_woo_order_items( $post_id, $post_args ) {

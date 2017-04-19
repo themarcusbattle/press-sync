@@ -166,7 +166,6 @@ class Press_Sync_Dashboard {
 	public function objects_to_sync( $objects = array() ) {
 
 		$objects = array(
-			'comment'		=> 'Comments',
 			'attachment' 	=> 'Media',
 			'page' 			=> 'Pages',
 			'post' 			=> 'Posts',
