@@ -344,6 +344,10 @@ class Press_Sync_API {
 	}
 
 	public function attach_featured_image( $post_id, $post_args ) {
+		// Post does not have a featured image so bail early.
+		if ( empty( $post_args['featured_image'] ) ) {
+			return false;
+		}
 
 		$request = new WP_REST_Request( 'POST' );
 		$request->set_body_params( $post_args['featured_image'] );
