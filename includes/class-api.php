@@ -125,6 +125,9 @@ class Press_Sync_API {
 			// Attach featured image
 			$this->attach_featured_image( $post['ID'], $post_args );
 
+			// Insert Comments
+			$this->insert_comments( $post['ID'], $post_args );
+
 			// Run any secondary commands
 			do_action( 'press_sync_insert_new_post', $post_id, $post_args );
 
@@ -179,6 +182,9 @@ class Press_Sync_API {
 
 		// Attach featured image
 		$this->attach_featured_image( $post_id, $post_args );
+
+		// Insert Comments
+		$this->insert_comments( $post_id, $post_args );
 
 		// Run any secondary commands
 		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
@@ -386,5 +392,19 @@ class Press_Sync_API {
 		$post_id 	= $wpdb->get_var( $sql );
 
 		return $post_id;
+	}
+
+	public function insert_comments( $post_id, $post_args ) {
+		// Post ID empty or post does not have any comments so bail early.
+		if ( empty( $post_id ) || ( ! array_key_exists( 'comments', $post_args ) && empty( $post_args['comments'] ) ) ) {
+			return false;
+		}
+
+		foreach ( $post_args['comments'] as $comment ) {
+			$comment['comment_post_ID'] = $post_id;
+			if ( isset( $comment['comment_post_ID'] ) ) {
+				wp_insert_comment( $comment );
+			}
+		}
 	}
 }
