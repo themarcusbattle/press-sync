@@ -189,11 +189,7 @@ class Press_Sync_API {
 
 		$data['id'] = 0;
 
-		require_once( ABSPATH . '/wp-admin/includes/image.php' );
-	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
-	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
-
-	    $attachment_args = $request->get_params();
+		$attachment_args = $request->get_params();
 
 	    // Attachment URL does not exist so bail early.
 	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
@@ -203,6 +199,10 @@ class Press_Sync_API {
 	    $attachment_url = $attachment_args['attachment_url'];
 
 		unset( $attachment_args['attachment_url'] );
+
+		require_once( ABSPATH . '/wp-admin/includes/image.php' );
+	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
+	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
 		if ( $media_id = $this->media_exists( $attachment_url ) ) {
 
