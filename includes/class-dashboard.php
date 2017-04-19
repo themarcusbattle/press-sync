@@ -111,10 +111,10 @@ class Press_Sync_Dashboard {
 		) );
 
 		$cmb_options->add_field( array(
-			'name'    => __( 'Objects to Sync', 'press-sync' ),
-			'id'      => 'objects_to_sync',
-			'type'    => 'select',
-			'options' => array( $this, 'objects_to_sync' )
+			'name'       => __( 'Objects to Sync', 'press-sync' ),
+			'id'         => 'objects_to_sync',
+			'type'       => 'select',
+			'options_cb' => array( $this, 'objects_to_sync' )
 		) );
 
 	}
