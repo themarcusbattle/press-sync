@@ -234,7 +234,7 @@ class Press_Sync_API {
 
 	    $data['id'] = $attachment_id;
 
-		return wp_send_json_success( $data );
+		return $data;
 
 	}
 
