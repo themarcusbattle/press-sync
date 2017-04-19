@@ -194,7 +194,13 @@ class Press_Sync_API {
 	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
 	    $attachment_args = $request->get_params();
-		$attachment_url = $attachment_args['attachment_url'];
+
+	    // Attachment URL does not exist so bail early.
+	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
+	    	wp_send_json_error( $data );
+	    }
+
+	    $attachment_url = $attachment_args['attachment_url'];
 
 		unset( $attachment_args['attachment_url'] );
 
