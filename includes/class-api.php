@@ -203,7 +203,7 @@ class Press_Sync_API {
 
 	    // Attachment URL does not exist so bail early.
 	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
-	    	wp_send_json_error( $data );
+	    	return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 	    $attachment_url = $attachment_args['attachment_url'];
@@ -231,7 +231,7 @@ class Press_Sync_API {
 
          if ( is_wp_error( $temp_file ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return wp_send_json_error( $data );
+	        return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
@@ -239,12 +239,12 @@ class Press_Sync_API {
 		// Check for handle sideload errors.
 	    if ( is_wp_error( $attachment_id ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return wp_send_json_error( $data );
+	        return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 	    $data['id'] = $attachment_id;
 
-		return $data;
+		return ( $return_local ) ? $data : wp_send_json_success( $data );
 
 	}
 
