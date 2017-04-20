@@ -424,6 +424,11 @@ class Press_Sync {
 			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
 		}
 
+		// Look for any P2P connections
+		if ( class_exists('P2P_Autoload') ) {
+			$object_args['p2p_connections'] = $this->get_p2p_connections( $object_args['ID'] );
+		}
+
 		unset( $object_args['ID'] );
 
 		return $object_args;
@@ -487,6 +492,23 @@ class Press_Sync {
 		}
 
 		return $comments;
+	}
+
+	/**
+	 * Return the P2P connections for a single post
+	 *
+	 * @since 0.1.0
+	 * @param
+	 */
+	public function get_p2p_connections( $post_id ) {
+
+		global $wpdb;
+
+		$sql = "SELECT p2p_from, p2p_to, p2p_type FROM {$wpdb->prefix}p2p WHERE p2p_from = $post_id OR p2p_to = $post_id";
+		$results = $wpdb->get_results( $sql, ARRAY_A );
+
+		return $results;
+
 	}
 
 	public function prepare_user_args_to_sync( $user_args ) {
