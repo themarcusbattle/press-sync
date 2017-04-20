@@ -229,35 +229,22 @@ class Press_Sync {
 		$taxonomies 	= get_object_taxonomies( $objects_to_sync );
 		$paged 			= isset( $_POST['paged'] ) ? (int) $_POST['paged'] : 1;
 
-		$objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+		$objects 	= $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+		$logs 		= array();
 
 		// Send parsed objects to target server
 		foreach ( $objects as $object ) {
 			$args = $this->$sync_class( $object );
-			$this->send_data_to_remote_server( $url, $args );
+			$logs[] = $this->send_data_to_remote_server( $url, $args );
 		}
 
 		wp_send_json_success( array(
 			'objects_to_sync'			=> $wp_object,
 			'total_objects'				=> $total_objects,
 			'total_objects_processed'	=> count( $objects ) ? count( $objects ) * $paged : 10 * $paged,
-			'next_page'					=> $paged + 1
+			'next_page'					=> $paged + 1,
+			'log'						=> $logs,
 		) );
-
-		/* while ( $objects = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies ) ) {
-
-			foreach ( $objects as $object ) {
-				$args = $this->$sync_class( $object );
-				$this->send_data_to_remote_server( $url, $args );
-			}
-
-			$paged++;
-			exit;
-		}
-
-		wp_die();
-		*/
-
 
 	}
 
@@ -282,24 +269,20 @@ class Press_Sync {
 
 	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
 
-		$query_args = array(
-			'post_type' => $objects_to_sync,
-			'posts_per_page' => 10,
-			'post_status' => 'any',
-			'paged' => $paged,
-			'order'	=> 'ASC',
-			'orderby'	=> 'post_parent'
-		);
+		global $wpdb;
 
-		$query = new WP_Query( $query_args );
+		$offset = ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 0;
 
-		$posts = array();
+		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s LIMIT 10 OFFSET %d";
+		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
-		if ( $query->posts ) {
+		// Get the results
+		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
+		$posts 		= array();
 
-			foreach ( $query->posts as $object ) {
+		if ( $results ) {
 
-				$object = (array) $object;
+			foreach ( $results as $object ) {
 
 				$object['tax_input'] 							= $this->get_relationships( $object['ID'], $taxonomies );
 				$object['meta_input'] 							= get_post_meta( $object['ID'] );
@@ -312,7 +295,7 @@ class Press_Sync {
 			}
 
 		}
-
+		
 		return $posts;
 
 	}
@@ -600,7 +583,9 @@ class Press_Sync {
 		);
 
 		$response 	= wp_remote_post( $url, $args );
-		$body 		= wp_remote_retrieve_body( $response );
+		$response_body 		= wp_remote_retrieve_body( $response );
+
+		return $response_body;
 	}
 
 	public function insert_woo_order_items( $post_id, $post_args ) {
