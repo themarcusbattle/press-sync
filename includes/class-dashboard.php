@@ -172,12 +172,19 @@ class Press_Sync_Dashboard {
 			'user'			=> 'Users',
 		);
 
-		/* $custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
+		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
 
-		foreach ( $custom_post_types as $cpt ) {
-			$objects[ $cpt->name ] = $cpt->label;
+		if ( $custom_post_types ) {
+
+			$objects[] = '-- Custom Post Types --';
+			
+			foreach ( $custom_post_types as $cpt ) {
+				$objects[ $cpt->name ] = $cpt->label;
+			}
+
 		}
-		*/
+
+		$objects = apply_filters( 'press_sync_objects_to_sync', $objects );
 
 		return $objects;
 
