@@ -37,6 +37,7 @@ class Press_Sync_API {
 	 */
 	public function hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
+		add_action( 'press_sync_insert_new_post', array( $this, 'add_p2p_connections' ), 10, 2 );
 	}
 
 	/**
@@ -123,6 +124,9 @@ class Press_Sync_API {
 
 			// Attach featured image
 			$this->attach_featured_image( $post['ID'], $post_args );
+
+			// Run any secondary commands
+			do_action( 'press_sync_insert_new_post', $post_id, $post_args );
 
 			// Check if the post has been modified
 			if ( strtotime( $post_args['post_modified'] ) > strtotime( $post['post_modified'] ) ) {
@@ -350,4 +354,37 @@ class Press_Sync_API {
 
 	}
 
+	public function add_p2p_connections( $post_id, $post_args ) {
+
+		if ( ! class_exists('P2P_Autoload') || ! $post_args['p2p_connections'] ) {
+			return;
+		}
+
+		$connections = isset( $post_args['p2p_connections'] ) ? $post_args['p2p_connections'] : array();
+
+		if ( ! $connections ) {
+			return;
+		}
+
+		foreach ( $connections as $connection ) {
+
+			$p2p_from 	= $this->get_post_id_by_press_sync_id( $connection['p2p_from'] );
+			$p2p_to 	= $this->get_post_id_by_press_sync_id( $connection['p2p_to'] );
+			$p2p_type 	= $connection['p2p_type'];
+
+			$response = p2p_type( $p2p_type )->connect( $p2p_from, $p2p_to );
+
+		}
+
+	}
+
+	public function get_post_id_by_press_sync_id( $press_sync_post_id ) {
+
+		global $wpdb;
+
+		$sql 		= "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'press_sync_post_id' AND meta_value = $press_sync_post_id";
+		$post_id 	= $wpdb->get_var( $sql );
+
+		return $post_id;
+	}
 }
