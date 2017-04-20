@@ -161,7 +161,7 @@ class Press_Sync_API {
 		$post_id = wp_insert_post( $post_args );
 
 		if ( is_wp_error( $post_id ) ) {
-			return wp_send_json_error();
+			return wp_send_json_error( array( 'debug' => $post_id ) );
 		}
 
 		// Set taxonomies for custom post type
