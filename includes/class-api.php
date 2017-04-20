@@ -113,7 +113,8 @@ class Press_Sync_API {
 
 	public function insert_new_post( $request ) {
 
-		$post_args = $request->get_params();
+		$post_args 	= $request->get_params();
+		$comments 	= $request->get_param('comments');
 
 		if ( ! $post_args ) {
 			return wp_send_json_error();
@@ -123,6 +124,9 @@ class Press_Sync_API {
 
 			// Attach featured image
 			$this->attach_featured_image( $post['ID'], $post_args );
+
+			// Attach any comments
+			$this->attach_comments( $post['ID'], $comments );
 
 			// Check if the post has been modified
 			if ( strtotime( $post_args['post_modified'] ) > strtotime( $post['post_modified'] ) ) {
@@ -176,6 +180,9 @@ class Press_Sync_API {
 		// Attach featured image
 		$this->attach_featured_image( $post_id, $post_args );
 
+		// Attach any comments
+		$this->attach_comments( $post_id, $comments );
+
 		// Run any secondary commands
 		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
 
@@ -215,7 +222,7 @@ class Press_Sync_API {
 
          if ( is_wp_error( $temp_file ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return wp_send_json_error( $data );
+	        return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
@@ -223,12 +230,12 @@ class Press_Sync_API {
 		// Check for handle sideload errors.
 	    if ( is_wp_error( $attachment_id ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return wp_send_json_error( $data );
+	        return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 	    $data['id'] = $attachment_id;
 
-		return wp_send_json_success( $data );
+		return ( $return_local ) ? $data : wp_send_json_success( $data );
 
 	}
 
@@ -266,6 +273,12 @@ class Press_Sync_API {
 		$data['user_id'] = $user_id;
 
 		return wp_send_json_success( $data );
+
+	}
+
+	public function insert_comment( $comment_args ) {
+
+
 
 	}
 
@@ -310,6 +323,37 @@ class Press_Sync_API {
 
 	}
 
+	public function comment_exists( $comment_args = array() ) {
+
+		$press_sync_comment_id 	= isset( $comment_args['meta_input']['press_sync_comment_id'] ) ? $comment_args['meta_input']['press_sync_comment_id'] : 0;
+		$press_sync_source 		= isset( $comment_args['meta_input']['press_sync_source'] ) ? $comment_args['meta_input']['press_sync_source'] : 0;
+
+		$query_args = array(
+			'number'		=> 1,
+			'meta_query' 	=> array(
+				array(
+					'key'     => 'press_sync_comment_id',
+					'value'   => $press_sync_comment_id,
+					'compare' => '='
+				),
+				array(
+					'key'     => 'press_sync_source',
+					'value'   => $press_sync_source,
+					'compare' => '='
+				),
+			)
+		);
+
+		$comment = get_comments( $query_args );
+
+		if ( $comment ) {
+			return (array) $comment[0];
+		}
+
+		return false;
+
+	}
+
 	public function get_post_by_orig_id( $press_sync_post_id ) {
 
 		global $wpdb;
@@ -321,6 +365,11 @@ class Press_Sync_API {
 	}
 
 	public function get_press_sync_author_id( $user_id ) {
+
+		if ( ! $user_id ) {
+			return 0;
+		}
+
 		$args = array(
 			'fields'		=> array('ID'),
 			'meta_key'		=> 'press_sync_user_id',
@@ -347,6 +396,38 @@ class Press_Sync_API {
 		$thumbnail_id 	= isset( $attachment['id'] ) ? $attachment['id'] : 0;
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
+
+	}
+
+	public function attach_comments( $post_id, $comments ) {
+
+		if ( ! $comments ) {
+			return;
+		}
+
+		foreach ( $comments as $comment_args ) {
+
+			// Check to see if the comment already exists
+			if ( $comment = $this->comment_exists( $comment_args ) ) {
+				continue;
+			}
+
+			// Set Comment Post ID to correct local Post ID
+			$comment_args['comment_post_ID'] = $post_id;
+
+			// Get the comment author ID
+			$comment_args['user_id'] = $this->get_press_sync_author_id( $comment_args['post_author'] );
+
+			$comment_id = wp_insert_comment( $comment_args );
+
+			if ( ! is_wp_error( $comment_id ) ) {
+
+				foreach ( $comment_args['meta_input'] as $meta_key => $meta_value ) {
+					update_comment_meta( $comment_id, $meta_key, $meta_value );
+				}
+			}
+
+		}
 
 	}
 
