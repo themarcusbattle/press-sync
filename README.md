@@ -13,3 +13,11 @@ For support, email plugins@marcusbattle.com
 3) On your push server, create a connection to the target server using the "PressSync Key"
 4) Select the type of content you want to push, click "Save"
 5) Press "Sync" to synchronize the data. Done!
+
+## Supports syncing the following data:
+- WP Users, WP Posts, WP Media and WP Comments
+- Custom Post Types
+- Featured Images
+- Categories, Tags and Custom Taxonomies
+- Post & User Meta
+- Posts 2 Posts Relationships
