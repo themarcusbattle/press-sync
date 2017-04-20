@@ -37,6 +37,7 @@ class Press_Sync_API {
 	 */
 	public function hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
+		add_action( 'press_sync_insert_new_post', array( $this, 'add_p2p_connections' ), 10, 2 );
 	}
 
 	/**
@@ -128,6 +129,12 @@ class Press_Sync_API {
 			// Attach any comments
 			$this->attach_comments( $post['ID'], $comments );
 
+			// Insert Comments
+			// $this->insert_comments( $post['ID'], $post_args );
+
+			// Run any secondary commands
+			do_action( 'press_sync_insert_new_post', $post_id, $post_args );
+
 			// Check if the post has been modified
 			if ( strtotime( $post_args['post_modified'] ) > strtotime( $post['post_modified'] ) ) {
 
@@ -161,7 +168,7 @@ class Press_Sync_API {
 		$post_id = wp_insert_post( $post_args );
 
 		if ( is_wp_error( $post_id ) ) {
-			return wp_send_json_error();
+			return wp_send_json_error( array( 'debug' => $post_id ) );
 		}
 
 		// Set taxonomies for custom post type
@@ -183,6 +190,9 @@ class Press_Sync_API {
 		// Attach any comments
 		$this->attach_comments( $post_id, $comments );
 
+		// Insert Comments
+		// $this->insert_comments( $post_id, $post_args );
+
 		// Run any secondary commands
 		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
 
@@ -196,14 +206,20 @@ class Press_Sync_API {
 
 		$data['id'] = 0;
 
+		$attachment_args = $request->get_params();
+
+	    // Attachment URL does not exist so bail early.
+	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
+	    	return ( $return_local ) ? $data : wp_send_json_error( $data );
+	    }
+
+	    $attachment_url = $attachment_args['attachment_url'];
+
+		unset( $attachment_args['attachment_url'] );
+
 		require_once( ABSPATH . '/wp-admin/includes/image.php' );
 	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
 	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
-
-	    $attachment_args = $request->get_params();
-		$attachment_url = $attachment_args['attachment_url'];
-
-		unset( $attachment_args['attachment_url'] );
 
 		if ( $media_id = $this->media_exists( $attachment_url ) ) {
 
@@ -273,12 +289,6 @@ class Press_Sync_API {
 		$data['user_id'] = $user_id;
 
 		return wp_send_json_success( $data );
-
-	}
-
-	public function insert_comment( $comment_args ) {
-
-
 
 	}
 
@@ -387,6 +397,13 @@ class Press_Sync_API {
 	}
 
 	public function attach_featured_image( $post_id, $post_args ) {
+		// Post does not have a featured image so bail early.
+		if ( empty( $post_args['featured_image'] ) ) {
+			return false;
+		}
+
+		// Allow download_url() to use an external request to retrieve featured images.
+		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
 
 		$request = new WP_REST_Request( 'POST' );
 		$request->set_body_params( $post_args['featured_image'] );
@@ -397,11 +414,30 @@ class Press_Sync_API {
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
 
+		// Remove filter that allowed an external request to be made via download_url().
+		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
+
+	}
+
+	/**
+	 * Filter http_request_host_is_external to return true and allow external requests for the HTTP request.
+	 *
+	 * @param  bool   $allow  Should external requests be allowed.
+	 * @param  string $host   IP of the requested host.
+	 * @param  string $url    URL of the requested host.
+	 *
+	 * @return bool
+	 */
+	public function allow_sync_external_host( $allow, $host, $url ) {
+		// Return true to allow an external request to be made via download_url().
+		$allow = true;
+
+		return $allow;
 	}
 
 	public function attach_comments( $post_id, $comments ) {
 
-		if ( ! $comments ) {
+		if ( empty( $post_id ) || ! $comments ) {
 			return;
 		}
 
@@ -429,6 +465,54 @@ class Press_Sync_API {
 
 		}
 
+	}
+
+	public function add_p2p_connections( $post_id, $post_args ) {
+
+		if ( ! class_exists('P2P_Autoload') || ! $post_args['p2p_connections'] ) {
+			return;
+		}
+
+		$connections = isset( $post_args['p2p_connections'] ) ? $post_args['p2p_connections'] : array();
+
+		if ( ! $connections ) {
+			return;
+		}
+
+		foreach ( $connections as $connection ) {
+
+			$p2p_from 	= $this->get_post_id_by_press_sync_id( $connection['p2p_from'] );
+			$p2p_to 	= $this->get_post_id_by_press_sync_id( $connection['p2p_to'] );
+			$p2p_type 	= $connection['p2p_type'];
+
+			$response = p2p_type( $p2p_type )->connect( $p2p_from, $p2p_to );
+
+		}
+
+	}
+
+	public function get_post_id_by_press_sync_id( $press_sync_post_id ) {
+
+		global $wpdb;
+
+		$sql 		= "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'press_sync_post_id' AND meta_value = $press_sync_post_id";
+		$post_id 	= $wpdb->get_var( $sql );
+
+		return $post_id;
+	}
+
+	public function insert_comments( $post_id, $post_args ) {
+		// Post ID empty or post does not have any comments so bail early.
+		if ( empty( $post_id ) || ( ! array_key_exists( 'comments', $post_args ) && empty( $post_args['comments'] ) ) ) {
+			return false;
+		}
+
+		foreach ( $post_args['comments'] as $comment ) {
+			$comment['comment_post_ID'] = $post_id;
+			if ( isset( $comment['comment_post_ID'] ) ) {
+				wp_insert_comment( $comment );
+			}
+		}
 	}
 
 }
