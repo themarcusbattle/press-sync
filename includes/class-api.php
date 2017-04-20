@@ -359,7 +359,7 @@ class Press_Sync_API {
 			return false;
 		}
 
-		// Allow download_url() to use an external host to retrieve featured image.
+		// Allow download_url() to use an external request to retrieve featured images.
 		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
 
 		$request = new WP_REST_Request( 'POST' );
@@ -371,13 +371,25 @@ class Press_Sync_API {
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
 
-		// Remove filter that allowed download_url() to use an external host.
+		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
 
 	}
 
+	/**
+	 * Filter http_request_host_is_external to return true and allow external requests for the HTTP request.
+	 *
+	 * @param  bool   $allow  Should external requests be allowed.
+	 * @param  string $host   IP of the requested host.
+	 * @param  string $url    URL of the requested host.
+	 *
+	 * @return bool
+	 */
 	public function allow_sync_external_host( $allow, $host, $url ) {
-		return true;
+		// Return true to allow an external request to be made via download_url().
+		$allow = true;
+
+		return $allow;
 	}
 
 	public function add_p2p_connections( $post_id, $post_args ) {
