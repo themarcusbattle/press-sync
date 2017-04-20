@@ -199,14 +199,20 @@ class Press_Sync_API {
 
 		$data['id'] = 0;
 
+		$attachment_args = $request->get_params();
+
+	    // Attachment URL does not exist so bail early.
+	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
+	    	return ( $return_local ) ? $data : wp_send_json_error( $data );
+	    }
+
+	    $attachment_url = $attachment_args['attachment_url'];
+
+		unset( $attachment_args['attachment_url'] );
+
 		require_once( ABSPATH . '/wp-admin/includes/image.php' );
 	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
 	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
-
-	    $attachment_args = $request->get_params();
-		$attachment_url = $attachment_args['attachment_url'];
-
-		unset( $attachment_args['attachment_url'] );
 
 		if ( $media_id = $this->media_exists( $attachment_url ) ) {
 
@@ -225,7 +231,7 @@ class Press_Sync_API {
 
          if ( is_wp_error( $temp_file ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return wp_send_json_error( $data );
+	        return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
@@ -233,12 +239,12 @@ class Press_Sync_API {
 		// Check for handle sideload errors.
 	    if ( is_wp_error( $attachment_id ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return wp_send_json_error( $data );
+	        return ( $return_local ) ? $data : wp_send_json_error( $data );
 	    }
 
 	    $data['id'] = $attachment_id;
 
-		return wp_send_json_success( $data );
+		return ( $return_local ) ? $data : wp_send_json_success( $data );
 
 	}
 
@@ -348,6 +354,13 @@ class Press_Sync_API {
 	}
 
 	public function attach_featured_image( $post_id, $post_args ) {
+		// Post does not have a featured image so bail early.
+		if ( empty( $post_args['featured_image'] ) ) {
+			return false;
+		}
+
+		// Allow download_url() to use an external request to retrieve featured images.
+		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
 
 		$request = new WP_REST_Request( 'POST' );
 		$request->set_body_params( $post_args['featured_image'] );
@@ -358,6 +371,25 @@ class Press_Sync_API {
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
 
+		// Remove filter that allowed an external request to be made via download_url().
+		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
+
+	}
+
+	/**
+	 * Filter http_request_host_is_external to return true and allow external requests for the HTTP request.
+	 *
+	 * @param  bool   $allow  Should external requests be allowed.
+	 * @param  string $host   IP of the requested host.
+	 * @param  string $url    URL of the requested host.
+	 *
+	 * @return bool
+	 */
+	public function allow_sync_external_host( $allow, $host, $url ) {
+		// Return true to allow an external request to be made via download_url().
+		$allow = true;
+
+		return $allow;
 	}
 
 	public function add_p2p_connections( $post_id, $post_args ) {
