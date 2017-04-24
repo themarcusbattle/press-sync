@@ -36,13 +36,20 @@ class Press_Sync_Dashboard {
 	 * @since  0.1.0
 	 */
 	public function hooks() {
+
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 10, 1 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
 		add_action( 'admin_notices', array( $this, 'error_notice' ) );
 
 		// CMB2 hooks
 		add_action( 'cmb2_admin_init', array( $this, 'init_press_sync_dashboard_metabox' ) );
 		add_action( 'cmb2_admin_init', array( $this, 'init_press_sync_settings_metabox' ) );
 		add_action( 'cmb2_render_connection_status', array( $this, 'render_connection_status_field' ), 10, 5 );
+
+		// AJAX Requests
+		add_action( 'wp_ajax_get_objects_to_sync_count', array( $this, 'get_objects_to_sync_count_via_ajax' ) );
+		add_action( 'wp_ajax_sync_wp_data', array( $this, 'sync_wp_data_via_ajax' ) );
+
 	}
 
 	/**
@@ -60,13 +67,22 @@ class Press_Sync_Dashboard {
 	 * @since 0.1.0
 	 */
 	public function show_menu_page() {
-
 		$selected_tab 	= isset( $_REQUEST['tab'] ) ? 'dashboard/' . $_REQUEST['tab'] : 'dashboard';
 		$this->plugin->include_page( $selected_tab );
 	}
 
 	/**
-	 * Initializes the CMB2 metabox for "Dashboard" tab in the dashboard
+	 * Load all of the scripts for the dashboard
+	 *
+	 * @since 0.1.0
+	 */
+	public function load_scripts() {
+		wp_enqueue_script( 'press-sync', plugins_url( 'assets/js/press-sync.js', dirname( __FILE__ ) ), true );
+		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+	}
+
+	/**
+	 * Initialize the CMB2 metabox for "Dashboard" tab in the dashboard
 	 *
 	 * @since 0.1.0
 	 */
@@ -177,7 +193,7 @@ class Press_Sync_Dashboard {
 		if ( $custom_post_types ) {
 
 			$objects[] = '-- Custom Post Types --';
-			
+
 			foreach ( $custom_post_types as $cpt ) {
 				$objects[ $cpt->name ] = $cpt->label;
 			}
@@ -190,6 +206,12 @@ class Press_Sync_Dashboard {
 
 	}
 
+	/**
+	 * Render custom CMB2 field for the connection status to the remote server
+	 *
+	 * @since 0.1.0
+	 * @return html
+	 */
 	public function render_connection_status_field( $field, $escaped_value, $object_id, $object_type, $field_type_object ) {
 
 		$url = cmb2_get_option( 'press-sync-options', 'connected_server' );
@@ -201,6 +223,79 @@ class Press_Sync_Dashboard {
 		} else {
 			echo "<div><p>Not Connected</p></div>";
 		}
+
+	}
+
+	/**
+	 * Get the total number of objects to sync
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return JSON
+	 */
+	public function get_objects_to_sync_count_via_ajax() {
+
+		$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$prepare_object 	= ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
+
+		$total_objects 	= $this->plugin->count_objects_to_sync( $objects_to_sync );
+
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
+
+		wp_send_json_success( array(
+			'objects_to_sync'	=> $wp_object,
+			'total_objects' 	=> $total_objects
+		) );
+
+	}
+
+	/**
+	 * Sync the data via AJAX
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return JSON
+	 */
+	public function sync_wp_data_via_ajax() {
+
+		$this->plugin->init_connection();
+
+		$sync_method = cmb2_get_option( 'press-sync-options', 'sync_method' );
+		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+
+		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
+
+		// Build out the url
+		$url 			= cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
+		$url			= untrailingslashit( $url ) . '/wp-json/press-sync/v1/' . $prepare_object . '?press_sync_key=' . $press_sync_key;
+
+		// Prepare the correct sync method
+		$sync_class 	= 'prepare_' . $prepare_object . '_args_to_sync';
+
+		$total_objects 	= $this->plugin->count_objects_to_sync( $objects_to_sync );
+		$taxonomies 	= get_object_taxonomies( $objects_to_sync );
+		$paged 			= isset( $_POST['paged'] ) ? (int) $_POST['paged'] : 1;
+
+		$objects 	= $this->plugin->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+		$logs 		= array();
+
+		// Send parsed objects to target server
+		foreach ( $objects as $object ) {
+			$args = $this->plugin->$sync_class( $object );
+			$logs[] = $this->plugin->send_data_to_remote_server( $url, $args );
+		}
+
+		wp_send_json_success( array(
+			'objects_to_sync'			=> $wp_object,
+			'total_objects'				=> $total_objects,
+			'total_objects_processed'	=> count( $objects ) ? count( $objects ) * $paged : 10 * $paged,
+			'next_page'					=> $paged + 1,
+			'log'						=> $logs,
+		) );
 
 	}
 
