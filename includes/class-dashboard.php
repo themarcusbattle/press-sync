@@ -133,6 +133,17 @@ class Press_Sync_Dashboard {
 			'options_cb' => array( $this, 'objects_to_sync' )
 		) );
 
+		$cmb_options->add_field( array(
+			'name'       => __( 'How do you want to handle duplicates?', 'press-sync' ),
+			'id'         => 'duplicate_action',
+			'type'       => 'select',
+			'options'	 => array(
+				'replace'	=> __( 'Replace', 'press-sync' ),
+				'skip'		=> __( 'Make a Copy', 'press-sync' ),
+			),
+			'default'	=> 'skip'
+		) );
+
 	}
 
 	/**
@@ -261,8 +272,9 @@ class Press_Sync_Dashboard {
 
 		$this->plugin->init_connection();
 
-		$sync_method = cmb2_get_option( 'press-sync-options', 'sync_method' );
-		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$sync_method 		= cmb2_get_option( 'press-sync-options', 'sync_method' );
+		$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$duplicate_action 	= cmb2_get_option( 'press-sync-options', 'duplicate_action' );
 
 		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
 		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
@@ -285,8 +297,12 @@ class Press_Sync_Dashboard {
 
 		// Send parsed objects to target server
 		foreach ( $objects as $object ) {
+
 			$args = $this->plugin->$sync_class( $object );
+			$args['duplicate_action'] = $duplicate_action;
+			
 			$logs[] = $this->plugin->send_data_to_remote_server( $url, $args );
+
 		}
 
 		wp_send_json_success( array(
