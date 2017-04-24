@@ -134,14 +134,15 @@ class Press_Sync_Dashboard {
 		) );
 
 		$cmb_options->add_field( array(
-			'name'       => __( 'How do you want to handle duplicates?', 'press-sync' ),
+			'name'       => __( 'How do you want to handle non-synced duplicates?', 'press-sync' ),
 			'id'         => 'duplicate_action',
 			'type'       => 'select',
 			'options'	 => array(
-				'replace'	=> __( 'Replace', 'press-sync' ),
-				'skip'		=> __( 'Make a Copy', 'press-sync' ),
+				'sync'		=> __( 'Sync', 'press-sync' ),
+				'skip'		=> __( 'Skip (Creates a duplicate post)', 'press-sync' ),
 			),
-			'default'	=> 'skip'
+			'desc'		=> __( 'The sync option will give a non-synced duplicate a press sync ID to be synced for the future', 'press-sync' ),
+			'default'	=> 'match'
 		) );
 
 	}
@@ -300,7 +301,7 @@ class Press_Sync_Dashboard {
 
 			$args = $this->plugin->$sync_class( $object );
 			$args['duplicate_action'] = $duplicate_action;
-			
+
 			$logs[] = $this->plugin->send_data_to_remote_server( $url, $args );
 
 		}
