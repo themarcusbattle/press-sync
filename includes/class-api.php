@@ -1,6 +1,6 @@
 <?php
 
-class Press_Sync_API {
+class Press_Sync_API extends WP_REST_Controller {
 
 	/**
 	 * Parent plugin class.
@@ -50,6 +50,12 @@ class Press_Sync_API {
 		register_rest_route( 'press-sync/v1', '/status', array(
 			'methods' => 'GET',
 			'callback' => array( $this, 'get_connection_status_via_api' ),
+		) );
+
+		register_rest_route( 'press-sync/v1', '/sync', array(
+			'methods' => 'POST',
+			'callback' => array( $this, 'sync_objects' ),
+			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
 		register_rest_route( 'press-sync/v1', '/post', array(
@@ -112,13 +118,56 @@ class Press_Sync_API {
 
 	}
 
-	public function insert_new_post( $request ) {
+	/**
+	 * Sync all of the object received from the local server
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_Request
+	 * @return WP_REST_Response
+	 */
+	public function sync_objects( $request ) {
 
-		$post_args 			= $request->get_params();
-		$duplicate_action 	= $request->get_param('duplicate_action');
+		$objects_to_sync 	= $request->get_param('objects_to_sync');
+		$objects 			= $request->get_param('objects');
+		$duplicate_action 	= ( $request->get_param('duplicate_action') ) ? $request->get_param('duplicate_action') : 'skip';
+
+		if ( ! $objects_to_sync ) {
+			wp_send_json_error( array(
+				'debug'	=> __( 'Not sure which WP object you want to sync', 'press-sync' )
+			) );
+		}
+
+		if ( ! $objects ) {
+			wp_send_json_error( array(
+				'debug'	=> __( 'No data available to sync', 'press-sync' )
+			) );
+		}
+
+		$logs = array();
+
+		foreach ( $objects as $object ) {
+			$sync_method	= "sync_{$objects_to_sync}";
+			$logs[] 		= $this->$sync_method( $object, $duplicate_action );
+		}
+
+		return $logs;
+
+	}
+
+	/**
+	 * Syncs a post of any type
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $post_args
+	 * @param string $duplicate_action
+	 * @return array
+	 */
+	public function sync_post( $post_args, $duplicate_action ) {
 
 		if ( ! $post_args ) {
-			return wp_send_json_error();
+			return false;
 		}
 
 		// Set the correct post author
@@ -151,14 +200,28 @@ class Press_Sync_API {
 		if ( $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
 
 			// If we're here, then we need to keep our local version
-			$data['remote_post_id']	= $post_args['meta_input']['press_sync_post_id'];
-			$data['local_post_id'] 	= $local_post['ID'];
-			$data['message'] 		= __( 'Local version is newer than remote version', 'press-sync' );
+			$response['remote_post_id']	= $post_args['meta_input']['press_sync_post_id'];
+			$response['local_post_id'] 	= $local_post['ID'];
+			$response['message'] 		= __( 'Local version is newer than remote version', 'press-sync' );
 
 			// Assign a press sync ID
 			$this->add_press_sync_id( $local_post['ID'], $post_args );
 
-			return wp_send_json_error( array( 'debug' => $data ) );
+			return array( 'debug' => $response );
+
+		}
+
+		// Add categories
+		if ( isset( $post_args['tax_input']['category'] ) && $post_args['tax_input']['category'] ) {
+
+			require_once( ABSPATH . '/wp-admin/includes/taxonomy.php');
+
+			foreach( $post_args['tax_input']['category'] as $category ) {
+				wp_insert_category( array(
+					'cat_name'	=> $category
+				) );
+				$post_args['post_category'][] = $category;
+			}
 
 		}
 
@@ -166,37 +229,38 @@ class Press_Sync_API {
 		$local_post_id = wp_insert_post( $post_args );
 
 		// Bail if the insert didn't work
-		if ( is_wp_error( $post_id ) ) {
-			return wp_send_json_error( array( 'debug' => $local_post_id ) );
+		if ( is_wp_error( $local_post_id ) ) {
+			return array( 'debug' => $local_post_id );
 		}
 
 		// Attach featured image
 		$this->attach_featured_image( $local_post_id, $post_args );
 
 		// Attach any comments
-		$this->attach_comments( $local_post_id, $request->get_param('comments') );
+		$comments = isset( $post_args['comments'] ) ? $post_args['comments'] : array();
+		$this->attach_comments( $local_post_id, $comments );
 
 		// Set taxonomies for custom post type
-		if ( ! in_array( $post_args['post_type'], array( 'post', 'page' ) ) ) {
+		// if ( ! in_array( $post_args['post_type'], array( 'post', 'page' ) ) ) {
 
 			if ( isset( $post_args['tax_input'] ) ) {
 
 				foreach ( $post_args['tax_input'] as $taxonomy => $terms )	{
-					wp_set_object_terms( $post_id, $terms, $taxonomy, false );
+					wp_set_object_terms( $local_post_id, $terms, $taxonomy, false );
 				}
 
 			}
 
-		}
+		// }
 
 		// Run any secondary commands
 		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
 
-		return wp_send_json_success( array( 'debug' => array(
+		return array( 'debug' => array(
 			'remote_post_id'	=> $post_args['meta_input']['press_sync_post_id'],
 			'local_post_id'		=> $local_post_id,
 			'message'			=> __( 'The post has been synced with the remote server', 'press-sync' ),
-		) ) );
+		) );
 
 	}
 
@@ -382,7 +446,7 @@ class Press_Sync_API {
 	public function get_press_sync_author_id( $user_id ) {
 
 		if ( ! $user_id ) {
-			return 0;
+			return 1;
 		}
 
 		global $wpdb;
@@ -392,7 +456,7 @@ class Press_Sync_API {
 
 		$press_sync_user_id = $wpdb->get_var( $prepared_sql );
 
-		return ( $press_sync_user_id ) ? $press_sync_user_id : 0;
+		return ( $press_sync_user_id ) ? $press_sync_user_id : 1;
 
 	}
 
