@@ -152,7 +152,7 @@ class Press_Sync {
 		$dir = $dir ? $dir : trailingslashit( dirname( __FILE__ ) );
 		return $dir . $path;
 	}
-	
+
 	/**
 	 * Returns the specified press sync option
 	 *
@@ -244,11 +244,11 @@ class Press_Sync {
 
 		global $wpdb;
 
-		$offset = ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 0;
+		$offset = ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0;
 
-		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s LIMIT 10 OFFSET %d";
+		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
-
+		echo $prepared_sql; exit;
 		// Get the results
 		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
 		$posts 		= array();
@@ -284,8 +284,8 @@ class Press_Sync {
 	public function get_users_to_sync( $paged = 1 ) {
 
 		$query_args = array(
-			'number'	=> 10,
-			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 10 : 0,
+			'number'	=> 5,
+			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0,
 			'paged'		=> $paged
 		);
 
@@ -361,7 +361,7 @@ class Press_Sync {
 
 		global $wpdb;
 
-		$sql = "SELECT count(*) FROM $wpdb->posts WHERE post_type = %s";
+		$sql = "SELECT count(*) FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')";
 		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync );
 
 		$total_objects = $wpdb->get_var( $prepared_sql );
@@ -601,8 +601,8 @@ class Press_Sync {
 			'body'	=> $args,
 		);
 
-		$response 	= wp_remote_post( $url, $args );
-		$response_body 		= wp_remote_retrieve_body( $response );
+		$response 		= wp_remote_post( $url, $args );
+		$response_body	= wp_remote_retrieve_body( $response );
 
 		return $response_body;
 	}

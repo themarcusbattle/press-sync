@@ -284,7 +284,7 @@ class Press_Sync_Dashboard {
 		// Build out the url
 		$url 			= cmb2_get_option( 'press-sync-options', 'connected_server' );
 		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
-		$url			= untrailingslashit( $url ) . '/wp-json/press-sync/v1/' . $prepare_object . '?press_sync_key=' . $press_sync_key;
+		$url			= untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
 
 		// Prepare the correct sync method
 		$sync_class 	= 'prepare_' . $prepare_object . '_args_to_sync';
@@ -296,20 +296,22 @@ class Press_Sync_Dashboard {
 		$objects 	= $this->plugin->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
 		$logs 		= array();
 
-		// Send parsed objects to target server
-		foreach ( $objects as $object ) {
-
-			$args = $this->plugin->$sync_class( $object );
-			$args['duplicate_action'] = $duplicate_action;
-
-			$logs[] = $this->plugin->send_data_to_remote_server( $url, $args );
-
+		// Prepare each object to be sent to the remote server
+		foreach ( $objects as $key => $object ) {
+			$objects[ $key ] = $this->plugin->$sync_class( $object );
 		}
+
+		// Prepare the remote request args
+		$args['duplicate_action'] 	= $duplicate_action;
+		$args['objects_to_sync'] 	= $prepare_object;
+		$args['objects'] 			= $objects;
+		
+		$logs = $this->plugin->send_data_to_remote_server( $url, $args );
 
 		wp_send_json_success( array(
 			'objects_to_sync'			=> $wp_object,
 			'total_objects'				=> $total_objects,
-			'total_objects_processed'	=> count( $objects ) ? count( $objects ) * $paged : 10 * $paged,
+			'total_objects_processed'	=> count( $objects ) ? count( $objects ) * $paged : 5 * $paged,
 			'next_page'					=> $paged + 1,
 			'log'						=> $logs,
 		) );
