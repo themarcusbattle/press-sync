@@ -131,6 +131,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		$objects_to_sync 	= $request->get_param('objects_to_sync');
 		$objects 			= $request->get_param('objects');
 		$duplicate_action 	= ( $request->get_param('duplicate_action') ) ? $request->get_param('duplicate_action') : 'skip';
+		$force_update 		= $request->get_param('force_update');
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -144,14 +145,25 @@ class Press_Sync_API extends WP_REST_Controller {
 			) );
 		}
 
-		$logs = array();
+		// Speed up bulk queries by pausing MySQL commits
+		global $wpdb;
+
+		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
+		wp_defer_term_counting(true);
+
+		$responses = array();
 
 		foreach ( $objects as $object ) {
 			$sync_method	= "sync_{$objects_to_sync}";
-			$logs[] 		= $this->$sync_method( $object, $duplicate_action );
+			$responses[] 	= $this->$sync_method( $object, $duplicate_action, $force_update );
 		}
 
-		return $logs;
+		// Commit all recent updates
+		$wpdb->query( 'COMMIT;' );
+		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
+		wp_defer_term_counting(false);
+
+		return $responses;
 
 	}
 
@@ -164,7 +176,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	 * @param string $duplicate_action
 	 * @return array
 	 */
-	public function sync_post( $post_args, $duplicate_action ) {
+	public function sync_post( $post_args, $duplicate_action, $force_update = false ) {
 
 		if ( ! $post_args ) {
 			return false;
@@ -197,7 +209,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
 
 		// Determine which content is newer, local or remote
-		if ( $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
+		if ( ! $force_update && $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
 
 			// If we're here, then we need to keep our local version
 			$response['remote_post_id']	= $post_args['meta_input']['press_sync_post_id'];
