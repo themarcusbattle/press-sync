@@ -21,13 +21,13 @@ class Press_Sync_API_Route_Status extends WP_REST_Controller {
 	}
 
 	/**
-	 *
+	 * Register endpoints for this API route.
 	 */
 	public function register_routes() {
 		register_rest_route( 'press-sync/v1', '/status', array(
 			'methods' => WP_REST_Server::READABLE,
 			'callback' => array( $this, 'get_connection_status_via_api' ),
-			'validate_callback' => array( $this->validator, 'validate_sync_key' ),
+			'permission_callback' => array( $this->validator, 'validate_sync_key' ),
 		) );
 	}
 
@@ -35,9 +35,15 @@ class Press_Sync_API_Route_Status extends WP_REST_Controller {
 	 * Gets the connection status via API request
 	 *
 	 * @since 0.1.0
-	 * @return JSON
+	 *
+	 * @return WP_REST_Response
 	 */
 	public function get_connection_status_via_api() {
-		wp_send_json_success();
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+			),
+			200
+		);
 	}
 }
