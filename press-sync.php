@@ -248,7 +248,7 @@ class Press_Sync {
 
 		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
-		echo $prepared_sql; exit;
+	
 		// Get the results
 		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
 		$posts 		= array();
