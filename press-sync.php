@@ -20,6 +20,16 @@ class Press_Sync {
 	protected static $single_instance = null;
 
 	/**
+	 * @var
+	 */
+	private $dashboard;
+
+	/**
+	 * @var
+	 */
+	private $api;
+
+	/**
 	 * Domain of local server
 	 *
 	 * @var string
