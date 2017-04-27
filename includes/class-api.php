@@ -37,7 +37,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	 */
 	public function hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
-		add_action( 'press_sync_insert_new_post', array( $this, 'add_p2p_connections' ), 10, 2 );
+		add_action( 'press_sync_sync_post', array( $this, 'add_p2p_connections' ), 10, 2 );
 	}
 
 	/**
@@ -55,30 +55,6 @@ class Press_Sync_API extends WP_REST_Controller {
 		register_rest_route( 'press-sync/v1', '/sync', array(
 			'methods' => 'POST',
 			'callback' => array( $this, 'sync_objects' ),
-			'permission_callback' => array( $this, 'validate_sync_key' ),
-		) );
-
-		register_rest_route( 'press-sync/v1', '/post', array(
-			'methods' => 'POST',
-			'callback' => array( $this, 'insert_new_post' ),
-			'permission_callback' => array( $this, 'validate_sync_key' ),
-		) );
-
-		register_rest_route( 'press-sync/v1', '/page', array(
-			'methods' => 'POST',
-			'callback' => array( $this, 'insert_new_post' ),
-			'permission_callback' => array( $this, 'validate_sync_key' ),
-		) );
-
-		register_rest_route( 'press-sync/v1', '/attachment', array(
-			'methods' => 'POST',
-			'callback' => array( $this, 'insert_new_media' ),
-			'permission_callback' => array( $this, 'validate_sync_key' ),
-		) );
-
-		register_rest_route( 'press-sync/v1', '/user', array(
-			'methods' => 'POST',
-			'callback' => array( $this, 'insert_new_user' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
@@ -266,7 +242,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		// }
 
 		// Run any secondary commands
-		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
+		do_action( 'press_sync_sync_post', $post_id, $post_args );
 
 		return array( 'debug' => array(
 			'remote_post_id'	=> $post_args['meta_input']['press_sync_post_id'],
@@ -276,15 +252,13 @@ class Press_Sync_API extends WP_REST_Controller {
 
 	}
 
-	public function insert_new_media( $request, $return_local = false ) {
+	public function sync_media( $attachment_args, $duplicate_action, $force_update = false ) {
 
-		$data['id'] = 0;
-
-		$attachment_args = $request->get_params();
+		$response['id'] = 0;
 
 	    // Attachment URL does not exist so bail early.
 	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
-	    	return ( $return_local ) ? $data : wp_send_json_error( $data );
+	    	return $response;
 	    }
 
 	    $attachment_url = $attachment_args['attachment_url'];
@@ -297,10 +271,10 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		if ( $media_id = $this->media_exists( $attachment_url ) ) {
 
-			$data['id'] = $media_id;
-			$data['message'] = 'file already exists';
+			$response['id'] = $media_id;
+			$response['message'] = 'file already exists';
 
-			return ( $return_local ) ? $data : wp_send_json_error( $data );
+			return $response;
 
 		}
 
@@ -312,7 +286,7 @@ class Press_Sync_API extends WP_REST_Controller {
 
          if ( is_wp_error( $temp_file ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return ( $return_local ) ? $data : wp_send_json_error( $data );
+	        return $response;
 	    }
 
 		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
@@ -320,18 +294,17 @@ class Press_Sync_API extends WP_REST_Controller {
 		// Check for handle sideload errors.
 	    if ( is_wp_error( $attachment_id ) ) {
 	        @unlink( $file_array['tmp_name'] );
-	        return ( $return_local ) ? $data : wp_send_json_error( $data );
+	        return $response;
 	    }
 
-	    $data['id'] = $attachment_id;
+	    $response['id'] = $attachment_id;
 
-		return ( $return_local ) ? $data : wp_send_json_success( $data );
+		return $response;
 
 	}
 
-	public function insert_new_user( $request ) {
+	public function sync_user( $user_args, $duplicate_action, $force_update = false ) {
 
-		$user_args = $request->get_params();
 		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
 
 		// Check to see if the user exists
@@ -360,9 +333,10 @@ class Press_Sync_API extends WP_REST_Controller {
 		$user->add_role( $user_args['role'] );
 
 		// Prepare response
-		$data['user_id'] = $user_id;
+		$response['user_id'] = $user_id;
+		$response['blog_id'] = get_current_blog_id();
 
-		return wp_send_json_success( $data );
+		return $response;
 
 	}
 
@@ -482,11 +456,8 @@ class Press_Sync_API extends WP_REST_Controller {
 		// Allow download_url() to use an external request to retrieve featured images.
 		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
 
-		$request = new WP_REST_Request( 'POST' );
-		$request->set_body_params( $post_args['featured_image'] );
-
 		// Download the attachment
-		$attachment 	= $this->insert_new_media( $request, true );
+		$attachment 	= $this->sync_media( $post_args['featured_image'], true );
 		$thumbnail_id 	= isset( $attachment['id'] ) ? $attachment['id'] : 0;
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
