@@ -74,15 +74,4 @@ class Press_Sync_API extends WP_REST_Controller {
 			add_action( 'rest_api_init', array( $route, 'register_routes' ) );
 		}
 	}
-
-	/**
-	 * Register the api endpoints
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param array $routes
-	 */
-	public function setup_routes( array $routes ) {
-
-	}
 }
