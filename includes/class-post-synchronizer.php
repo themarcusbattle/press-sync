@@ -401,5 +401,22 @@ class Press_Sync_Post_Synchronizer {
 		update_post_meta( $object_id, 'press_sync_source', $press_sync_source );
 
 	}
+
+	/**
+	 * Filter http_request_host_is_external to return true and allow external requests for the HTTP request.
+	 *
+	 * @param  bool   $allow  Should external requests be allowed.
+	 * @param  string $host   IP of the requested host.
+	 * @param  string $url    URL of the requested host.
+	 *
+	 * @return bool
+	 */
+	public function allow_sync_external_host( $allow, $host, $url ) {
+		// Return true to allow an external request to be made via download_url().
+		$allow = true;
+
+		return $allow;
+	}
+
 }
 
