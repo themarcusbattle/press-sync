@@ -145,6 +145,13 @@ class Press_Sync_Dashboard {
 			'default'	=> 'match'
 		) );
 
+		$cmb_options->add_field( array(
+			'name'    => __( 'Force update?', 'press-sync' ),
+			'id'      => 'force_update',
+			'type'    => 'checkbox',
+			'desc'	 => __( 'Force the content on the remote server to be overwritten when the sync method is "push"', 'press-sync' ),
+		) );
+
 	}
 
 	/**
@@ -276,6 +283,7 @@ class Press_Sync_Dashboard {
 		$sync_method 		= cmb2_get_option( 'press-sync-options', 'sync_method' );
 		$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
 		$duplicate_action 	= cmb2_get_option( 'press-sync-options', 'duplicate_action' );
+		$force_update 		= cmb2_get_option( 'press-sync-options', 'force_update' );
 
 		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
 		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
@@ -303,9 +311,10 @@ class Press_Sync_Dashboard {
 
 		// Prepare the remote request args
 		$args['duplicate_action'] 	= $duplicate_action;
+		$args['force_update']	 	= $force_update;
 		$args['objects_to_sync'] 	= $prepare_object;
 		$args['objects'] 			= $objects;
-		
+
 		$logs = $this->plugin->send_data_to_remote_server( $url, $args );
 
 		wp_send_json_success( array(
