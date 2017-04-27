@@ -202,16 +202,15 @@ class Press_Sync {
 	 * @return boolean
 	 */
 	public function check_connection( $url = '' ) {
-		$url            = ( $url ) ? $url : cmb2_get_option( 'press-sync-options', 'connected_server' );
-		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
-
+		$url             = trailingslashit( ( $url ) ? $url : cmb2_get_option( 'press-sync-options', 'connected_server' ) );
+		$press_sync_key  = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
 		$remote_get_args = array(
 			'timeout' => 30,
 		);
 
-		$url .= "wp-json/press-sync/v1/status?press_sync_key=$press_sync_key";
+		$url .= "wp-json/press-sync/v1/status/?press_sync_key={$press_sync_key}";
 
-		$response      = wp_safe_remote_get( $url, $remote_get_args );
+		$response      = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 === $response_code ) {
