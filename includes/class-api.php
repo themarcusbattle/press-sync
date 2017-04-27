@@ -59,6 +59,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			new Press_Sync_API_Route_Attachment( $this->validator, $this->media_synchronizer ),
 			new Press_Sync_API_Route_User( $this->validator ),
 			new Press_Sync_API_Route_Status( $this->validator ),
+			new Press_Sync_API_Route_Sync( $this->validator, $this->post_synchronizer ),
 		);
 
 		$this->hooks();
