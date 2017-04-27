@@ -137,6 +137,48 @@ class Press_Sync_Data_Synchronizer {
 	}
 
 	/**
+	 * @param      $user_args
+	 * @param      $duplicate_action
+	 * @param bool $force_update
+	 */
+	public function sync_user( $user_args, $duplicate_action, $force_update = false ) {
+
+		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
+
+		// Check to see if the user exists
+		$user = get_user_by( 'login', $username );
+
+		if ( ! $user ) {
+
+			$user_id = wp_insert_user( $user_args );
+
+			if ( is_wp_error( $user_id ) ) {
+				return wp_send_json_error();
+			}
+
+			$user = get_user_by( 'id', $user_id );
+
+		} else {
+			$user_id = $user->ID;
+		}
+
+		// Update the meta
+		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
+			update_user_meta( $user_id, $usermeta_key, $usermeta_value );
+		}
+
+		// Asign user role
+		$user->add_role( $user_args['role'] );
+
+		// Prepare response
+		$response['user_id'] = $user_id;
+		$response['blog_id'] = get_current_blog_id();
+
+		return $response;
+
+	}
+
+	/**
 	 * Sync all of the object received from the local server
 	 *
 	 * @since 0.1.0
@@ -182,6 +224,65 @@ class Press_Sync_Data_Synchronizer {
 		wp_defer_term_counting(false);
 
 		return $responses;
+
+	}
+
+	/**
+	 * // @TODO Figure out how to reuse insert_new_media method in the Media_Handler class.
+	 * @param      $attachment_args
+	 * @param      $duplicate_action
+	 * @param bool $force_update
+	 *
+	 * @return mixed
+	 */
+	public function sync_attachment( $attachment_args, $duplicate_action, $force_update = false ) {
+
+		$response['id'] = 0;
+
+		// Attachment URL does not exist so bail early.
+		if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
+			return $response;
+		}
+
+		$attachment_url = $attachment_args['attachment_url'];
+
+		unset( $attachment_args['attachment_url'] );
+
+		require_once( ABSPATH . '/wp-admin/includes/image.php' );
+		require_once( ABSPATH . '/wp-admin/includes/file.php' );
+		require_once( ABSPATH . '/wp-admin/includes/media.php' );
+
+		if ( $media_id = $this->media_handler->media_exists( $attachment_url ) ) {
+
+			$response['id'] = $media_id;
+			$response['message'] = 'file already exists';
+
+			return $response;
+
+		}
+
+		// 1) Download the url
+		$temp_file = download_url( $attachment_url, 5000 );
+
+		$file_array['name'] = basename( $attachment_url );
+		$file_array['tmp_name'] = $temp_file;
+
+		if ( is_wp_error( $temp_file ) ) {
+			@unlink( $file_array['tmp_name'] );
+			return $response;
+		}
+
+		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
+
+		// Check for handle sideload errors.
+		if ( is_wp_error( $attachment_id ) ) {
+			@unlink( $file_array['tmp_name'] );
+			return $response;
+		}
+
+		$response['id'] = $attachment_id;
+
+		return $response;
 
 	}
 
