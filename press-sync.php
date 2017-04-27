@@ -55,7 +55,6 @@ class Press_Sync {
 	 * Press_Sync constructor.
 	 */
 	public function __construct() {
-		spl_autoload_register( array( $this, 'autoload_classes' ) );
 	}
 
 	/**
@@ -69,25 +68,6 @@ class Press_Sync {
 		}
 
 		return self::$single_instance;
-	}
-
-	/**
-	 * Autoloads files with classes when needed.
-	 *
-	 * @since  0.1.0
-	 * @param  string $class_name Name of the class being requested.
-	 */
-	function autoload_classes( $class_name ) {
-		// If our class doesn't have our prefix, don't load it.
-		if ( 0 !== strpos( $class_name, 'Press_Sync_' ) ) {
-			return;
-		}
-
-		// Set up our filename.
-		$filename = strtolower( str_replace( '_', '-', substr( $class_name, strlen( 'Press_Sync_' ) ) ) );
-
-		// Include our file.
-		Press_Sync::include_file( 'includes/class-' . $filename );
 	}
 
 	/**
@@ -627,3 +607,24 @@ class Press_Sync {
 }
 
 add_action( 'plugins_loaded', array( Press_Sync::init(), 'hooks' ), 10, 1 );
+
+/**
+ * Autoloads files with classes when needed.
+ *
+ * @since  0.1.0
+ * @param  string $class_name Name of the class being requested.
+ */
+function press_sync_autoload_classes( $class_name ) {
+	// If our class doesn't have our prefix, don't load it.
+	if ( 0 !== strpos( $class_name, 'Press_Sync_' ) ) {
+		return;
+	}
+
+	// Set up our filename.
+	$filename = strtolower( str_replace( '_', '-', substr( $class_name, strlen( 'Press_Sync_' ) ) ) );
+
+	// Include our file.
+	Press_Sync::include_file( 'includes/class-' . $filename );
+}
+
+spl_autoload_register( 'press_sync_autoload_classes' );
