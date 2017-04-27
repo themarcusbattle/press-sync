@@ -9,8 +9,8 @@ class Press_Sync_API_Route_Attachment extends Press_Sync_API_Abstract_Route_Post
 	/**
 	 * Press_Sync_API_Route_Attachment constructor.
 	 *
-	 * @param Press_Sync_API_Validator     $validator
-	 * @param Press_Sync_Post_Synchronizer $synchronizer
+	 * @param Press_Sync_API_Validator     $validator    Data validation helper class.
+	 * @param Press_Sync_Post_Synchronizer $synchronizer Post synchronization helper class.
 	 */
 	public function __construct( Validator $validator, Synchronizer $synchronizer ) {
 		$this->validator    = $validator;
@@ -18,12 +18,12 @@ class Press_Sync_API_Route_Attachment extends Press_Sync_API_Abstract_Route_Post
 	}
 
 	/**
-	 *
+	 * Register endpoints for this API route.
 	 */
 	public function register_routes() {
 		register_rest_route( 'press-sync/v1', '/attachment', array(
-			'methods' => WP_REST_Server::CREATABLE,
-			'callback' => array( $this->synchronizer, 'insert_new_media' ),
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( $this->synchronizer, 'insert_new_media' ),
 			'permission_callback' => array( $this->validator, 'validate_sync_key' ),
 		) );
 	}

@@ -7,7 +7,7 @@ class Press_Sync_API_Validator {
 	/**
 	 * Press_Sync_API_Validator constructor.
 	 *
-	 * @param Press_Sync $plugin
+	 * @param Press_Sync $plugin Main plugin class.
 	 */
 	public function __construct( Press_Sync $plugin ) {
 		$this->plugin = $plugin;

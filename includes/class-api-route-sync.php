@@ -10,8 +10,8 @@ class Press_Sync_API_Route_Sync extends Press_Sync_API_Abstract_Route_Post_Type 
 	/**
 	 * Press_Sync_API_Route_Sync constructor.
 	 *
-	 * @param Validator    $validator
-	 * @param Synchronizer $synchronizer
+	 * @param Press_Sync_API_Validator     $validator    Data validation helper class.
+	 * @param Press_Sync_Post_Synchronizer $synchronizer Data synchronization helper class.
 	 */
 	public function __construct( Validator $validator, Synchronizer $synchronizer ) {
 		$this->validator    = $validator;
@@ -19,7 +19,7 @@ class Press_Sync_API_Route_Sync extends Press_Sync_API_Abstract_Route_Post_Type 
 	}
 
 	/**
-	 *
+	 * Register endpoints for this API route.
 	 */
 	public function register_routes() {
 		register_rest_route( 'press-sync/v1', '/sync', array(

@@ -7,6 +7,8 @@ use Press_Sync_API_Validator as Validator;
  */
 class Press_Sync_API_Route_Status extends WP_REST_Controller {
 	/**
+	 * Data validation helper class.
+	 *
 	 * @var Validator
 	 */
 	private $validator;
@@ -14,7 +16,7 @@ class Press_Sync_API_Route_Status extends WP_REST_Controller {
 	/**
 	 * Press_Sync_API_Route_Status constructor.
 	 *
-	 * @param Press_Sync_API_Validator $validator
+	 * @param Press_Sync_API_Validator $validator Data validation helper class.
 	 */
 	public function __construct( Validator $validator ) {
 		$this->validator = $validator;
@@ -25,8 +27,8 @@ class Press_Sync_API_Route_Status extends WP_REST_Controller {
 	 */
 	public function register_routes() {
 		register_rest_route( 'press-sync/v1', '/status', array(
-			'methods' => WP_REST_Server::READABLE,
-			'callback' => array( $this, 'get_connection_status_via_api' ),
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( $this, 'get_connection_status_via_api' ),
 			'permission_callback' => array( $this->validator, 'validate_sync_key' ),
 		) );
 	}
