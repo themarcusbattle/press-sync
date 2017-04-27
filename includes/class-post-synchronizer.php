@@ -15,9 +15,10 @@ class Press_Sync_Post_Synchronizer {
 	 *
 	 * @param array $post_args
 	 * @param string $duplicate_action
+	 * @param bool $force_update
 	 * @return array
 	 */
-	public function sync_post( $post_args, $duplicate_action ) {
+	public function sync_post( $post_args, $duplicate_action, $force_update = false ) {
 
 		if ( ! $post_args ) {
 			return false;
@@ -50,7 +51,7 @@ class Press_Sync_Post_Synchronizer {
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
 
 		// Determine which content is newer, local or remote
-		if ( $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
+		if ( ! $force_update && $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
 
 			// If we're here, then we need to keep our local version
 			$response['remote_post_id']	= $post_args['meta_input']['press_sync_post_id'];
@@ -107,13 +108,62 @@ class Press_Sync_Post_Synchronizer {
 		// }
 
 		// Run any secondary commands
-		do_action( 'press_sync_insert_new_post', $local_post_id, $post_args );
+		do_action( 'press_sync_sync_post', $local_post_id, $post_args );
 
 		return array( 'debug' => array(
 			'remote_post_id'	=> $post_args['meta_input']['press_sync_post_id'],
 			'local_post_id'		=> $local_post_id,
 			'message'			=> __( 'The post has been synced with the remote server', 'press-sync' ),
 		) );
+
+	}
+
+	/**
+	 * Sync all of the object received from the local server
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_Request
+	 * @return WP_REST_Response
+	 */
+	public function sync_objects( $request ) {
+
+		$objects_to_sync 	= $request->get_param('objects_to_sync');
+		$objects 			= $request->get_param('objects');
+		$duplicate_action 	= ( $request->get_param('duplicate_action') ) ? $request->get_param('duplicate_action') : 'skip';
+		$force_update 		= $request->get_param('force_update');
+
+		if ( ! $objects_to_sync ) {
+			wp_send_json_error( array(
+				'debug'	=> __( 'Not sure which WP object you want to sync', 'press-sync' )
+			) );
+		}
+
+		if ( ! $objects ) {
+			wp_send_json_error( array(
+				'debug'	=> __( 'No data available to sync', 'press-sync' )
+			) );
+		}
+
+		// Speed up bulk queries by pausing MySQL commits
+		global $wpdb;
+
+		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
+		wp_defer_term_counting(true);
+
+		$responses = array();
+
+		foreach ( $objects as $object ) {
+			$sync_method	= "sync_{$objects_to_sync}";
+			$responses[] 	= $this->$sync_method( $object, $duplicate_action, $force_update );
+		}
+
+		// Commit all recent updates
+		$wpdb->query( 'COMMIT;' );
+		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
+		wp_defer_term_counting(false);
+
+		return $responses;
 
 	}
 
