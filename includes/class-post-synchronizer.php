@@ -107,7 +107,7 @@ class Press_Sync_Post_Synchronizer {
 		// }
 
 		// Run any secondary commands
-		do_action( 'press_sync_insert_new_post', $post_id, $post_args );
+		do_action( 'press_sync_insert_new_post', $local_post_id, $post_args );
 
 		return array( 'debug' => array(
 			'remote_post_id'	=> $post_args['meta_input']['press_sync_post_id'],

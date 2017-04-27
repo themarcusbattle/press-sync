@@ -21,7 +21,7 @@ class Press_Sync_API_Route_Page extends Press_Sync_API_Abstract_Route_Post_Type 
 	public function register_routes() {
 		register_rest_route( 'press-sync/v1', '/page', array(
 			'methods' => WP_REST_Server::CREATABLE,
-			'callback' => array( $this, 'insert_new_post' ),
+			'callback' => array( $this, 'sync_objects' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 	}
