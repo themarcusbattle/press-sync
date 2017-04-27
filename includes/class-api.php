@@ -22,21 +22,29 @@ class Press_Sync_API extends WP_REST_Controller {
 	protected $prefix = 'press_sync_api_';
 
 	/**
-	 * @var
+	 * Array collection of Route objects.
+	 *
+	 * @var array
 	 */
 	private $routes;
 
 	/**
+	 * Data Validation helper class.
+	 *
 	 * @var Press_Sync_API_Validator
 	 */
 	protected $validator;
 
 	/**
+	 * Data synchronization helper class.
+	 *
 	 * @var Press_Sync_Data_Synchronizer
 	 */
 	protected $synchronizer;
 
 	/**
+	 * Media Handler class.
+	 *
 	 * @var Press_Sync_Media_Handler
 	 */
 	protected $media_handler;
