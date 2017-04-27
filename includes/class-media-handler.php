@@ -1,6 +1,34 @@
 <?php
 
-class Press_Sync_Media_Synchronizer {
+class Press_Sync_Media_Handler {
+	public function attach_featured_image( $post_id, $post_args ) {
+
+		// Post does not have a featured image so bail early.
+		if ( empty( $post_args['featured_image'] ) ) {
+			return false;
+		}
+
+		// Allow download_url() to use an external request to retrieve featured images.
+		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
+
+		$request = new WP_REST_Request( 'POST' );
+		$request->set_body_params( $post_args['featured_image'] );
+
+		// Download the attachment
+		$attachment 	= $this->insert_new_media( $request, true );
+		$thumbnail_id 	= isset( $attachment['id'] ) ? $attachment['id'] : 0;
+
+		$response = set_post_thumbnail( $post_id, $thumbnail_id );
+
+		// Remove filter that allowed an external request to be made via download_url().
+		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
+
+	}
+
+	/**
+	 * @param      $request
+	 * @param bool $return_local
+	 */
 	public function insert_new_media( $request, $return_local = false ) {
 
 		$data['id'] = 0;

@@ -32,14 +32,14 @@ class Press_Sync_API extends WP_REST_Controller {
 	protected $validator;
 
 	/**
-	 * @var Press_Sync_Post_Synchronizer
+	 * @var Press_Sync_Data_Synchronizer
 	 */
-	protected $post_synchronizer;
+	protected $synchronizer;
 
 	/**
-	 * @var Press_Sync_Media_Synchronizer
+	 * @var Press_Sync_Media_Handler
 	 */
-	protected $media_synchronizer;
+	protected $media_handler;
 
 	/**
 	 * Constructor.
@@ -49,17 +49,17 @@ class Press_Sync_API extends WP_REST_Controller {
 	 * @param  Press_Sync $plugin Main plugin object.
 	 */
 	public function __construct( $plugin ) {
-		$this->plugin             = $plugin;
-		$this->validator          = new Press_Sync_API_Validator( $plugin );
-		$this->post_synchronizer  = new Press_Sync_Post_Synchronizer();
-		$this->media_synchronizer = new Press_Sync_Media_Synchronizer();
-		$this->routes = array(
-			new Press_Sync_API_Route_Post( $this->validator, $this->post_synchronizer ),
-			new Press_Sync_API_Route_Page( $this->validator, $this->post_synchronizer ),
-			new Press_Sync_API_Route_Attachment( $this->validator, $this->media_synchronizer ),
-			new Press_Sync_API_Route_User( $this->validator ),
+		$this->plugin        = $plugin;
+		$this->validator     = new Press_Sync_API_Validator( $plugin );
+		$this->media_handler = new Press_Sync_Media_Handler();
+		$this->synchronizer  = new Press_Sync_Data_Synchronizer( $this->media_handler );
+		$this->routes        = array(
+			new Press_Sync_API_Route_Post( $this->validator, $this->synchronizer ),
+			new Press_Sync_API_Route_Page( $this->validator, $this->synchronizer ),
+			new Press_Sync_API_Route_Attachment( $this->validator, $this->synchronizer ),
+			new Press_Sync_API_Route_User( $this->validator, $this->synchronizer ),
 			new Press_Sync_API_Route_Status( $this->validator ),
-			new Press_Sync_API_Route_Sync( $this->validator, $this->post_synchronizer ),
+			new Press_Sync_API_Route_Sync( $this->validator, $this->synchronizer ),
 		);
 
 		$this->hooks();

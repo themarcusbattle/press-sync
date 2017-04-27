@@ -1,6 +1,7 @@
 <?php
 
 use Press_Sync_API_Validator as Validator;
+use Press_Sync_Data_Synchronizer as Synchronizer;
 
 /**
  * Class Press_Sync_API_Route_User
@@ -14,12 +15,19 @@ class Press_Sync_API_Route_User extends WP_REST_Controller {
 	protected $validator;
 
 	/**
+	 * @var Press_Sync_Data_Synchronizer
+	 */
+	protected $synchronizer;
+
+	/**
 	 * Press_Sync_API_Route_User constructor.
 	 *
-	 * @param Press_Sync_API_Validator $validator Data validation helper class.
+	 * @param Press_Sync_API_Validator     $validator    Data validation helper class.
+	 * @param Press_Sync_Data_Synchronizer $synchronizer Data synchronization helper class.
 	 */
-	public function __construct( Validator $validator ) {
-		$this->validator = $validator;
+	public function __construct( Validator $validator, Synchronizer $synchronizer ) {
+		$this->validator    = $validator;
+		$this->synchronizer = $synchronizer;
 	}
 
 	/**
@@ -28,17 +36,18 @@ class Press_Sync_API_Route_User extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route( 'press-sync/v1', '/user', array(
 			'methods'             => WP_REST_Server::CREATABLE,
-			'callback'            => array( $this, 'insert_new_user' ),
+			'callback'            => array( $this, 'sync_user' ),
 			'permission_callback' => array( $this->validator, 'validate_sync_key' ),
 		) );
 	}
 
 	/**
-	 * @param $request
+	 * @param      $user_args
+	 * @param      $duplicate_action
+	 * @param bool $force_update
 	 */
-	public function insert_new_user( $request ) {
+	public function sync_user( $user_args, $duplicate_action, $force_update = false ) {
 
-		$user_args = $request->get_params();
 		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
 
 		// Check to see if the user exists
@@ -67,9 +76,10 @@ class Press_Sync_API_Route_User extends WP_REST_Controller {
 		$user->add_role( $user_args['role'] );
 
 		// Prepare response
-		$data['user_id'] = $user_id;
+		$response['user_id'] = $user_id;
+		$response['blog_id'] = get_current_blog_id();
 
-		return wp_send_json_success( $data );
+		return $response;
 
 	}
 }

@@ -1,6 +1,24 @@
 <?php
 
-class Press_Sync_Post_Synchronizer {
+use Press_Sync_Media_Handler as Media_Handler;
+
+/**
+ * Class Press_Sync_Data_Synchronizer
+ */
+class Press_Sync_Data_Synchronizer {
+	/**
+	 * @var Press_Sync_Media_Handler
+	 */
+	public $media_handler;
+
+	/**
+	 * Press_Sync_Data_Synchronizer constructor.
+	 *
+	 * @param Press_Sync_Media_Handler $media_handler
+	 */
+	public function __construct( Media_Handler $media_handler ) {
+		$this->media_handler = $media_handler;
+	}
 	/**
 	 *
 	 */
@@ -88,7 +106,7 @@ class Press_Sync_Post_Synchronizer {
 		}
 
 		// Attach featured image
-		$this->attach_featured_image( $local_post_id, $post_args );
+		$this->media_handler->attach_featured_image( $local_post_id, $post_args );
 
 		// Attach any comments
 		$comments = isset( $post_args['comments'] ) ? $post_args['comments'] : array();
@@ -167,6 +185,11 @@ class Press_Sync_Post_Synchronizer {
 
 	}
 
+	/**
+	 * @param $post_args
+	 *
+	 * @return array|bool|null|object|void
+	 */
 	public function get_synced_post( $post_args ) {
 
 		global $wpdb;
@@ -188,6 +211,11 @@ class Press_Sync_Post_Synchronizer {
 
 	}
 
+	/**
+	 * @param array $comment_args
+	 *
+	 * @return array|bool
+	 */
 	public function comment_exists( $comment_args = array() ) {
 
 		$press_sync_comment_id 	= isset( $comment_args['meta_input']['press_sync_comment_id'] ) ? $comment_args['meta_input']['press_sync_comment_id'] : 0;
@@ -219,6 +247,11 @@ class Press_Sync_Post_Synchronizer {
 
 	}
 
+	/**
+	 * @param $press_sync_post_id
+	 *
+	 * @return null|string
+	 */
 	public function get_post_by_orig_id( $press_sync_post_id ) {
 
 		global $wpdb;
@@ -254,30 +287,11 @@ class Press_Sync_Post_Synchronizer {
 
 	}
 
-	public function attach_featured_image( $post_id, $post_args ) {
 
-		// Post does not have a featured image so bail early.
-		if ( empty( $post_args['featured_image'] ) ) {
-			return false;
-		}
-
-		// Allow download_url() to use an external request to retrieve featured images.
-		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
-
-		$request = new WP_REST_Request( 'POST' );
-		$request->set_body_params( $post_args['featured_image'] );
-
-		// Download the attachment
-		$attachment 	= $this->insert_new_media( $request, true );
-		$thumbnail_id 	= isset( $attachment['id'] ) ? $attachment['id'] : 0;
-
-		$response = set_post_thumbnail( $post_id, $thumbnail_id );
-
-		// Remove filter that allowed an external request to be made via download_url().
-		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
-
-	}
-
+	/**
+	 * @param $post_id
+	 * @param $comments
+	 */
 	public function attach_comments( $post_id, $comments ) {
 
 		if ( empty( $post_id ) || ! $comments ) {
@@ -310,6 +324,10 @@ class Press_Sync_Post_Synchronizer {
 
 	}
 
+	/**
+	 * @param $post_id
+	 * @param $post_args
+	 */
 	public function add_p2p_connections( $post_id, $post_args ) {
 
 		if ( ! class_exists('P2P_Autoload') || ! $post_args['p2p_connections'] ) {
@@ -334,6 +352,11 @@ class Press_Sync_Post_Synchronizer {
 
 	}
 
+	/**
+	 * @param $press_sync_post_id
+	 *
+	 * @return null|string
+	 */
 	public function get_post_id_by_press_sync_id( $press_sync_post_id ) {
 
 		global $wpdb;
@@ -344,6 +367,12 @@ class Press_Sync_Post_Synchronizer {
 		return $post_id;
 	}
 
+	/**
+	 * @param $post_id
+	 * @param $post_args
+	 *
+	 * @return bool
+	 */
 	public function insert_comments( $post_id, $post_args ) {
 		// Post ID empty or post does not have any comments so bail early.
 		if ( empty( $post_id ) || ( ! array_key_exists( 'comments', $post_args ) && empty( $post_args['comments'] ) ) ) {
