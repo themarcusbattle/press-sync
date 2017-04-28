@@ -260,16 +260,14 @@ class Press_Sync {
 		$results = $wpdb->get_results( $prepared_sql, ARRAY_A );
 		$posts   = array();
 
-		if ( $results ) {
-			foreach ( $results as $object ) {
-				$object['tax_input']                           = $this->get_relationships( $object['ID'], $taxonomies );
-				$object['meta_input']                          = get_post_meta( $object['ID'] );
-				$object['meta_input']['press_sync_post_id']    = $object['ID'];
-				$object['meta_input']['press_sync_source']     = home_url();
-				$object['meta_input']['press_sync_gmt_offset'] = get_option( 'gmt_offset' );
+		foreach ( $results as $object ) {
+			$object['tax_input']                           = $this->get_relationships( $object['ID'], $taxonomies );
+			$object['meta_input']                          = get_post_meta( $object['ID'] );
+			$object['meta_input']['press_sync_post_id']    = $object['ID'];
+			$object['meta_input']['press_sync_source']     = home_url();
+			$object['meta_input']['press_sync_gmt_offset'] = get_option( 'gmt_offset' );
 
-				array_push( $posts, $object );
-			}
+			array_push( $posts, $object );
 		}
 
 		return $posts;
@@ -295,27 +293,25 @@ class Press_Sync {
 		$results = $query->get_results();
 		$users   = array();
 
-		if ( $results ) {
-			foreach ( $results as $user ) {
-				// Get user role.
-				$role = $user->roles[0];
+		foreach ( $results as $user ) {
+			// Get user role.
+			$role = $user->roles[0];
 
-				// Get user data.
-				$user = (array) $user->data;
-				$user_meta = get_user_meta( $user['ID'] ); // @codingStandardsIgnoreLine
+			// Get user data.
+			$user = (array) $user->data;
+			$user_meta = get_user_meta( $user['ID'] ); // @codingStandardsIgnoreLine
 
-				foreach ( $user_meta as $key => $value ) {
-					$user['meta_input'][ $key ] = $value[0];
-				}
-
-				$user['meta_input']['press_sync_user_id']	= $user['ID'];
-				$user['meta_input']['press_sync_source']	= home_url();
-				$user['role'] = $role;
-
-				unset( $user['ID'] );
-
-				array_push( $users, $user );
+			foreach ( $user_meta as $key => $value ) {
+				$user['meta_input'][ $key ] = $value[0];
 			}
+
+			$user['meta_input']['press_sync_user_id']	= $user['ID'];
+			$user['meta_input']['press_sync_source']	= home_url();
+			$user['role'] = $role;
+
+			unset( $user['ID'] );
+
+			array_push( $users, $user );
 		}
 
 		return $users;
