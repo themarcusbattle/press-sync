@@ -6,7 +6,7 @@ use Press_Sync_Data_Synchronizer as Synchronizer;
 /**
  * Class Press_Sync_API_Route_Sync
  */
-class Press_Sync_API_Route_Sync extends Press_Sync_API_Abstract_Route_Post_Type {
+class Press_Sync_API_Route_Sync extends Press_Sync_API_Abstract_Route {
 	/**
 	 * Press_Sync_API_Route_Sync constructor.
 	 *
@@ -16,13 +16,14 @@ class Press_Sync_API_Route_Sync extends Press_Sync_API_Abstract_Route_Post_Type 
 	public function __construct( Validator $validator, Synchronizer $synchronizer ) {
 		$this->validator    = $validator;
 		$this->synchronizer = $synchronizer;
+		$this->rest_base    = 'sync';
 	}
 
 	/**
 	 * Register endpoints for this API route.
 	 */
 	public function register_routes() {
-		register_rest_route( 'press-sync/v1', '/sync', array(
+		register_rest_route( $this->namespace, $this->rest_base, array(
 			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => array( $this->synchronizer, 'sync_objects' ),
 			'permission_callback' => array( $this->validator, 'validate_sync_key' ),

@@ -5,7 +5,7 @@ use Press_Sync_API_Validator as Validator;
 /**
  * Class Press_Sync_API_Route_Status
  */
-class Press_Sync_API_Route_Status extends WP_REST_Controller {
+class Press_Sync_API_Route_Status extends Press_Sync_API_Abstract_Route {
 	/**
 	 * Data validation helper class.
 	 *
@@ -20,13 +20,14 @@ class Press_Sync_API_Route_Status extends WP_REST_Controller {
 	 */
 	public function __construct( Validator $validator ) {
 		$this->validator = $validator;
+		$this->rest_base = 'status';
 	}
 
 	/**
 	 * Register endpoints for this API route.
 	 */
 	public function register_routes() {
-		register_rest_route( 'press-sync/v1', '/status', array(
+		register_rest_route( $this->namespace, $this->rest_base, array(
 			'methods'             => WP_REST_Server::READABLE,
 			'callback'            => array( $this, 'get_connection_status_via_api' ),
 			'permission_callback' => array( $this->validator, 'validate_sync_key' ),
