@@ -52,12 +52,6 @@ class Press_Sync {
 	public $remote_domain = null;
 
 	/**
-	 * Press_Sync constructor.
-	 */
-	public function __construct() {
-	}
-
-	/**
 	 * Create an instance of the Press Sync object
 	 *
 	 * @since 0.1.0
