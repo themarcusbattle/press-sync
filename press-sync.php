@@ -221,9 +221,9 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string  $objects_to_sync
-	 * @param integer $paged
-	 * @param array   $taxonomies
+	 * @param string  $objects_to_sync The object type to sync (e.g., page, post, user, attachment).
+	 * @param integer $paged           Results pagination.
+	 * @param array   $taxonomies      Array of object taxonomies.
 	 *
 	 * @return array $objects
 	 */
@@ -242,9 +242,9 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string  $objects_to_sync
-	 * @param integer $paged
-	 * @param array   $taxonomies
+	 * @param string  $objects_to_sync The type of objects to sync.
+	 * @param integer $paged           Data pagination.
+	 * @param array   $taxonomies      Array of object taxonomies.
 	 *
 	 * @return array posts
 	 */
@@ -326,7 +326,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer $object_id
+	 * @param integer $object_id  ID of the object.
 	 * @param array   $taxonomies Array of WP_Taxonomy objects.
 	 *
 	 * @return array $taxonomies
@@ -351,7 +351,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $objects_to_sync
+	 * @param string $objects_to_sync Type of objects to sync (e.g., post, page, user, attachment).
 	 *
 	 * @return integer $total_objects
 	 */
@@ -386,7 +386,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $object_args
+	 * @param array $object_args Array of object arguments.
 	 *
 	 * @return array $object_args
 	 */
@@ -421,7 +421,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $object_args
+	 * @param array $object_args Array of object arguments.
 	 *
 	 * @return array $object_args
 	 */
@@ -441,7 +441,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer $post_id
+	 * @param integer $post_id ID of the post object.
 	 *
 	 * @return bool|array $media Array of WP_Attachment objects.
 	 */
@@ -465,7 +465,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $post_id
+	 * @param int $post_id ID of the post object.
 	 *
 	 * @return bool|array
 	 */
@@ -493,7 +493,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer $post_id
+	 * @param integer $post_id ID of the post object.
 	 *
 	 * @return array $p2p_connections
 	 */
@@ -511,7 +511,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $user_args
+	 * @param array $user_args Array of user arguments.
 	 *
 	 * @return array $user_args
 	 */
@@ -527,7 +527,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $object_args
+	 * @param array $object_args Array of object arguments.
 	 *
 	 * @return array $attachment_args
 	 */
@@ -548,7 +548,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $comment_args
+	 * @param array $comment_args Array of comment arguments.
 	 *
 	 * @return array
 	 */
@@ -592,10 +592,9 @@ class Press_Sync {
 			'body'    => $args,
 		);
 
-		$response      = wp_remote_post( $url, $args );
-		$response_body = wp_remote_retrieve_body( $response );
+		$response = wp_remote_post( $url, $args );
 
-		return $response_body;
+		return wp_remote_retrieve_body( $response );
 	}
 }
 
