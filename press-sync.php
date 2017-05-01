@@ -248,7 +248,7 @@ class Press_Sync {
 
 		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
-	
+
 		// Get the results
 		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
 		$posts 		= array();
@@ -396,9 +396,9 @@ class Press_Sync {
  			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
 		}
 
-		$object_args = $this->update_links( $object_args );
-
 		$object_args = apply_filters( 'press_sync_prepare_post_args_to_sync', $object_args );
+
+		$object_args['embedded_media'] = $this->get_embedded_media( $object_args['post_content'] );
 
 		// Send Featured image information along to be imported
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
@@ -605,6 +605,28 @@ class Press_Sync {
 		$response_body	= wp_remote_retrieve_body( $response );
 
 		return $response_body;
+	}
+
+	/**
+	 * Find any embedded images in the post content
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $post_content
+	 */
+	public function get_embedded_media( $post_content = '' ) {
+
+		$embedded_media = array();
+
+		if ( ! $post_content ) {
+			return $embedded_media;
+		}
+
+		preg_match_all('/< *img[^>]*src *= *["\']?([^"\']*)/i', $post_content, $embedded_media );
+		$embedded_media = array_filter( $embedded_media );
+
+		return isset( $embedded_media[1] ) ? $embedded_media[1] : array();
+
 	}
 
 }
