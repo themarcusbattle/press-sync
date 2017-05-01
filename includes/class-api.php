@@ -126,6 +126,7 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
 		wp_defer_term_counting(true);
+		wp_defer_comment_counting(true);
 
 		$responses = array();
 
@@ -138,6 +139,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		$wpdb->query( 'COMMIT;' );
 		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
 		wp_defer_term_counting(false);
+		wp_defer_comment_counting(false);
 
 		return $responses;
 
@@ -156,6 +158,22 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		if ( ! $post_args ) {
 			return false;
+		}
+
+		// Replace embedded media
+		if ( $post_args['embedded_media'] ) {
+
+			foreach ( $post_args['embedded_media'] as $embedded_media ) {
+
+				$attachment = $this->sync_media( array(
+					'attachment_url' => $embedded_media
+				) );
+
+				$attachment_url = isset( $attachment['attachment_url'] ) ? $attachment['attachment_url'] : $embedded_media;
+				$post_args['post_content'] = str_ireplace( $embedded_media, $attachment_url, $post_args['post_content'] );
+
+			}
+
 		}
 
 		// Set the correct post author
@@ -252,9 +270,9 @@ class Press_Sync_API extends WP_REST_Controller {
 
 	}
 
-	public function sync_media( $attachment_args, $duplicate_action, $force_update = false ) {
+	public function sync_media( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
 
-		$response['id'] = 0;
+		$response['attachment_id'] = 0;
 
 	    // Attachment URL does not exist so bail early.
 	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
@@ -269,10 +287,11 @@ class Press_Sync_API extends WP_REST_Controller {
 	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
 	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
-		if ( $media_id = $this->media_exists( $attachment_url ) ) {
+		if ( $attachment_id = $this->media_exists( $attachment_url ) ) {
 
-			$response['id'] = $media_id;
-			$response['message'] = 'file already exists';
+			$response['attachment_id'] 	= $attachment_id;
+			$response['message'] 		= 'file already exists';
+			$response['attachment_url']	= wp_get_attachment_url( $attachment_id );
 
 			return $response;
 
@@ -297,7 +316,8 @@ class Press_Sync_API extends WP_REST_Controller {
 	        return $response;
 	    }
 
-	    $response['id'] = $attachment_id;
+	    $response['attachment_id'] = $attachment_id;
+		$response['attachment_url']	= wp_get_attachment_url( $attachment_id );
 
 		return $response;
 
