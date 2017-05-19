@@ -52,11 +52,21 @@ class Press_Sync_API extends WP_REST_Controller {
 			'callback' => array( $this, 'get_connection_status_via_api' ),
 		) );
 
+		register_rest_route( 'press-sync/v1', '/status/(?P<id>\d+)', array(
+			'methods' => 'GET',
+			'callback' => array( $this, 'get_post_sync_status_via_api' ),
+		) );
+
 		register_rest_route( 'press-sync/v1', '/sync', array(
-			'methods' => 'POST',
+			'methods' => array( 'GET', 'POST' ),
 			'callback' => array( $this, 'sync_objects' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
+
+		/* register_rest_route( 'press-sync/v1', '/sync/(?P<id>\d+)', array(
+			'methods' => array( 'GET', 'POST' ),
+			'callback' => array( $this, 'sync_objects' ),
+		) ); */
 
 	}
 
@@ -73,6 +83,40 @@ class Press_Sync_API extends WP_REST_Controller {
 		}
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * Gets the post sync status via API request
+	 *
+	 * @since 0.2.0
+	 * @return JSON
+	 */
+	public function get_post_sync_status_via_api( $request ) {
+
+		$press_sync_post_id = $request->get_param('id');
+
+		if ( ! $press_sync_post_id ) {
+			wp_send_json_error();
+		}
+
+		// Look for the post on the server
+		$post = $this->get_post_by_orig_id( $press_sync_post_id );
+
+		if ( ! $post ) {
+			return array(
+				'remote_post_id'	=> $post->ID,
+				'status'			=> 'not synced'
+			);
+		}
+
+		return array(
+			'remote_post_id'				=> $post->ID,
+			'remote_post_modified'			=> $post->post_modified,
+			'remote_post_gmt_offset'		=> get_option('gmt_offset'),
+			'remote_post_modified_offset'	=> date( 'Y-m-d H:i:s', strtotime( $post->post_modified ) + ( get_option('gmt_offset') * 60 * 60 ) ),
+			'status'						=> 'synced'
+		);
+
 	}
 
 	/**
@@ -119,6 +163,15 @@ class Press_Sync_API extends WP_REST_Controller {
 			wp_send_json_error( array(
 				'debug'	=> __( 'No data available to sync', 'press-sync' )
 			) );
+		}
+
+		// If the method is to pull then how do
+		if ( 'GET' == $request->get_method() ) {
+
+			$where_clause = "ID IN ('" . implode( "''", $objects) . "')";
+			$taxonomies 	= get_object_taxonomies( $objects_to_sync );
+			return $this->plugin->get_objects_to_sync( $objects_to_sync, 1 ,$taxonomies ,$where_clause );
+
 		}
 
 		// Speed up bulk queries by pausing MySQL commits
@@ -435,9 +488,12 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		global $wpdb;
 
-		$sql = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'press_sync_post_id' AND meta_value = $press_sync_post_id";
+		$sql = "SELECT ID, post_modified
+		FROM $wpdb->posts AS posts
+		LEFT JOIN $wpdb->postmeta AS meta ON meta.post_id = posts.ID
+		WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = $press_sync_post_id";
 
-		return $wpdb->get_var( $sql );
+		return $wpdb->get_row( $sql );
 
 	}
 
