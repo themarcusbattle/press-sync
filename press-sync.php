@@ -218,12 +218,12 @@ class Press_Sync {
 	 * @param array $taxonomies
 	 * @return array $objects
 	 */
-	public function get_objects_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
+	public function get_objects_to_sync( $objects_to_sync, $paged = 1, $taxonomies, $where_clause = '' ) {
 
 		if ( 'user' == $objects_to_sync ) {
 			$objects = $this->get_users_to_sync( $paged );
 		} else {
-			$objects = $this->get_posts_to_sync( $objects_to_sync, $paged, $taxonomies );
+			$objects = $this->get_posts_to_sync( $objects_to_sync, $paged, $taxonomies, $where_clause );
 		}
 
 		return $objects;
@@ -240,13 +240,14 @@ class Press_Sync {
 	 * @param array $taxonomies
 	 * @return array posts
 	 */
-	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
+	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies, $where_clause = '' ) {
 
 		global $wpdb;
 
 		$offset = ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0;
 
-		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') ORDER BY post_date DESC LIMIT 5 OFFSET %d";
+		$where_clause 	= ( $where_clause ) ? ' AND ' . $where_clause : '';
+		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
 		// Get the results
