@@ -152,6 +152,13 @@ class Press_Sync_Dashboard {
 			'desc'	 => __( 'Force the content on the remote server to be overwritten when the sync method is "push"', 'press-sync' ),
 		) );
 
+		$cmb_options->add_field( array(
+			'name'    => __( 'Ignore comments?', 'press-sync' ),
+			'id'      => 'ignore_comments',
+			'type'    => 'checkbox',
+			'desc'	 => __( 'Checking this box ommits comments from being synced to the remote server', 'press-sync' ),
+		) );
+
 	}
 
 	/**

@@ -405,7 +405,9 @@ class Press_Sync {
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 
 		// Get the comments for the post
-		if ( $object_args['comment_count'] ) {
+		$ignore_comments = cmb2_get_option( 'press-sync-options', 'ignore_comments' );
+
+		if ( $object_args['comment_count'] && ! $ignore_comments ) {
 			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
 		}
 
