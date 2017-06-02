@@ -388,9 +388,9 @@ class Press_Sync {
 		global $wpdb;
 
 		$sql          = "SELECT count(*) FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')";
-		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync );
+		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync );  // @codingStandardsIgnoreLine
 
-		$total_objects = $wpdb->get_var( $prepared_sql );
+		$total_objects = $wpdb->get_var( $prepared_sql );  // @codingStandardsIgnoreLine
 
 		return $total_objects;
 
