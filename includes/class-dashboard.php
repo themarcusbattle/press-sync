@@ -251,6 +251,22 @@ class Press_Sync_Dashboard {
 	}
 
 	/**
+	 * Stores the default object keys so they're not pasted throughout the file.
+	 *
+	 * @return mixed
+	 *
+	 * @author JayWood
+	 * @since  0.1.0
+	 */
+	private function get_default_obj_keys() {
+		return apply_filters( 'press_sync_default_obj_keys', array(
+			'attachment',
+			'comment',
+			'user',
+		) );
+	}
+
+	/**
 	 * Get the total number of objects to sync
 	 *
 	 * @since 0.1.0
@@ -260,19 +276,11 @@ class Press_Sync_Dashboard {
 	public function get_objects_to_sync_count_via_ajax() {
 
 		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
-		$prepare_object  = ! in_array( (string) $objects_to_sync, array(
-			'attachment',
-			'comment',
-			'user',
-		) ) ? 'post' : (string) $objects_to_sync;
+		$prepare_object  = ! in_array( (string) $objects_to_sync, $this->get_default_obj_keys() ) ? 'post' : (string) $objects_to_sync;
 
 		$total_objects = $this->plugin->count_objects_to_sync( (string) $objects_to_sync );
 
-		$wp_object = in_array( (string) $objects_to_sync, array(
-			'attachment',
-			'comment',
-			'user',
-		) ) ? ucwords( (string) $objects_to_sync ) . 's' : get_post_type_object( (string) $objects_to_sync );
+		$wp_object = in_array( (string) $objects_to_sync, $this->get_default_obj_keys() ) ? ucwords( (string) $objects_to_sync ) . 's' : get_post_type_object( (string) $objects_to_sync );
 
 		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
@@ -299,17 +307,9 @@ class Press_Sync_Dashboard {
 		$duplicate_action = cmb2_get_option( 'press-sync-options', 'duplicate_action' );
 		$force_update     = cmb2_get_option( 'press-sync-options', 'force_update' );
 
-		$prepare_object = ! in_array( $objects_to_sync, array(
-			'attachment',
-			'comment',
-			'user',
-		) ) ? 'post' : $objects_to_sync;
+		$prepare_object = ! in_array( $objects_to_sync, $this->get_default_obj_keys() ) ? 'post' : $objects_to_sync;
 
-		$wp_object      = in_array( $objects_to_sync, array(
-			'attachment',
-			'comment',
-			'user',
-		) ) ? ucwords( (string) $objects_to_sync ) . 's' : get_post_type_object( (string) $objects_to_sync );
+		$wp_object      = in_array( $objects_to_sync, $this->get_default_obj_keys() ) ? ucwords( (string) $objects_to_sync ) . 's' : get_post_type_object( (string) $objects_to_sync );
 
 		$wp_object      = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
