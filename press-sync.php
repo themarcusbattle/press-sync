@@ -42,7 +42,7 @@ class Press_Sync {
 	 */
 	static function init() {
 
-		if ( self::$single_instance === null ) {
+		if ( null === self::$single_instance ) {
 			self::$single_instance = new self();
 		}
 
