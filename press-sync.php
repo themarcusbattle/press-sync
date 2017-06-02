@@ -354,8 +354,8 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer     $object_id
-	 * @param WP_Taxonomy $taxonomies
+	 * @param integer $object_id
+	 * @param array   $taxonomies
 	 *
 	 * @return array $taxonomies
 	 */
