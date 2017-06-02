@@ -521,9 +521,9 @@ class Press_Sync_API extends WP_REST_Controller {
 		global $wpdb;
 
 		$sql          = "SELECT user_id AS ID FROM $wpdb->usermeta WHERE meta_key = 'press_sync_user_id' AND meta_value = %d";
-		$prepared_sql = $wpdb->prepare( $sql, $user_id );
+		$prepared_sql = $wpdb->prepare( $sql, $user_id );  // @codingStandardsIgnoreLine
 
-		$press_sync_user_id = $wpdb->get_var( $prepared_sql );
+		$press_sync_user_id = $wpdb->get_var( $prepared_sql );  // @codingStandardsIgnoreLine
 
 		return ( $press_sync_user_id ) ? $press_sync_user_id : 1;
 
