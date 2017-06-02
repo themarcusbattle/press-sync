@@ -537,7 +537,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		}
 
 		// Allow download_url() to use an external request to retrieve featured images.
-		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
+		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
 
 		// Download the attachment
 		$attachment   = $this->sync_media( $post_args['featured_image'], true );
@@ -551,17 +551,11 @@ class Press_Sync_API extends WP_REST_Controller {
 	/**
 	 * Filter http_request_host_is_external to return true and allow external requests for the HTTP request.
 	 *
-	 * @param  bool   $allow Should external requests be allowed.
-	 * @param  string $host  IP of the requested host.
-	 * @param  string $url   URL of the requested host.
-	 *
 	 * @return bool
 	 */
-	public function allow_sync_external_host( $allow, $host, $url ) {
+	public function allow_sync_external_host() {
 		// Return true to allow an external request to be made via download_url().
-		$allow = true;
-
-		return $allow;
+		return true;
 	}
 
 	public function attach_comments( $post_id, $comments ) {
