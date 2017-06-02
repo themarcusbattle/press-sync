@@ -362,7 +362,7 @@ class Press_Sync {
 	public function get_relationships( $object_id, $taxonomies ) {
 
 		foreach ( $taxonomies as $key => $taxonomy ) {
-			$taxonomies[ $taxonomy ] = wp_get_object_terms( $object_id, $taxonomy, array( 'fields' => 'names' ) );
+			$taxonomies[ $taxonomy ] = wp_get_object_terms( $object_id, $taxonomy, array( 'fields' => 'names' ) );  // @codingStandardsIgnoreLine
 			unset( $taxonomies[ $key ] );
 		}
 
