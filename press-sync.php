@@ -289,7 +289,6 @@ class Press_Sync {
 				array_push( $posts, $object );
 
 			}
-
 		}
 
 		return $posts;
@@ -303,14 +302,14 @@ class Press_Sync {
 	 *
 	 * @param int $paged
 	 *
-	 * @return WP_Users
+	 * @return array An array of WP_User objects.
 	 */
 	public function get_users_to_sync( $paged = 1 ) {
 
 		$query_args = array(
 			'number' => 5,
 			'offset' => ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0,
-			'paged'  => $paged
+			'paged'  => $paged,
 		);
 
 		$query = new WP_User_Query( $query_args );
