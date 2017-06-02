@@ -470,14 +470,14 @@ class Press_Sync_API extends WP_REST_Controller {
 				array(
 					'key'     => 'press_sync_comment_id',
 					'value'   => $press_sync_comment_id,
-					'compare' => '='
+					'compare' => '=',
 				),
 				array(
 					'key'     => 'press_sync_source',
 					'value'   => $press_sync_source,
-					'compare' => '='
+					'compare' => '=',
 				),
-			)
+			),
 		);
 
 		$comment = get_comments( $query_args );
