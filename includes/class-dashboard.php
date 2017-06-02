@@ -95,7 +95,7 @@ class Press_Sync_Dashboard {
 			'show_on' => array(
 				// These are important, don't remove
 				'key'   => 'options-page',
-				'value' => array( 'press_sync_options' )
+				'value' => array( 'press_sync_options' ),
 			),
 		) );
 
@@ -122,7 +122,7 @@ class Press_Sync_Dashboard {
 			'id'      => 'sync_method',
 			'type'    => 'select',
 			'options' => array(
-				'push' => 'Push'
+				'push' => 'Push',
 			)
 		) );
 
@@ -130,7 +130,7 @@ class Press_Sync_Dashboard {
 			'name'       => __( 'Objects to Sync', 'press-sync' ),
 			'id'         => 'objects_to_sync',
 			'type'       => 'select',
-			'options_cb' => array( $this, 'objects_to_sync' )
+			'options_cb' => array( $this, 'objects_to_sync' ),
 		) );
 
 		$cmb_options->add_field( array(
@@ -142,7 +142,7 @@ class Press_Sync_Dashboard {
 				'skip'		=> __( 'Skip (Creates a duplicate post)', 'press-sync' ),
 			),
 			'desc'		=> __( 'The sync option will give a non-synced duplicate a press sync ID to be synced for the future', 'press-sync' ),
-			'default'	=> 'match'
+			'default'	=> 'match',
 		) );
 
 		$cmb_options->add_field( array(
