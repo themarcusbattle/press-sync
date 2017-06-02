@@ -145,7 +145,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_Request
+	 * @param WP_Rest_Request $request
 	 *
 	 * @return WP_REST_Response
 	 */
@@ -158,13 +158,13 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
-				'debug' => __( 'Not sure which WP object you want to sync', 'press-sync' )
+				'debug' => __( 'Not sure which WP object you want to sync', 'press-sync' ),
 			) );
 		}
 
 		if ( ! $objects ) {
 			wp_send_json_error( array(
-				'debug' => __( 'No data available to sync', 'press-sync' )
+				'debug' => __( 'No data available to sync', 'press-sync' ),
 			) );
 		}
 
