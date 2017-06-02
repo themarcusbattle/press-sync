@@ -268,7 +268,7 @@ class Press_Sync_Dashboard {
 		$prepare_object  = ! in_array( $objects_to_sync, array(
 			'attachment',
 			'comment',
-			'user'
+			'user',
 		) ) ? 'post' : $objects_to_sync;
 
 		$total_objects = $this->plugin->count_objects_to_sync( $objects_to_sync );
@@ -276,8 +276,9 @@ class Press_Sync_Dashboard {
 		$wp_object = in_array( $objects_to_sync, array(
 			'attachment',
 			'comment',
-			'user'
+			'user',
 		) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+
 		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		wp_send_json_success( array(
@@ -306,13 +307,15 @@ class Press_Sync_Dashboard {
 		$prepare_object = ! in_array( $objects_to_sync, array(
 			'attachment',
 			'comment',
-			'user'
+			'user',
 		) ) ? 'post' : $objects_to_sync;
+
 		$wp_object      = in_array( $objects_to_sync, array(
 			'attachment',
 			'comment',
-			'user'
+			'user',
 		) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+
 		$wp_object      = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url
