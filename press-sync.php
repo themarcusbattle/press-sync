@@ -258,6 +258,7 @@ class Press_Sync {
 	 * @param string  $objects_to_sync
 	 * @param integer $paged
 	 * @param array   $taxonomies
+	 * @param string  $where_clause
 	 *
 	 * @return array posts
 	 */
