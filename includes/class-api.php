@@ -497,9 +497,9 @@ class Press_Sync_API extends WP_REST_Controller {
 		$sql = "SELECT ID, post_modified
 		FROM $wpdb->posts AS posts
 		LEFT JOIN $wpdb->postmeta AS meta ON meta.post_id = posts.ID
-		WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = $press_sync_post_id";
+		WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = %s";
 
-		return $wpdb->get_row( $sql );
+		return $wpdb->get_row( $wpdb->prepare( $sql, $press_sync_post_id ) );  // @codingStandardsIgnoreLine
 
 	}
 
