@@ -663,14 +663,14 @@ class Press_Sync_API extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param int   $object_id
 	 * @param array $object_args
 	 *
-	 * @return boolean
 	 */
 	public function add_press_sync_id( $object_id, $object_args ) {
 
 		if ( ! isset( $object_args['post_type'] ) ) {
-			return false;
+			return;
 		}
 
 		$press_sync_post_id = isset( $object_args['meta_input']['press_sync_post_id'] ) ? $object_args['meta_input']['press_sync_post_id'] : '';
