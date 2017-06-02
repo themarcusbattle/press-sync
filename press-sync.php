@@ -478,7 +478,7 @@ class Press_Sync {
 	 *
 	 * @param integer $post_id
 	 *
-	 * @return WP_Attachment $media
+	 * @return array|boolean An array of WP Post data if success, false otherwise.
 	 */
 	public function get_featured_image( $post_id ) {
 
