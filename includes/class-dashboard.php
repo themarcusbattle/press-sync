@@ -276,7 +276,7 @@ class Press_Sync_Dashboard {
 	public function get_objects_to_sync_count_via_ajax() {
 
 		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
-		$prepare_object  = ! in_array( (string) $objects_to_sync, $this->get_default_obj_keys() ) ? 'post' : (string) $objects_to_sync;
+		// $prepare_object  = ! in_array( (string) $objects_to_sync, $this->get_default_obj_keys() ) ? 'post' : (string) $objects_to_sync;
 
 		$total_objects = $this->plugin->count_objects_to_sync( (string) $objects_to_sync );
 
