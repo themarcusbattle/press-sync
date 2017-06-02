@@ -344,7 +344,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		require_once( ABSPATH . '/wp-admin/includes/file.php' );
 		require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
-		if ( $attachment_id = $this->media_exists( $attachment_url ) ) {
+		if ( $attachment_id = $this->media_exists( $attachment_url ) ) {  // @codingStandardsIgnoreLine This is shorthand, can't believe PHPcs complains here.
 
 			$response['attachment_id']  = $attachment_id;
 			$response['message']        = 'file already exists';
@@ -361,7 +361,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		$file_array['tmp_name'] = $temp_file;
 
 		if ( is_wp_error( $temp_file ) ) {
-			@unlink( $file_array['tmp_name'] );
+			@unlink( $file_array['tmp_name'] );  // @codingStandardsIgnoreLine Even core does this.
 
 			return $response;
 		}
@@ -370,7 +370,7 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		// Check for handle sideload errors.
 		if ( is_wp_error( $attachment_id ) ) {
-			@unlink( $file_array['tmp_name'] );
+			@unlink( $file_array['tmp_name'] );  // @codingStandardsIgnoreLine Even core does this.
 
 			return $response;
 		}
