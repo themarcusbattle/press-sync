@@ -624,7 +624,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	public function insert_comments( $post_id, $post_args ) {
 		// Post ID empty or post does not have any comments so bail early.
 		if ( empty( $post_id ) || ( ! array_key_exists( 'comments', $post_args ) && empty( $post_args['comments'] ) ) ) {
-			return false;
+			return;
 		}
 
 		foreach ( $post_args['comments'] as $comment ) {
