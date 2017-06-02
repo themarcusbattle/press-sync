@@ -239,7 +239,6 @@ class Press_Sync_Dashboard {
 	 * Render custom CMB2 field for the connection status to the remote server
 	 *
 	 * @since 0.1.0
-	 * @return html
 	 */
 	public function render_connection_status_field( $field, $escaped_value, $object_id, $object_type, $field_type_object ) {
 
@@ -248,9 +247,9 @@ class Press_Sync_Dashboard {
 		$is_connected = $this->plugin->check_connection( $url );
 
 		if ( $is_connected ) {
-			echo "<div><p>Connected</p></div>";
+			printf( '<div><p>%s</p></div>', __( 'Connected', 'press-sync' ) );
 		} else {
-			echo "<div><p>Not Connected</p></div>";
+			printf( '<div><p>%s</p></div>', __( 'Not Connected', 'press-sync' ) );
 		}
 
 	}
