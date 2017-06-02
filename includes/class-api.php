@@ -643,16 +643,16 @@ class Press_Sync_API extends WP_REST_Controller {
 	 * @param string $post_name
 	 * @param string $post_type
 	 *
-	 * @return WP_Post
+	 * @return object|boolean
 	 */
 	public function get_non_synced_duplicate( $post_name, $post_type ) {
 
 		global $wpdb;
 
 		$sql          = "SELECT ID, post_type, post_modified FROM $wpdb->posts WHERE post_name = %s AND post_type = %s";
-		$prepared_sql = $wpdb->prepare( $sql, $post_name, $post_type );
+		$prepared_sql = $wpdb->prepare( $sql, $post_name, $post_type );  // @codingStandardsIgnoreLine
 
-		$post = $wpdb->get_row( $prepared_sql, ARRAY_A );
+		$post = $wpdb->get_row( $prepared_sql, ARRAY_A );  // @codingStandardsIgnoreLine
 
 		return ( $post ) ? $post : false;
 
