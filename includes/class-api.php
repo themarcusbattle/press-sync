@@ -315,7 +315,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		// }
 
 		// Run any secondary commands
-		do_action( 'press_sync_sync_post', $post_id, $post_args );
+		do_action( 'press_sync_sync_post', $local_post_id, $post_args );
 
 		return array(
 			'debug' => array(
