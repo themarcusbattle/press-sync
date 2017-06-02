@@ -206,10 +206,11 @@ class Press_Sync_API extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array  $post_args
-	 * @param string $duplicate_action
+	 * @param array   $post_args
+	 * @param string  $duplicate_action
+	 * @param boolean $force_update
 	 *
-	 * @return array
+	 * @return array|false
 	 */
 	public function sync_post( $post_args, $duplicate_action, $force_update = false ) {
 
@@ -223,21 +224,20 @@ class Press_Sync_API extends WP_REST_Controller {
 			foreach ( $post_args['embedded_media'] as $embedded_media ) {
 
 				$attachment = $this->sync_media( array(
-					'attachment_url' => $embedded_media
+					'attachment_url' => $embedded_media,
 				) );
 
 				$attachment_url            = isset( $attachment['attachment_url'] ) ? $attachment['attachment_url'] : $embedded_media;
 				$post_args['post_content'] = str_ireplace( $embedded_media, $attachment_url, $post_args['post_content'] );
 
 			}
-
 		}
 
 		// Set the correct post author
 		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
 
 		// Check for post parent and update IDs accordingly
-		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
+		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {  // @codingStandardsIgnoreLine Assignments must be first? Really???
 
 			$post_parent_args['post_type']                        = $post_args['post_type'];
 			$post_parent_args['meta_input']['press_sync_post_id'] = $post_parent_id;
@@ -270,7 +270,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			// Assign a press sync ID
 			$this->add_press_sync_id( $local_post['ID'], $post_args );
 
-			return array( 'debug' => $response );
+			return array( 'debug' => $response );  // @codingStandardsIgnoreLine
 
 		}
 
@@ -281,11 +281,10 @@ class Press_Sync_API extends WP_REST_Controller {
 
 			foreach ( $post_args['tax_input']['category'] as $category ) {
 				wp_insert_category( array(
-					'cat_name' => $category
+					'cat_name' => $category,
 				) );
 				$post_args['post_category'][] = $category;
 			}
-
 		}
 
 		// Insert/update the post
@@ -293,7 +292,7 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		// Bail if the insert didn't work
 		if ( is_wp_error( $local_post_id ) ) {
-			return array( 'debug' => $local_post_id );
+			return array( 'debug' => $local_post_id );  // @codingStandardsIgnoreLine
 		}
 
 		// Attach featured image
@@ -311,7 +310,6 @@ class Press_Sync_API extends WP_REST_Controller {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
 				wp_set_object_terms( $local_post_id, $terms, $taxonomy, false );
 			}
-
 		}
 
 		// }
@@ -324,7 +322,7 @@ class Press_Sync_API extends WP_REST_Controller {
 				'remote_post_id' => $post_args['meta_input']['press_sync_post_id'],
 				'local_post_id'  => $local_post_id,
 				'message'        => __( 'The post has been synced with the remote server', 'press-sync' ),
-			)
+			),
 		);
 
 	}
