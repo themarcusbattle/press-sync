@@ -265,25 +265,25 @@ class Press_Sync_Dashboard {
 	public function get_objects_to_sync_count_via_ajax() {
 
 		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
-		$prepare_object  = ! in_array( $objects_to_sync, array(
+		$prepare_object  = ! in_array( (string) $objects_to_sync, array(
 			'attachment',
 			'comment',
 			'user',
-		) ) ? 'post' : $objects_to_sync;
+		) ) ? 'post' : (string) $objects_to_sync;
 
-		$total_objects = $this->plugin->count_objects_to_sync( $objects_to_sync );
+		$total_objects = $this->plugin->count_objects_to_sync( (string) $objects_to_sync );
 
-		$wp_object = in_array( $objects_to_sync, array(
+		$wp_object = in_array( (string) $objects_to_sync, array(
 			'attachment',
 			'comment',
 			'user',
-		) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		) ) ? ucwords( (string) $objects_to_sync ) . 's' : get_post_type_object( (string) $objects_to_sync );
 
 		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		wp_send_json_success( array(
 			'objects_to_sync' => $wp_object,
-			'total_objects'   => $total_objects
+			'total_objects'   => $total_objects,
 		) );
 
 	}
@@ -314,23 +314,23 @@ class Press_Sync_Dashboard {
 			'attachment',
 			'comment',
 			'user',
-		) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		) ) ? ucwords( (string) $objects_to_sync ) . 's' : get_post_type_object( (string) $objects_to_sync );
 
 		$wp_object      = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url
 		$url            = cmb2_get_option( 'press-sync-options', 'connected_server' );
 		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
-		$url            = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
+		$url            = untrailingslashit( (string) $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
 
 		// Prepare the correct sync method
 		$sync_class = 'prepare_' . $prepare_object . '_args_to_sync';
 
-		$total_objects = $this->plugin->count_objects_to_sync( $objects_to_sync );
-		$taxonomies    = get_object_taxonomies( $objects_to_sync );
+		$total_objects = $this->plugin->count_objects_to_sync( (string) $objects_to_sync );
+		$taxonomies    = get_object_taxonomies( (string) $objects_to_sync );
 		$paged         = isset( $_POST['paged'] ) ? (int) $_POST['paged'] : 1;
 
-		$objects = $this->plugin->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+		$objects = $this->plugin->get_objects_to_sync( (string) $objects_to_sync, $paged, $taxonomies );
 		$logs    = array();
 
 		// Prepare each object to be sent to the remote server
