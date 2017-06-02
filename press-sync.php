@@ -538,10 +538,9 @@ class Press_Sync {
 		global $wpdb;
 
 		$sql             = "SELECT p2p_from, p2p_to, p2p_type FROM {$wpdb->prefix}p2p WHERE p2p_from = $post_id OR p2p_to = $post_id";
-		$p2p_connections = $wpdb->get_results( $sql, ARRAY_A );
+		$p2p_connections = $wpdb->get_results( $sql, ARRAY_A );  // @codingStandardsIgnoreLine
 
 		return $p2p_connections;
-
 	}
 
 	/**
@@ -566,7 +565,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $attachment_args
+	 * @param array $object_args
 	 *
 	 * @return array $attachment_args
 	 */
