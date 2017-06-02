@@ -567,7 +567,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		foreach ( $comments as $comment_args ) {
 
 			// Check to see if the comment already exists
-			if ( $comment = $this->comment_exists( $comment_args ) ) {
+			if ( $comment = $this->comment_exists( $comment_args ) ) {  // @codingStandardsIgnoreLine shorthand assignments are okay
 				continue;
 			}
 
@@ -585,14 +585,12 @@ class Press_Sync_API extends WP_REST_Controller {
 					update_comment_meta( $comment_id, $meta_key, $meta_value );
 				}
 			}
-
 		}
-
 	}
 
 	public function add_p2p_connections( $post_id, $post_args ) {
 
-		if ( ! class_exists( 'P2P_Autoload' ) || ! $post_args['p2p_connections'] ) {
+		if ( ! function_exists( 'p2p_type' ) || ! $post_args['p2p_connections'] ) {
 			return;
 		}
 
@@ -608,8 +606,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			$p2p_to   = $this->get_post_id_by_press_sync_id( $connection['p2p_to'] );
 			$p2p_type = $connection['p2p_type'];
 
-			$response = p2p_type( $p2p_type )->connect( $p2p_from, $p2p_to );
-
+			p2p_type( $p2p_type )->connect( $p2p_from, $p2p_to );
 		}
 
 	}
