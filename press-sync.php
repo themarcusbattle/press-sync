@@ -502,7 +502,7 @@ class Press_Sync {
 	 *
 	 * @param int $post_id
 	 *
-	 * @return array
+	 * @return array|boolean An array of comments if successful, false if no comments.
 	 */
 	public function get_comments( $post_id ) {
 
