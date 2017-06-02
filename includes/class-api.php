@@ -88,8 +88,10 @@ class Press_Sync_API extends WP_REST_Controller {
 	/**
 	 * Gets the post sync status via API request
 	 *
+	 * @param WP_Rest_Request $request
+	 *
 	 * @since 0.2.0
-	 * @return JSON
+	 * @return array
 	 */
 	public function get_post_sync_status_via_api( $request ) {
 
@@ -105,7 +107,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		if ( ! $post ) {
 			return array(
 				'remote_post_id' => $post->ID,
-				'status'         => 'not synced'
+				'status'         => 'not synced',
 			);
 		}
 
@@ -114,7 +116,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			'remote_post_modified'        => $post->post_modified,
 			'remote_post_gmt_offset'      => get_option( 'gmt_offset' ),
 			'remote_post_modified_offset' => date( 'Y-m-d H:i:s', strtotime( $post->post_modified ) + ( get_option( 'gmt_offset' ) * 60 * 60 ) ),
-			'status'                      => 'synced'
+			'status'                      => 'synced',
 		);
 
 	}
