@@ -218,7 +218,7 @@ class Press_Sync_Dashboard {
 
 		if ( $custom_post_types ) {
 
-			$objects[] = '-- Custom Post Types --';
+			$objects[] = __( '-- Custom Post Types --', 'press-sync' );
 
 			foreach ( $custom_post_types as $cpt ) {
 				$objects[ $cpt->name ] = $cpt->label;
