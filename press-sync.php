@@ -270,10 +270,10 @@ class Press_Sync {
 
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 		$sql          = "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
-		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync, $offset );
+		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync, $offset );  // @codingStandardsIgnoreLine
 
 		// Get the results
-		$results = $wpdb->get_results( $prepared_sql, ARRAY_A );
+		$results = $wpdb->get_results( $prepared_sql, ARRAY_A );  // @codingStandardsIgnoreLine
 		$posts   = array();
 
 		if ( $results ) {
