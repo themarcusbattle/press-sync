@@ -147,7 +147,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	 *
 	 * @param WP_Rest_Request $request
 	 *
-	 * @return WP_REST_Response
+	 * @return array
 	 */
 	public function sync_objects( $request ) {
 
@@ -175,7 +175,6 @@ class Press_Sync_API extends WP_REST_Controller {
 			$taxonomies   = get_object_taxonomies( $objects_to_sync );
 
 			return $this->plugin->get_objects_to_sync( $objects_to_sync, 1, $taxonomies, $where_clause );
-
 		}
 
 		// Speed up bulk queries by pausing MySQL commits
