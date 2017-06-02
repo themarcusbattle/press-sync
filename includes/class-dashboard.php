@@ -296,13 +296,13 @@ class Press_Sync_Dashboard {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return JSON
+	 * @return void Returns a JSOn success message, which is followed by die() therefore no return.
 	 */
 	public function sync_wp_data_via_ajax() {
 
 		$this->plugin->init_connection();
 
-		$sync_method      = cmb2_get_option( 'press-sync-options', 'sync_method' );
+		// $sync_method      = cmb2_get_option( 'press-sync-options', 'sync_method' );
 		$objects_to_sync  = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
 		$duplicate_action = cmb2_get_option( 'press-sync-options', 'duplicate_action' );
 		$force_update     = cmb2_get_option( 'press-sync-options', 'force_update' );
@@ -326,7 +326,7 @@ class Press_Sync_Dashboard {
 		$paged         = isset( $_POST['paged'] ) ? (int) $_POST['paged'] : 1;
 
 		$objects = $this->plugin->get_objects_to_sync( (string) $objects_to_sync, $paged, $taxonomies );
-		$logs    = array();
+		// $logs    = array();
 
 		// Prepare each object to be sent to the remote server
 		foreach ( $objects as $key => $object ) {
