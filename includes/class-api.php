@@ -74,7 +74,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	 * Gets the connection status via API request
 	 *
 	 * @since 0.1.0
-	 * @return JSON
+	 * @return void JSON data on success. JSON error object on failure.
 	 */
 	public function get_connection_status_via_api() {
 
