@@ -44,7 +44,7 @@ class Press_Sync_Dashboard {
 		// CMB2 hooks
 		add_action( 'cmb2_admin_init', array( $this, 'init_press_sync_dashboard_metabox' ) );
 		add_action( 'cmb2_admin_init', array( $this, 'init_press_sync_settings_metabox' ) );
-		add_action( 'cmb2_render_connection_status', array( $this, 'render_connection_status_field' ), 10, 5 );
+		add_action( 'cmb2_render_connection_status', array( $this, 'render_connection_status_field' ) );
 
 		// AJAX Requests
 		add_action( 'wp_ajax_get_objects_to_sync_count', array( $this, 'get_objects_to_sync_count_via_ajax' ) );
@@ -240,7 +240,7 @@ class Press_Sync_Dashboard {
 	 *
 	 * @since 0.1.0
 	 */
-	public function render_connection_status_field( $field, $escaped_value, $object_id, $object_type, $field_type_object ) {
+	public function render_connection_status_field() {
 
 		$url = cmb2_get_option( 'press-sync-options', 'connected_server' );
 
