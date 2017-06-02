@@ -542,8 +542,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		// Download the attachment
 		$attachment   = $this->sync_media( $post_args['featured_image'], true );
 		$thumbnail_id = isset( $attachment['id'] ) ? $attachment['id'] : 0;
-
-		// $response = set_post_thumbnail( $post_id, $thumbnail_id );
+		set_post_thumbnail( $post_id, $thumbnail_id );
 
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
