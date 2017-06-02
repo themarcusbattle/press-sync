@@ -123,7 +123,7 @@ class Press_Sync_Dashboard {
 			'type'    => 'select',
 			'options' => array(
 				'push' => 'Push',
-			)
+			),
 		) );
 
 		$cmb_options->add_field( array(
@@ -177,7 +177,7 @@ class Press_Sync_Dashboard {
 			'show_on' => array(
 				// These are important, don't remove
 				'key'   => 'options-page',
-				'value' => array( 'press_sync_options' )
+				'value' => array( 'press_sync_options' ),
 			),
 		) );
 
@@ -214,7 +214,7 @@ class Press_Sync_Dashboard {
 			'user'       => 'Users',
 		);
 
-		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
+		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );  // @codingStandardsIgnoreLine
 
 		if ( $custom_post_types ) {
 
@@ -223,7 +223,6 @@ class Press_Sync_Dashboard {
 			foreach ( $custom_post_types as $cpt ) {
 				$objects[ $cpt->name ] = $cpt->label;
 			}
-
 		}
 
 		$objects = apply_filters( 'press_sync_objects_to_sync', $objects );
