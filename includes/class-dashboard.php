@@ -58,10 +58,7 @@ class Press_Sync_Dashboard {
 	 * @since 0.1.0
 	 */
 	public function add_menu_page() {
-		add_management_page( __( 'Press Sync', 'press-sync' ), __( 'Press Sync', 'press-sync' ), 'manage_options', 'press-sync', array(
-			$this,
-			'show_menu_page'
-		) );
+		add_management_page( __( 'Press Sync', 'press-sync' ), __( 'Press Sync', 'press-sync' ), 'manage_options', 'press-sync', array(	$this, 'show_menu_page'	) );  // @codingStandardsIgnoreLine
 	}
 
 	/**
