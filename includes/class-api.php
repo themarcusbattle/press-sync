@@ -433,8 +433,8 @@ class Press_Sync_API extends WP_REST_Controller {
 			LIMIT 1
 		";
 
-		$prepared_sql = $wpdb->prepare( $sql, $press_sync_post_id, $post_args['post_type'] );
-		$post         = $wpdb->get_row( $prepared_sql, ARRAY_A );
+		$prepared_sql = $wpdb->prepare( $sql, $press_sync_post_id, $post_args['post_type'] );  // @codingStandardsIgnoreLine
+		$post         = $wpdb->get_row( $prepared_sql, ARRAY_A );  // @codingStandardsIgnoreLine
 
 		return ( $post ) ? $post : false;
 
@@ -447,9 +447,9 @@ class Press_Sync_API extends WP_REST_Controller {
 		$media_url = basename( $media_url );
 
 		$sql          = "SELECT ID FROM $wpdb->posts WHERE guid LIKE '%%%s%%' LIMIT 1;";
-		$prepared_sql = $wpdb->prepare( $sql, $media_url );
+		$prepared_sql = $wpdb->prepare( $sql, $media_url );  // @codingStandardsIgnoreLine
 
-		$media_id = $wpdb->get_var( $prepared_sql );
+		$media_id = $wpdb->get_var( $prepared_sql );  // @codingStandardsIgnoreLine
 
 		if ( $media_id ) {
 			return $media_id;
