@@ -260,7 +260,7 @@ class Press_Sync_Dashboard {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return JSON
+	 * @return void Preforms a JSON success call.
 	 */
 	public function get_objects_to_sync_count_via_ajax() {
 
