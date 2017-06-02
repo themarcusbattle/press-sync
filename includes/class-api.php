@@ -533,7 +533,7 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		// Post does not have a featured image so bail early.
 		if ( empty( $post_args['featured_image'] ) ) {
-			return false;
+			return;
 		}
 
 		// Allow download_url() to use an external request to retrieve featured images.
@@ -547,7 +547,6 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
-
 	}
 
 	/**
