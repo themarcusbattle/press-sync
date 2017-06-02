@@ -183,7 +183,7 @@ class Press_Sync {
 	 */
 	public function init_connection() {
 		$this->local_domain = untrailingslashit( home_url() );
-		$this->remote_domain = untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
+		$this->remote_domain = untrailingslashit( (string) cmb2_get_option( 'press-sync-options', 'connected_server' ) );
 	}
 
 	/**
