@@ -626,7 +626,7 @@ class Press_Sync {
 	 * @param string $url
 	 * @param array  $args
 	 *
-	 * @return JSON $response_body
+	 * @return string $response_body
 	 */
 	public function send_data_to_remote_server( $url, $args ) {
 
@@ -647,6 +647,8 @@ class Press_Sync {
 	 * @since 0.1.0
 	 *
 	 * @param string $post_content
+	 *
+	 * @return string|array The embedded media item if available, empty array otherwise.
 	 */
 	public function get_embedded_media( $post_content = '' ) {
 
