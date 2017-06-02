@@ -394,7 +394,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			$user_id = wp_insert_user( $user_args );
 
 			if ( is_wp_error( $user_id ) ) {
-				return wp_send_json_error();
+				wp_send_json_error();
 			}
 
 			$user = get_user_by( 'id', $user_id );
