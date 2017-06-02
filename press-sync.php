@@ -341,11 +341,9 @@ class Press_Sync {
 				array_push( $users, $user );
 
 			}
-
 		}
 
 		return $users;
-
 	}
 
 	/**
