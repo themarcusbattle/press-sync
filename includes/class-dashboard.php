@@ -78,7 +78,7 @@ class Press_Sync_Dashboard {
 	 */
 	public function load_scripts() {
 		wp_enqueue_script( 'press-sync', plugins_url( 'assets/js/press-sync.js', dirname( __FILE__ ) ), true );
-		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );  // @codingStandardsIgnoreLine
 	}
 
 	/**
