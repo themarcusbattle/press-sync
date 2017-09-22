@@ -38,7 +38,6 @@ class Press_Sync_Dashboard {
 	public function hooks() {
 
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 10, 1 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
 		add_action( 'admin_notices', array( $this, 'error_notice' ) );
 
 		// CMB2 hooks
@@ -69,16 +68,6 @@ class Press_Sync_Dashboard {
 	public function show_menu_page() {
 		$selected_tab 	= isset( $_REQUEST['tab'] ) ? 'dashboard/' . $_REQUEST['tab'] : 'dashboard';
 		$this->plugin->include_page( $selected_tab );
-	}
-
-	/**
-	 * Load all of the scripts for the dashboard
-	 *
-	 * @since 0.1.0
-	 */
-	public function load_scripts() {
-		wp_enqueue_script( 'press-sync', plugins_url( 'assets/js/press-sync.js', dirname( __FILE__ ) ), true );
-		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 	}
 
 	/**
@@ -280,10 +269,22 @@ class Press_Sync_Dashboard {
 
 		$this->plugin->init_connection();
 
-		$sync_method 		= cmb2_get_option( 'press-sync-options', 'sync_method' );
-		$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
-		$duplicate_action 	= cmb2_get_option( 'press-sync-options', 'duplicate_action' );
-		$force_update 		= cmb2_get_option( 'press-sync-options', 'force_update' );
+		$post_id 		= isset( $_POST['post_id'] ) ? $_POST['post_id'] : 0;
+		$sync_method 	= isset( $_POST['sync_method'] ) ? $_POST['sync_method'] : cmb2_get_option( 'press-sync-options', 'sync_method' );
+
+		// Set paramters based on post sync or bulk sync
+		if ( $post_id ) {
+			$objects_to_sync 	= get_post_type( $post_id );
+			$duplicate_action 	= 'sync';
+			$where_clause 		= 'ID = ' . $post_id;
+		} else {
+			$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+			$duplicate_action 	= cmb2_get_option( 'press-sync-options', 'duplicate_action' );
+			$where_clause 		= '';
+		}
+
+		$post_endpoint 	= ( $post_id ) ? '/' . $post_id : '';
+		$force_update 	= cmb2_get_option( 'press-sync-options', 'force_update' );
 
 		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
 		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
@@ -292,16 +293,16 @@ class Press_Sync_Dashboard {
 		// Build out the url
 		$url 			= cmb2_get_option( 'press-sync-options', 'connected_server' );
 		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
-		$url			= untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
+		$url			= untrailingslashit( $url ) . "/wp-json/press-sync/v1/sync?press_sync_key=" . $press_sync_key;
 
 		// Prepare the correct sync method
 		$sync_class 	= 'prepare_' . $prepare_object . '_args_to_sync';
 
-		$total_objects 	= $this->plugin->count_objects_to_sync( $objects_to_sync );
+		$total_objects 	= ( $post_id ) ? 1 : $this->plugin->count_objects_to_sync( $objects_to_sync );
 		$taxonomies 	= get_object_taxonomies( $objects_to_sync );
 		$paged 			= isset( $_POST['paged'] ) ? (int) $_POST['paged'] : 1;
 
-		$objects 	= $this->plugin->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+		$objects 	= $this->plugin->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies, $where_clause );
 		$logs 		= array();
 
 		// Prepare each object to be sent to the remote server
@@ -315,7 +316,11 @@ class Press_Sync_Dashboard {
 		$args['objects_to_sync'] 	= $prepare_object;
 		$args['objects'] 			= $objects;
 
-		$logs = $this->plugin->send_data_to_remote_server( $url, $args );
+		if ( 'push' == $sync_method ) {
+			$logs = $this->plugin->send_data_to_remote_server( $url, $args );
+		} else {
+			$logs = $this->plugin->pull_data_from_remote_server( $url, $args );
+		}
 
 		wp_send_json_success( array(
 			'objects_to_sync'			=> $wp_object,

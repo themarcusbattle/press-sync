@@ -52,6 +52,11 @@ class Press_Sync_API extends WP_REST_Controller {
 			'callback' => array( $this, 'get_connection_status_via_api' ),
 		) );
 
+		register_rest_route( 'press-sync/v1', '/status/(?P<id>\d+)', array(
+			'methods' => 'GET',
+			'callback' => array( $this, 'get_post_sync_status_via_api' ),
+		) );
+
 		register_rest_route( 'press-sync/v1', '/sync', array(
 			'methods' => 'POST',
 			'callback' => array( $this, 'sync_objects' ),
@@ -73,6 +78,16 @@ class Press_Sync_API extends WP_REST_Controller {
 		}
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * Gets the post sync status via API request
+	 *
+	 * @since 0.2.0
+	 * @return JSON
+	 */
+	public function get_post_sync_status_via_api( $request ) {
+		print_r( $request->get_params() ); exit;
 	}
 
 	/**

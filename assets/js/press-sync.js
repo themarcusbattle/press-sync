@@ -4,13 +4,24 @@ window.PressSync = ( function( window, document, $ ) {
 
 	app.init = function() {
 		$(document).on( 'click', '.press-sync-button', app.pressSyncButton );
+		$(document).on( 'click', '#post-sync-button', app.postSyncButton );
 	};
 
 	app.pressSyncButton = function( click_event ) {
-
 		app.loadProgressBar();
 		return;
+	}
 
+	app.postSyncButton = function ( click_event ) {
+
+		click_event.preventDefault();
+
+		// Disable the button
+		$(this).attr('disabled',true);
+		$(this).text('Syncing...');
+
+		app.syncPost();
+		return;
 	}
 
 	app.loadProgressBar = function() {
@@ -59,6 +70,28 @@ window.PressSync = ( function( window, document, $ ) {
 				app.syncData( response.data.next_page );
 			}
 
+		});
+
+	}
+
+	/**
+	 * Syncs an individual post form the post edit screen
+	 */
+	app.syncPost = function( paged ) {
+
+		$.ajax({
+			method: "POST",
+			url: press_sync.ajax_url,
+			data: {
+				action: 'sync_wp_data',
+				post_id: $('#post-sync-button').data('post-id'),
+				sync_method: $('#post-sync-button').data('sync-method'),
+			}
+		}).done(function( response ) {
+			if ( response.success ) {
+				$('#post-sync-message').text('This post is in sync with the remote server.');
+				$('#post-sync-button').text('Done').fadeOut();
+			}
 		});
 
 	}

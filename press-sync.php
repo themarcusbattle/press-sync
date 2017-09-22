@@ -63,6 +63,7 @@ class Press_Sync {
 		// Initialize plugin classes
 		$this->plugin_classes();
 
+		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
 	}
 
 	/**
@@ -87,6 +88,7 @@ class Press_Sync {
 	public function plugin_classes() {
 		$this->dashboard 	= new Press_Sync_Dashboard( $this );
 		$this->api 			= new Press_Sync_API( $this );
+		$this->post_sync 	= new Press_Sync_Post_Sync( $this );
 	}
 
 	/**
@@ -218,12 +220,12 @@ class Press_Sync {
 	 * @param array $taxonomies
 	 * @return array $objects
 	 */
-	public function get_objects_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
+	public function get_objects_to_sync( $objects_to_sync, $paged = 1, $taxonomies, $where_clause = '' ) {
 
 		if ( 'user' == $objects_to_sync ) {
 			$objects = $this->get_users_to_sync( $paged );
 		} else {
-			$objects = $this->get_posts_to_sync( $objects_to_sync, $paged, $taxonomies );
+			$objects = $this->get_posts_to_sync( $objects_to_sync, $paged, $taxonomies, $where_clause );
 		}
 
 		return $objects;
@@ -240,13 +242,14 @@ class Press_Sync {
 	 * @param array $taxonomies
 	 * @return array posts
 	 */
-	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies ) {
+	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies, $where_clause = '' ) {
 
 		global $wpdb;
 
 		$offset = ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0;
 
-		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') ORDER BY post_date DESC LIMIT 5 OFFSET %d";
+		$where_clause 	= ( $where_clause ) ? ' AND ' . $where_clause : '';
+		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
 		// Get the results
@@ -594,19 +597,53 @@ class Press_Sync {
 	 * @param array $args
 	 * @return JSON $response_body
 	 */
-	public function send_data_to_remote_server( $url, $args ) {
+	public function send_data_to_remote_server( $url, $args, $method = 'post' ) {
 
 		$args = array(
 			'timeout'	=> 30,
 			'body'	=> $args,
 		);
 
-		$response 		= wp_remote_post( $url, $args );
+		$request_method = 'wp_remote_' . $method;
+		$response 		= $request_method( $url, $args );
 		$response_body	= wp_remote_retrieve_body( $response );
 
 		return $response_body;
 	}
 
+	public function pull_data_from_remote_server( $url, $args ) {
+
+		// Capture the objects that are being requested
+		$objects 	= isset( $args['objects'] ) ? $args['objects'] : array();
+		$object_ids = array();
+
+		if ( ! $objects ) {
+			return false;
+		}
+
+		// Extract all of the IDs from objects
+		foreach ( $objects as $object ) {
+
+			if ( 'post' == $args['objects_to_sync'] ) {
+				$object_ids[] = $object['meta_input']['orig_post_id'];
+			}
+
+		}
+
+		// Update the args to pass on the ids of the objects to be pulled into the local server
+		$args['objects'] = $object_ids;
+
+		$query_args = array(
+			'timeout'	=> 30,
+		);
+
+		$url 		   .= '&' . http_build_query( $args );
+		$response 		= wp_remote_get( $url, $query_args );
+		$response_body	= wp_remote_retrieve_body( $response );
+
+		print_r( $response_body ); exit;
+
+	}
 	/**
 	 * Find any embedded images in the post content
 	 *
@@ -627,6 +664,34 @@ class Press_Sync {
 
 		return isset( $embedded_media[1] ) ? $embedded_media[1] : array();
 
+	}
+
+	/**
+	 * Converts the time into the offset time
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param DATETIME $datetime
+	 * @param integer $datetime_offset
+	 * @return DATETIME
+	 */
+	 public function get_press_sync_time( $datetime = '', $datetime_offset = 0 ) {
+
+		 $datetime 			= ( $datetime ) ? $datetime : date('Y-m-d H:i:s');
+		 $datetime_offset	= ( $datetime_offset ) ? $datetime_offset : get_option('gmt_offset');
+
+		 return date('Y-m-d H:i:s', strtotime( $datetime ) + ( $datetime_offset * 60 * 60 ) );
+
+	 }
+
+	/**
+	 * Load all of the scripts for the dashboard
+	 *
+	 * @since 0.1.0
+	 */
+	public function load_scripts() {
+		wp_enqueue_script( 'press-sync', plugins_url( 'assets/js/press-sync.js', __FILE__ ), true );
+		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 	}
 
 }
