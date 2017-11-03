@@ -122,7 +122,8 @@ class Press_Sync_Dashboard {
 			'id'      => 'sync_method',
 			'type'    => 'select',
 			'options' => array(
-				'push' => 'Push'
+				'push' => 'Push',
+				'pull' => 'Pull'
 			)
 		) );
 
