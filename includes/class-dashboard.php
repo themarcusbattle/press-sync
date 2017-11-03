@@ -39,7 +39,7 @@ class Press_Sync_Dashboard {
 
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
-		add_action( 'admin_notices', array( $this, 'error_notice' ) );
+		// add_action( 'admin_notices', array( $this, 'error_notice' ) );
 
 		// CMB2 hooks
 		add_action( 'cmb2_admin_init', array( $this, 'init_press_sync_dashboard_metabox' ) );
@@ -67,7 +67,16 @@ class Press_Sync_Dashboard {
 	 * @since 0.1.0
 	 */
 	public function show_menu_page() {
-		$selected_tab 	= isset( $_REQUEST['tab'] ) ? 'dashboard/' . $_REQUEST['tab'] : 'dashboard';
+
+		$press_sync_key = $this->plugin->press_sync_option('press_sync_key');
+
+		if ( $press_sync_key ) {
+			$selected_tab 	= isset( $_REQUEST['tab'] ) ? 'dashboard/' . $_REQUEST['tab'] : 'dashboard';
+		} else {
+			$selected_tab 	= 'dashboard/install';
+		}
+
+		// $selected_tab 	= isset( $_REQUEST['tab'] ) ? 'dashboard/' . $_REQUEST['tab'] : 'dashboard';
 		$this->plugin->include_page( $selected_tab );
 	}
 
