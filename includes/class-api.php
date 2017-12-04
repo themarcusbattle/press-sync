@@ -214,7 +214,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		}
 
 		// Replace embedded media
-		if ( $post_args['embedded_media'] ) {
+		if ( isset( $post_args['embedded_media'] ) ) {
 
 			foreach ( $post_args['embedded_media'] as $embedded_media ) {
 
