@@ -625,13 +625,56 @@ class Press_Sync {
 			return $embedded_media;
 		}
 
-		preg_match_all('/< *img[^>]*src *= *["\']?([^"\']*)/i', $post_content, $embedded_media );
-		$embedded_media = array_filter( $embedded_media );
+		$doc = new DOMDocument();
+		$doc->loadHTML( $post_content );
 
-		return isset( $embedded_media[1] ) ? $embedded_media[1] : array();
+		$images = $doc->getElementsByTagName( 'img' );
+
+		foreach ( $images as $image ) {
+
+			$attachment_url = $image->getAttribute( 'src' );
+
+			if ( false === stripos( $attachment_url, $this->local_domain ) ) {
+				continue;
+			}
+
+			$attachment_args['attachment_url']  = $attachment_url;
+			$attachment_args['details']         = $this->get_attachment_details( $attachment_url );
+
+			array_push( $embedded_media, $attachment_args );
+		}
+
+		unset( $doc );
+
+		return $embedded_media;
 
 	}
 
+	public function get_attachment_details( $attachment_url ) {
+
+		$attachment_details = array();
+		$last_dash_pos      = strrpos( $attachment_url, "-" );
+		$image_query_string = substr( $attachment_url, 0, $last_dash_pos );
+
+		global $wpdb;
+
+		$attachment = $wpdb->get_row( "SELECT ID, guid FROM $wpdb->posts WHERE guid LIKE '$image_query_string%'" );
+
+		if ( ! $attachment ) {
+			return $attachment_details();
+		}
+
+		$image          = wp_get_attachment_metadata( $attachment->ID );
+		$filename_parts = explode( '/', $image['file'] );
+
+		$attachment_details = array(
+			'filename'  => $filename_parts[2],
+			'post_date' => $filename_parts[0] . '/' . $filename_parts[1],
+			'url'       => $attachment->guid,
+		);
+
+		return $attachment_details;
+	}
 }
 
 add_action( 'plugins_loaded', array( Press_Sync::init(), 'hooks' ), 10, 1 );
