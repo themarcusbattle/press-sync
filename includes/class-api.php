@@ -313,7 +313,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		// }
 
 		// Run any secondary commands
-		do_action( 'press_sync_sync_post', $post_id, $post_args );
+		do_action( 'press_sync_sync_post', $local_post_id, $post_args );
 
 		return array( 'debug' => array(
 			'remote_post_id'	=> $post_args['meta_input']['press_sync_post_id'],
@@ -421,7 +421,7 @@ class Press_Sync_API extends WP_REST_Controller {
 		$press_sync_post_id = isset( $post_args['meta_input']['press_sync_post_id'] ) ? $post_args['meta_input']['press_sync_post_id'] : 0;
 
 		$sql = "
-			SELECT post_id AS ID, post_type, post_modified FROM $wpdb->postmeta AS meta
+			SELECT post_id AS ID, post_title, post_type, post_modified FROM $wpdb->postmeta AS meta
 			LEFT JOIN $wpdb->posts AS posts ON posts.ID = meta.post_id
 			WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = %d AND posts.post_type = %s
 			LIMIT 1
@@ -649,10 +649,14 @@ class Press_Sync_API extends WP_REST_Controller {
 	 * @return WP_Post
 	 */
 	public function get_non_synced_duplicate( $post_name, $post_type ) {
+		
+		if ( '' === $post_name  ) {
+			return false;
+		}
 
 		global $wpdb;
 
-		$sql = "SELECT ID, post_type, post_modified FROM $wpdb->posts WHERE post_name = %s AND post_type = %s";
+		$sql = "SELECT ID, post_title, post_type, post_modified FROM $wpdb->posts WHERE post_name = %s AND post_type = %s";
 		$prepared_sql = $wpdb->prepare( $sql, $post_name, $post_type );
 
 		$post = $wpdb->get_row( $prepared_sql, ARRAY_A );
