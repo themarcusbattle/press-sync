@@ -611,6 +611,27 @@ class Press_Sync {
 	}
 
 	/**
+	 * GET data from the remote server
+	 *
+	 * @param  string 	$url
+	 * @param  array  	$args
+	 * @return JSON 	$response_body
+	 */
+	public function get_data_from_remote_server( $url = '', $args = array() ) {
+
+		$args = array(
+			'timeout'	=> 30,
+			'body'	=> $args,
+		);
+
+		$response 		= wp_remote_get( $url, $args );
+		$response_body	= wp_remote_retrieve_body( $response );
+
+		return $response_body;
+
+	}
+
+	/**
 	 * Find any embedded images in the post content
 	 *
 	 * @since 0.1.0
