@@ -139,7 +139,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	}
 
 	/**
-	 * Sync all of the object received from the local server
+	 * Sync all of the objects received from the local server
 	 *
 	 * @since 0.1.0
 	 *
@@ -149,7 +149,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	public function sync_objects( $request ) {
 
 		$objects_to_sync 	= $request->get_param('objects_to_sync');
-		$objects 			= $request->get_param('objects');
+		$objects 			= (array) $request->get_param('objects');
 		$duplicate_action 	= ( $request->get_param('duplicate_action') ) ? $request->get_param('duplicate_action') : 'skip';
 		$force_update 		= $request->get_param('force_update');
 
@@ -159,7 +159,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			) );
 		}
 
-		if ( ! $objects ) {
+		if ( ! $objects && 'POST' === $request->get_method() ) {
 			wp_send_json_error( array(
 				'debug'	=> __( 'No data available to sync', 'press-sync' )
 			) );
@@ -168,9 +168,10 @@ class Press_Sync_API extends WP_REST_Controller {
 		// If the method is to pull then how do
 		if ( 'GET' == $request->get_method() ) {
 
-			$where_clause = "ID IN ('" . implode( "''", $objects) . "')";
+			$where_clause 	= $objects ? "ID IN ('" . implode( "''", $objects ) . "')" : '';
 			$taxonomies 	= get_object_taxonomies( $objects_to_sync );
-			return $this->plugin->get_objects_to_sync( $objects_to_sync, 1 ,$taxonomies ,$where_clause );
+
+			return $this->plugin->get_objects_to_sync( $objects_to_sync, 1, $taxonomies, $where_clause );
 
 		}
 
