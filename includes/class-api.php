@@ -335,10 +335,11 @@ class Press_Sync_API extends WP_REST_Controller {
 		require_once( ABSPATH . '/wp-admin/includes/file.php' );
 		require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
-		$attachment_url = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
+		$attachment_url       = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
+		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : '';
 
 		// Check to see if the file already exists.
-		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_args['details']['post_date'] ) ) {
+		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_post_date ) ) {
 			return $attachment_id;
 		}
 
@@ -360,7 +361,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			$overrides = array( 'test_form' => false, 'test_size' => true, 'action' => 'custom', );
 
 			// Move the temporary file into the uploads directory.
-			$results = wp_handle_upload( $file, $overrides, $attachment_args['details']['post_date'] );
+			$results = wp_handle_upload( $file, $overrides, $attachment_post_date );
 
 			// Delete the temporary file.
 			@unlink( $temp_file );
