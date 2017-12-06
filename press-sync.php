@@ -63,6 +63,7 @@ class Press_Sync {
 		// Initialize plugin classes
 		$this->plugin_classes();
 
+		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 	}
 
 	/**
@@ -675,6 +676,32 @@ class Press_Sync {
 
 		return $attachment_details;
 	}
+
+	public function file_exists( $filename = '', $post_date = '' ) {
+
+		$filename_partial_path = trailingslashit( $post_date ) . basename( $filename );
+		$wp_upload_dir         = wp_upload_dir();
+
+		if ( ! file_exists( trailingslashit( $wp_upload_dir['basedir'] ) . $filename_partial_path ) ) {
+			return false;
+		}
+
+		global $wpdb;
+
+		$attachment_id = $wpdb->get_var( "SELECT ID FROM $wpdb->posts WHERE guid LIKE '%$filename_partial_path%'" );
+
+		return $attachment_id;
+	}
+
+	public function approve_localhost_urls( $approve, $host, $url ) {
+
+		if ( 0 <= stripos( $host, '.local' ) ) {
+			return true;
+		}
+
+		return $approve;
+	}
+
 }
 
 add_action( 'plugins_loaded', array( Press_Sync::init(), 'hooks' ), 10, 1 );

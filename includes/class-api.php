@@ -213,26 +213,27 @@ class Press_Sync_API extends WP_REST_Controller {
 			return false;
 		}
 
-		// Replace embedded media
+		// Replace embedded media.
 		if ( isset( $post_args['embedded_media'] ) ) {
 
-			foreach ( $post_args['embedded_media'] as $embedded_media ) {
+			foreach ( $post_args['embedded_media'] as $attachment_args ) {
 
-				$attachment = $this->sync_media( array(
-					'attachment_url' => $embedded_media
-				) );
+				$attachment_id = $this->sync_media( $attachment_args );
 
-				$attachment_url = isset( $attachment['attachment_url'] ) ? $attachment['attachment_url'] : $embedded_media;
-				$post_args['post_content'] = str_ireplace( $embedded_media, $attachment_url, $post_args['post_content'] );
+				if ( $attachment_id ) {
 
+					$sync_source = $post_args['meta_input']['press_sync_source'];
+					$attachment_url = str_ireplace( $sync_source, home_url(), $attachment_args['attachment_url'] );
+
+					$post_args['post_content'] = str_ireplace( $attachment_args['attachment_url'], $attachment_url, $post_args['post_content'] );
+				}
 			}
-
 		}
 
-		// Set the correct post author
+		// Set the correct post author.
 		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
 
-		// Check for post parent and update IDs accordingly
+		// Check for post parent and update IDs accordingly.
 		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
 
 			$post_parent_args['post_type'] = $post_args['post_type'];
@@ -325,40 +326,29 @@ class Press_Sync_API extends WP_REST_Controller {
 
 	public function sync_media( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
 
-		$response['attachment_id'] = 0;
-
-	    // Attachment URL does not exist so bail early.
-	    if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
-	    	return $response;
-	    }
-
-		$attachment_url       = $attachment_args['attachment_url'];
-		$attachment_url_parts = array_reverse( explode( '/', $attachment_url ) );
-		$attachment_date      = $attachment_url_parts[2] . '/' . $attachment_url_parts[1];
-
-		unset( $attachment_args['attachment_url'] );
-
-		require_once( ABSPATH . '/wp-admin/includes/image.php' );
-	    require_once( ABSPATH . '/wp-admin/includes/file.php' );
-	    require_once( ABSPATH . '/wp-admin/includes/media.php' );
-
-		if ( $attachment_id = $this->media_exists( $attachment_url ) ) {
-
-			$response['attachment_id'] 	= $attachment_id;
-			$response['message'] 		= 'file already exists';
-			$response['attachment_url']	= wp_get_attachment_url( $attachment_id );
-
+		// Attachment URL does not exist so bail early.
+		if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return $response;
-
 		}
 
-		// 1) Download the url
+		require_once( ABSPATH . '/wp-admin/includes/image.php' );
+		require_once( ABSPATH . '/wp-admin/includes/file.php' );
+		require_once( ABSPATH . '/wp-admin/includes/media.php' );
+
+		$attachment_url = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
+
+		// Check to see if the file already exists.
+		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_args['details']['post_date'] ) ) {
+			return $attachment_id;
+		}
+
+		// Download the url.
 		$temp_file = download_url( $attachment_url, 5000 );
 
 		// Move the file to the proper uploads folder.
 		if ( ! is_wp_error( $temp_file ) ) {
 
-			// Array based on $_FILE as seen in PHP file uploads
+			// Array based on $_FILE as seen in PHP file uploads.
 			$file = array(
 				'name'     => basename( $attachment_url ),
 				'type'     => 'image/png',
@@ -367,56 +357,40 @@ class Press_Sync_API extends WP_REST_Controller {
 				'size'     => filesize( $temp_file ),
 			);
 
-			$overrides = array(
-				// Tells WordPress to not look for the POST form
-				// fields that would normally be present as
-				// we downloaded the file from a remote server, so there
-				// will be no form fields
-				// Default is true
-				'test_form' => false,
-
-				// Setting this to false lets WordPress allow empty files, not recommended
-				// Default is true
-				'test_size' => true,
-			);
+			$overrides = array( 'test_form' => false, 'test_size' => true, 'action' => 'custom', );
 
 			// Move the temporary file into the uploads directory.
-			$results = wp_handle_sideload( $file, $overrides, $attachment_date );
+			$results = wp_handle_upload( $file, $overrides, $attachment_args['details']['post_date'] );
 
-			if ( !empty( $results['error'] ) ) {
-				// Insert any error handling here
-			} else {
+			// Delete the temporary file.
+			@unlink( $temp_file );
 
-				$filename  = $results['file']; // Full path to the file
-				$local_url = $results['url'];  // URL to the file in the uploads dir
-				$type      = $results['type']; // MIME type of the file
+			// Upload the file into WP Media Library.
+			if ( $results['file'] ) {
 
-				// Perform any actions here based in the above results
+				$filename  = $results['file']; // Full path to the file.
+				$local_url = $results['url'];  // URL to the file in the uploads dir.
+				$type      = $results['type']; // MIME type of the file.
+
+				// Prepare an array of post data for the attachment.
+				$attachment = array(
+					'guid'           => $local_url,
+					'post_mime_type' => $type,
+					'post_title'     => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
+					'post_content'   => '',
+					'post_status'    => 'inherit',
+				);
+
+				// Insert the attachment.
+				$attachment_id = wp_insert_attachment( $attachment, $filename, 0 );
+
+				// Generate the metadata for the attachment, and update the database record.
+				$attachment_data = wp_generate_attachment_metadata( $attachment_id, $filename );
+				wp_update_attachment_metadata( $attachment_id, $attachment_data );
 			}
-
 		}
-		
-		$file_array['name'] = basename( $attachment_url );
-        $file_array['tmp_name'] = $temp_file;
 
-         if ( is_wp_error( $temp_file ) ) {
-	        @unlink( $file_array['tmp_name'] );
-	        return $response;
-	    }
-
-		$attachment_id = media_handle_sideload( $file_array, 0, '', $attachment_args );
-
-		// Check for handle sideload errors.
-	    if ( is_wp_error( $attachment_id ) ) {
-	        @unlink( $file_array['tmp_name'] );
-	        return $response;
-	    }
-
-	    $response['attachment_id'] = $attachment_id;
-		$response['attachment_url']	= wp_get_attachment_url( $attachment_id );
-
-		return $response;
-
+		return $attachment_id;
 	}
 
 	public function sync_user( $user_args, $duplicate_action, $force_update = false ) {
