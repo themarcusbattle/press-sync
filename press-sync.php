@@ -662,7 +662,7 @@ class Press_Sync {
 		$attachment = $wpdb->get_row( "SELECT ID, guid FROM $wpdb->posts WHERE guid LIKE '$image_query_string%'" );
 
 		if ( ! $attachment ) {
-			return $attachment_details();
+			return $attachment_details;
 		}
 
 		$image          = wp_get_attachment_metadata( $attachment->ID );
