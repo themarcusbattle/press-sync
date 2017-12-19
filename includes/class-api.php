@@ -21,9 +21,9 @@ class Press_Sync_API extends WP_REST_Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @since  0.1.0
+	 * @since 0.1.0
 	 *
-	 * @param  WDS_Fordham_Library_Calendar $plugin Main plugin object.
+	 * @param Press_Sync $plugin Main plugin object.
 	 */
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;

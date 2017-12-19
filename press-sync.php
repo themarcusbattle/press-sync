@@ -86,8 +86,9 @@ class Press_Sync {
 	 * @since  0.1.0
 	 */
 	public function plugin_classes() {
-		$this->dashboard 	= new Press_Sync_Dashboard( $this );
-		$this->api 			= new Press_Sync_API( $this );
+		$this->dashboard = new Press_Sync_Dashboard( $this );
+		$this->api       = new Press_Sync_API( $this );
+		$this->cli       = new Press_Sync_CLI( $this );
 	}
 
 	/**
@@ -171,10 +172,12 @@ class Press_Sync {
 	 * Initialize the connection variables
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param string $remote_domain The remote site that we'll be pulling/pushing content from/to.
 	 */
-	public function init_connection() {
-		$this->local_domain = untrailingslashit( home_url() );
-		$this->remote_domain = untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
+	public function init_connection( $remote_domain = '' ) {
+		$this->local_domain  = untrailingslashit( home_url() );
+		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
 	}
 
 	/**
@@ -700,6 +703,64 @@ class Press_Sync {
 		}
 
 		return $approve;
+	}
+
+	/**
+	 * Synchronize any content type.
+	 *
+	 * @param string $content_type The WP object you want to sync.
+	 * @param array  $settings     The Press Sync settings.
+	 */
+	public function sync_content( $content_type = 'post', $settings = array() ) {
+
+		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
+		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
+		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : cmb2_get_option( 'press-sync-options', 'sync_method' );
+		$objects_to_sync   = isset( $settings['objects_to_sync'] ) ? $settings['objects_to_sync'] : cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : cmb2_get_option( 'press-sync-options', 'duplicate_action' );
+		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : cmb2_get_option( 'press-sync-options', 'force_update' );
+
+		$this->init_connection( $remote_domain );
+
+		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
+		$wp_object      = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object      = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
+
+		// Build out the url.
+		$url            = cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
+		$url            = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
+
+		// Prepare the correct sync method.
+		$sync_class     = 'prepare_' . $prepare_object . '_args_to_sync';
+
+		$total_objects  = $this->count_objects_to_sync( $objects_to_sync );
+		$taxonomies     = get_object_taxonomies( $objects_to_sync );
+		$paged          = isset( $_POST['paged'] ) ? (int) esc_attr( $_POST['paged'] ) : 1;
+
+		$objects        = $this->get_objects_to_sync( $objects_to_sync, $paged, $taxonomies );
+		$logs           = array();
+
+		// Prepare each object to be sent to the remote server.
+		foreach ( $objects as $key => $object ) {
+			$objects[ $key ] = $this->$sync_class( $object );
+		}
+
+		// Prepare the remote request args.
+		$args['duplicate_action']  = $duplicate_action;
+		$args['force_update']      = $force_update;
+		$args['objects_to_sync']   = $prepare_object;
+		$args['objects']           = $objects;
+
+		$logs = $this->send_data_to_remote_server( $url, $args );
+
+		return array(
+			'objects_to_sync'         => $wp_object,
+			'total_objects'           => $total_objects,
+			'total_objects_processed' => count( $objects ) ? count( $objects ) * $paged : 5 * $paged,
+			'next_page'               => $paged + 1,
+			'log'                     => $logs,
+		);
 	}
 
 }
