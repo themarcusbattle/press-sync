@@ -716,14 +716,15 @@ class Press_Sync {
 		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
 		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
 		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : cmb2_get_option( 'press-sync-options', 'sync_method' );
-		$objects_to_sync   = isset( $settings['objects_to_sync'] ) ? $settings['objects_to_sync'] : cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$objects_to_sync   = $content_type ? $content_type : cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
 		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : cmb2_get_option( 'press-sync-options', 'duplicate_action' );
 		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : cmb2_get_option( 'press-sync-options', 'force_update' );
 
+		// Initialize the connection credentials.
 		$this->init_connection( $remote_domain );
 
-		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
-		$wp_object      = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$prepare_object = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? 'post' : $objects_to_sync;
+		$wp_object      = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
 		$wp_object      = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url.
