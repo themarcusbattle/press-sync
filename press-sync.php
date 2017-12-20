@@ -257,7 +257,7 @@ class Press_Sync {
 		$offset = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
 
 		$where_clause   = ( $where_clause ) ? ' AND ' . $where_clause : '';
-		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
+		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
 		// Get the results.
