@@ -120,7 +120,7 @@ class Press_Sync {
 		$html = ob_get_contents();
 		ob_end_clean();
 
-		echo esc_html( $html );
+		echo $html;
 
 		return true;
 
