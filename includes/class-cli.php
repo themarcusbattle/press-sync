@@ -44,9 +44,7 @@ class Press_Sync_CLI {
 	 */
 	public function sync_posts( $args, $assoc_args ) {
 
-		WP_CLI::line( 'Started sync of posts.' );
-
-		$response = $this->plugin->sync_content( 'post', $assoc_args );
+		$response = $this->plugin->sync_content( 'post', $assoc_args, true );
 
 		$this->return_response( $response );
 	}
@@ -60,8 +58,6 @@ class Press_Sync_CLI {
 	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key>
 	 */
 	public function sync_media( $args, $assoc_args ) {
-
-		WP_CLI::line( 'Started sync of media.' );
 
 		$response = $this->plugin->sync_content( 'media', $assoc_args );
 
@@ -78,8 +74,6 @@ class Press_Sync_CLI {
 	 */
 	public function sync_pages( $args, $assoc_args ) {
 
-		WP_CLI::line( 'Started sync of pages.' );
-
 		$response = $this->plugin->sync_content( 'page', $assoc_args );
 
 		$this->return_response( $response );
@@ -94,8 +88,6 @@ class Press_Sync_CLI {
 	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key>
 	 */
 	public function sync_users( $args, $assoc_args ) {
-
-		WP_CLI::line( 'Started sync of users.' );
 
 		$response = $this->plugin->sync_content( 'user', $assoc_args );
 
@@ -112,10 +104,12 @@ class Press_Sync_CLI {
 		$total_objects            = isset( $response['total_objects'] ) ? (int) $response['total_objects'] : 0;
 		$total_objects_processed  = isset( $response['total_objects_processed'] ) ? (int) $response['total_objects_processed'] : 0;
 
+		WP_CLI::line( '' ); // Insert a blank line.
+
 		if ( $total_objects === $total_objects_processed ) {
 			WP_CLI::success( 'Successfully synced ' . $total_objects . ' objects.' );
 		} else {
-			WP_CLI::error( 'All of the content didn\'t sync.' );
+			WP_CLI::error( 'There was a porblem. All of the content didn\'t sync.' );
 		}
 	}
 }
