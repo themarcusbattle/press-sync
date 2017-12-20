@@ -239,14 +239,16 @@ class Press_Sync {
 	}
 
 	/**
-	 * Return the posts to sync
+	 * Return the posts to sync.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $objects_to_sync
-	 * @param integer $next_page
-	 * @param array $taxonomies
-	 * @return array posts
+	 * @param string  $objects_to_sync The objects to sync.
+	 * @param integer $next_page       The next page of results.
+	 * @param array   $taxonomies      The related taxonomies for the objects.
+	 * @param string  $where_clause    An SQL Where clause to modify the query to retrieve posts.
+	 *
+	 * @return array  $posts           The posts to return.
 	 */
 	public function get_posts_to_sync( $objects_to_sync, $next_page = 1, $taxonomies, $where_clause = '' ) {
 
@@ -254,11 +256,11 @@ class Press_Sync {
 
 		$offset = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
 
-		$where_clause 	= ( $where_clause ) ? ' AND ' . $where_clause : '';
-		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
-		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
+		$where_clause   = ( $where_clause ) ? ' AND ' . $where_clause : '';
+		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
+		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
-		// Get the results
+		// Get the results.
 		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
 		$posts 		= array();
 
@@ -776,10 +778,10 @@ class Press_Sync {
 		$sync_args['objects_to_sync']   = $prepare_object;
 
 		// Prepare the correct sync method.
-		$sync_class        = 'prepare_' . $prepare_object . '_args_to_sync';
+		$sync_class        = "prepare_{$prepare_object}_args_to_sync";
 		$total_objects     = $this->count_objects_to_sync( $objects_to_sync );
 		$taxonomies        = get_object_taxonomies( $objects_to_sync );
-		$next_page         = isset( $_POST['paged'] ) ? (int) esc_attr( $_POST['paged'] ) : $next_page;
+		$next_page         = isset( $_POST['paged'] ) ? filter_var( $_POST['paged'], FILTER_VALIDATE_INT ) : $next_page;
 		$objects           = $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
 		$logs              = array();
 

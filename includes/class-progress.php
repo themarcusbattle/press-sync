@@ -23,7 +23,7 @@ class Press_Sync_Progress {
 	 */
 	public function __construct( $plugin ) {
 		$this->plugin      = $plugin;
-		$this->cli_enabled = class_exists( 'WP_CLI' ) ? true : false;
+		$this->cli_enabled = class_exists( 'WP_CLI' );
 	}
 
 	/**
