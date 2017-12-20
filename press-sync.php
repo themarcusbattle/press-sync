@@ -1,14 +1,17 @@
 <?php
-/*
-Plugin Name: Press Sync
-Description: The easiest way to synchronize posts, media and users between two WordPress sites
-Version: 0.1.0
-License: GPL
-Author: Marcus Battle
-Author URI: http://marcusbattle.com
-Text Domain: press-sync
-*/
+/**
+ * Plugin Name: Press Sync
+ * Description: The easiest way to synchronize posts, media and users between two WordPress sites
+ * Version: 0.1.0
+ * License: GPL
+ * Author: Marcus Battle
+ * Author URI: http://marcusbattle.com
+ * Text Domain: press-sync
+ */
 
+/**
+ * The Press_Sync class.
+ */
 class Press_Sync {
 
 	/**
@@ -57,10 +60,10 @@ class Press_Sync {
 	 */
 	public function hooks() {
 
-		// Include other files
+		// Include other files.
 		$this->includes();
 
-		// Initialize plugin classes
+		// Initialize plugin classes.
 		$this->plugin_classes();
 
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
@@ -73,7 +76,7 @@ class Press_Sync {
 	 */
 	public function includes() {
 
-		// Load CMB2 support for fields
+		// Load CMB2 support for fields.
 		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
 			require_once( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
 		}
@@ -86,8 +89,10 @@ class Press_Sync {
 	 * @since  0.1.0
 	 */
 	public function plugin_classes() {
-		$this->dashboard 	= new Press_Sync_Dashboard( $this );
-		$this->api 			= new Press_Sync_API( $this );
+		$this->dashboard = new Press_Sync_Dashboard( $this );
+		$this->api       = new Press_Sync_API( $this );
+		$this->cli       = new Press_Sync_CLI( $this );
+		$this->progress  = new Press_Sync_Progress( $this );
 	}
 
 	/**
@@ -171,10 +176,12 @@ class Press_Sync {
 	 * Initialize the connection variables
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param string $remote_domain The remote site that we'll be pulling/pushing content from/to.
 	 */
-	public function init_connection() {
-		$this->local_domain = untrailingslashit( home_url() );
-		$this->remote_domain = untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
+	public function init_connection( $remote_domain = '' ) {
+		$this->local_domain  = untrailingslashit( home_url() );
+		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
 	}
 
 	/**
@@ -215,16 +222,16 @@ class Press_Sync {
 	 * @since 0.1.0
 	 *
 	 * @param string $objects_to_sync
-	 * @param integer $paged
+	 * @param integer $next_page
 	 * @param array $taxonomies
 	 * @return array $objects
 	 */
-	public function get_objects_to_sync( $objects_to_sync, $paged = 1, $taxonomies, $where_clause = '' ) {
+	public function get_objects_to_sync( $objects_to_sync, $next_page = 1, $taxonomies, $where_clause = '' ) {
 
 		if ( 'user' == $objects_to_sync ) {
-			$objects = $this->get_users_to_sync( $paged );
+			$objects = $this->get_users_to_sync( $next_page );
 		} else {
-			$objects = $this->get_posts_to_sync( $objects_to_sync, $paged, $taxonomies, $where_clause );
+			$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
 		}
 
 		return $objects;
@@ -232,26 +239,28 @@ class Press_Sync {
 	}
 
 	/**
-	 * Return the posts to sync
+	 * Return the posts to sync.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $objects_to_sync
-	 * @param integer $paged
-	 * @param array $taxonomies
-	 * @return array posts
+	 * @param string  $objects_to_sync The objects to sync.
+	 * @param integer $next_page       The next page of results.
+	 * @param array   $taxonomies      The related taxonomies for the objects.
+	 * @param string  $where_clause    An SQL Where clause to modify the query to retrieve posts.
+	 *
+	 * @return array  $posts           The posts to return.
 	 */
-	public function get_posts_to_sync( $objects_to_sync, $paged = 1, $taxonomies, $where_clause = '' ) {
+	public function get_posts_to_sync( $objects_to_sync, $next_page = 1, $taxonomies, $where_clause = '' ) {
 
 		global $wpdb;
 
-		$offset = ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0;
+		$offset = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
 
-		$where_clause 	= ( $where_clause ) ? ' AND ' . $where_clause : '';
-		$sql 			= "SELECT * FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') $where_clause ORDER BY post_date DESC LIMIT 5 OFFSET %d";
-		$prepared_sql 	= $wpdb->prepare( $sql, $objects_to_sync, $offset );
+		$where_clause   = ( $where_clause ) ? ' AND ' . $where_clause : '';
+		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
+		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
-		// Get the results
+		// Get the results.
 		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
 		$posts 		= array();
 
@@ -280,15 +289,15 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $paged
+	 * @param int $next_page
 	 * @return WP_Users
 	 */
-	public function get_users_to_sync( $paged = 1 ) {
+	public function get_users_to_sync( $next_page = 1 ) {
 
 		$query_args = array(
 			'number'	=> 5,
-			'offset'	=> ( $paged > 1 ) ? ( $paged - 1 ) * 5 : 0,
-			'paged'		=> $paged
+			'offset'	=> ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0,
+			'paged'		=> $next_page
 		);
 
 		$query = new WP_User_Query( $query_args );
@@ -700,6 +709,97 @@ class Press_Sync {
 		}
 
 		return $approve;
+	}
+
+	/**
+	 * Synchronize any content type.
+	 *
+	 * @param string  $content_type The WP object you want to sync.
+	 * @param array   $settings     The Press Sync settings.
+	 * @param boolean $cli_enabled  Flag used to display WP CLI messages.
+	 */
+	public function sync_content( $content_type = 'post', $settings = array(), $cli_enabled = false ) {
+
+		$next_page = 1;
+		$do_run    = true;
+
+		$this->progress->start( 'Syncing ' . $content_type . 's', $this->count_objects_to_sync( $content_type ) );
+
+		while ( $do_run ) {
+
+			$response                = $this->sync_batch( $content_type, $settings, $next_page );
+			$total_objects           = isset( $response['total_objects'] ) ? (int) $response['total_objects'] : 0;
+			$total_objects_processed = isset( $response['total_objects_processed'] ) ? (int) $response['total_objects_processed'] : 0;
+			$next_page               = isset( $response['next_page'] ) ? $response['next_page'] : 0;
+
+			if ( $total_objects === $total_objects_processed ) {
+				$do_run = false;
+			}
+
+			$this->progress->tick();
+		}
+
+		$this->progress->finish();
+
+		return $response;
+	}
+
+	/**
+	 * Synchronize a batch of records.
+	 *
+	 * @param string  $content_type The WP object you want to sync.
+	 * @param array   $settings     The Press Sync settings.
+	 * @param integer $next_page    Pagination counter for bath queries.
+	 */
+	public function sync_batch( $content_type = 'post', $settings = array(), $next_page = 1 ) {
+
+		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
+		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
+		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : cmb2_get_option( 'press-sync-options', 'sync_method' );
+		$objects_to_sync   = $content_type ? $content_type : cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : cmb2_get_option( 'press-sync-options', 'duplicate_action' );
+		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : cmb2_get_option( 'press-sync-options', 'force_update' );
+
+		// Initialize the connection credentials.
+		$this->init_connection( $remote_domain );
+
+		$prepare_object    = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? 'post' : $objects_to_sync;
+		$wp_object         = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
+
+		// Build out the url.
+		$url               = cmb2_get_option( 'press-sync-options', 'connected_server' );
+		$press_sync_key    = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
+		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
+
+		// Prepare the remote request args.
+		$sync_args['duplicate_action']  = $duplicate_action;
+		$sync_args['force_update']      = $force_update;
+		$sync_args['objects_to_sync']   = $prepare_object;
+
+		// Prepare the correct sync method.
+		$sync_class        = "prepare_{$prepare_object}_args_to_sync";
+		$total_objects     = $this->count_objects_to_sync( $objects_to_sync );
+		$taxonomies        = get_object_taxonomies( $objects_to_sync );
+		$next_page         = isset( $_POST['paged'] ) ? filter_var( $_POST['paged'], FILTER_VALIDATE_INT ) : $next_page;
+		$objects           = $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
+		$logs              = array();
+
+		// Prepare each object to be sent to the remote server.
+		foreach ( $objects as $key => $object ) {
+			$sync_args['objects'][ $key ] = $this->$sync_class( $object );
+		}
+
+		$logs = $this->send_data_to_remote_server( $url, $sync_args );
+
+		return array(
+			'objects_to_sync'         => $wp_object,
+			'total_objects'           => $total_objects,
+			'total_objects_processed' => ( $next_page * 5 ) - ( 5 - count( $objects ) ),
+			'next_page'               => $next_page + 1,
+			'log'                     => $logs,
+		);
+
 	}
 
 }
