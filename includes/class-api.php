@@ -139,7 +139,7 @@ class Press_Sync_API extends WP_REST_Controller {
 	}
 
 	/**
-	 * Sync all of the object received from the local server
+	 * Sync all of the object received from the local server.
 	 *
 	 * @since 0.1.0
 	 *
@@ -148,24 +148,24 @@ class Press_Sync_API extends WP_REST_Controller {
 	 */
 	public function sync_objects( $request ) {
 
-		$objects_to_sync 	= $request->get_param('objects_to_sync');
-		$objects 			= $request->get_param('objects');
-		$duplicate_action 	= ( $request->get_param('duplicate_action') ) ? $request->get_param('duplicate_action') : 'skip';
-		$force_update 		= $request->get_param('force_update');
+		$objects_to_sync   = $request->get_param( 'objects_to_sync' );
+		$objects           = $request->get_param( 'objects' );
+		$duplicate_action  = ( $request->get_param( 'duplicate_action' ) ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$force_update      = $request->get_param( 'force_update' );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
-				'debug'	=> __( 'Not sure which WP object you want to sync', 'press-sync' )
+				'debug'	=> __( 'Not sure which WP object you want to sync.', 'press-sync' ),
 			) );
 		}
 
 		if ( ! $objects ) {
 			wp_send_json_error( array(
-				'debug'	=> __( 'No data available to sync', 'press-sync' )
+				'debug'	=> __( 'No data available to sync.', 'press-sync' ),
 			) );
 		}
 
-		// If the method is to pull then how do
+		// If the method is to pull then how do.
 		if ( 'GET' == $request->get_method() ) {
 
 			$where_clause = "ID IN ('" . implode( "''", $objects) . "')";
@@ -174,37 +174,39 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		}
 
-		// Speed up bulk queries by pausing MySQL commits
+		// Speed up bulk queries by pausing MySQL commits.
 		global $wpdb;
 
 		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
-		wp_defer_term_counting(true);
-		wp_defer_comment_counting(true);
+		wp_defer_term_counting( true );
+		wp_defer_comment_counting( true );
 
 		$responses = array();
 
 		foreach ( $objects as $object ) {
-			$sync_method	= "sync_{$objects_to_sync}";
-			$responses[] 	= $this->$sync_method( $object, $duplicate_action, $force_update );
+			$sync_method = "sync_{$objects_to_sync}";
+			$responses[] = $this->$sync_method( $object, $duplicate_action, $force_update );
 		}
 
-		// Commit all recent updates
+		// Commit all recent updates.
 		$wpdb->query( 'COMMIT;' );
 		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
-		wp_defer_term_counting(false);
-		wp_defer_comment_counting(false);
+		wp_defer_term_counting( false );
+		wp_defer_comment_counting( false );
 
 		return $responses;
 
 	}
 
 	/**
-	 * Syncs a post of any type
+	 * Syncs a post of any type.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $post_args
-	 * @param string $duplicate_action
+	 * @param array   $post_args        The WP Posts to sync.
+	 * @param string  $duplicate_action A flag to direct whether or not content is duplicated.
+	 * @param boolean $force_update     A flag to overwrite existing content.
+	 *
 	 * @return array
 	 */
 	public function sync_post( $post_args, $duplicate_action, $force_update = false ) {
@@ -398,7 +400,7 @@ class Press_Sync_API extends WP_REST_Controller {
 
 		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
 
-		// Check to see if the user exists
+		// Check to see if the user exists.
 		$user = get_user_by( 'login', $username );
 
 		if ( ! $user ) {
@@ -415,20 +417,45 @@ class Press_Sync_API extends WP_REST_Controller {
 			$user_id = $user->ID;
 		}
 
-		// Update the meta
+		// Update the meta.
 		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
 			update_user_meta( $user_id, $usermeta_key, $usermeta_value );
 		}
 
-		// Asign user role
+		// Asign user role.
 		$user->add_role( $user_args['role'] );
 
-		// Prepare response
+		// Prepare response.
 		$response['user_id'] = $user_id;
 		$response['blog_id'] = get_current_blog_id();
 
 		return $response;
 
+	}
+
+	/**
+	 * Syncs a WP Option.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param array   $option_args      The WP Options to sync.
+	 * @param string  $duplicate_action A flag to direct whether or not content is duplicated.
+	 * @param boolean $force_update     A flag to overwrite existing content.
+	 *
+	 * @return array
+	 */
+	public function sync_options( $option_args, $duplicate_action, $force_update = false ) {
+
+		$option_name  = isset( $option_args['option_name'] ) ? $option_args['option_name'] : '';
+		$option_value = isset( $option_args['option_value'] ) ? $option_args['option_value'] : '';
+
+		if ( empty( $option_value ) || empty( $option_name ) ) {
+			return false;
+		}
+
+		$response['option_id'] = update_option( $option_name, $option_value );
+
+		return $response;
 	}
 
 	public function get_synced_post( $post_args ) {
