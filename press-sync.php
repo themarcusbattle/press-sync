@@ -367,7 +367,7 @@ class Press_Sync {
 		$format_string = implode( ', ', $placeholders );
 		$prepared_sql  = "SELECT * FROM {$wpdb->options} WHERE option_name IN ({$format_string})";
 		$sql           = $wpdb->prepare( $prepared_sql, $this->options );
-		$options       = $wpdb->get_results( $sql );
+		$options       = $wpdb->get_results( $sql, ARRAY_A );
 
 		return $options;
 	}
