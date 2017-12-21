@@ -205,13 +205,21 @@ class Press_Sync_Dashboard {
 	    <?php
 	}
 
-	public function objects_to_sync( $objects = array() ) {
+	/**
+	 * Prepares a list of WP Objects to sync.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array $objects A list of WP objects.
+	 */
+	public function objects_to_sync() {
 
 		$objects = array(
-			'attachment' 	=> 'Media',
-			'page' 			=> 'Pages',
-			'post' 			=> 'Posts',
-			'user'			=> 'Users',
+			'attachment' => __( 'Media', 'press-sync' ),
+			'page'       => __( 'Pages', 'press-sync' ),
+			'post'       => __( 'Posts', 'press-sync' ),
+			'user'       => __( 'Users', 'press-sync' ),
+			'options'    => __( 'Options', 'press-sync' ),
 		);
 
 		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
@@ -223,7 +231,6 @@ class Press_Sync_Dashboard {
 			foreach ( $custom_post_types as $cpt ) {
 				$objects[ $cpt->name ] = $cpt->label;
 			}
-
 		}
 
 		$objects = apply_filters( 'press_sync_objects_to_sync', $objects );

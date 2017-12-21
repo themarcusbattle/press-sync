@@ -32,6 +32,7 @@ class Press_Sync_CLI {
 		WP_CLI::add_command( 'press-sync media', array( $this, 'sync_media' ) );
 		WP_CLI::add_command( 'press-sync pages', array( $this, 'sync_pages' ) );
 		WP_CLI::add_command( 'press-sync users', array( $this, 'sync_users' ) );
+		WP_CLI::add_command( 'press-sync options', array( $this, 'sync_options' ) );
 	}
 
 	/**
@@ -90,6 +91,23 @@ class Press_Sync_CLI {
 	public function sync_users( $args, $assoc_args ) {
 
 		$response = $this->plugin->sync_content( 'user', $assoc_args );
+
+		$this->return_response( $response );
+	}
+
+	/**
+	 * Synchronize users.
+	 *
+	 * @param array $args       The arguments.
+	 * @param array $assoc_args The associative arugments.
+	 *
+	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> --options=<options>
+	 */
+	public function sync_options( $args, $assoc_args ) {
+
+		$this->plugin->prepare_options( $assoc_args['options'] );
+
+		$response = $this->plugin->sync_content( 'options', $assoc_args );
 
 		$this->return_response( $response );
 	}
