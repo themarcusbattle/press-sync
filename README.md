@@ -4,7 +4,7 @@ An easy and straightforward way to syncrchonize users, posts and more between mu
 
 Uses the WP-API. Custom Post Type Support. Currently supports push only. Alpha Version. Use at own risk.
 
-For support, email plugins@marcusbattle.com
+For support, email marcus@marcusbattle.com
 
 ## How to Install/Use
 
@@ -21,3 +21,8 @@ For support, email plugins@marcusbattle.com
 - Categories, Tags and Custom Taxonomies
 - Post & User Meta
 - Posts 2 Posts Relationships
+
+## Changelog.
+
+v0.1.0 - The initial commit and development of Press Sync
+v0.2.0 - Addition of CLI support
