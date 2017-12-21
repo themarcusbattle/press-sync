@@ -24,5 +24,6 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
-v0.1.0 - The initial commit and development of Press Sync
-v0.2.0 - Addition of CLI support
+- v0.1.0 - The initial commit and development of Press Sync.
+- v0.2.0 - Addition of CLI support.
+- v0.3.0 - Added WP Options migrations to the plugin.
