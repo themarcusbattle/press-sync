@@ -217,21 +217,31 @@ class Press_Sync {
 	}
 
 	/**
-	 * Return the objects to be synced to the remote server
+	 * Return the objects to be synced to the remote server.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $objects_to_sync
-	 * @param integer $next_page
-	 * @param array $taxonomies
-	 * @return array $objects
+	 * @param string  $objects_to_sync The WP object to sync.
+	 * @param integer $next_page       The pagination number for the next request.
+	 * @param array   $taxonomies      The related taxonomies to the WP object.
+	 *
+	 * @return array $objects          The queried objects to sync.
 	 */
 	public function get_objects_to_sync( $objects_to_sync, $next_page = 1, $taxonomies, $where_clause = '' ) {
 
-		if ( 'user' == $objects_to_sync ) {
-			$objects = $this->get_users_to_sync( $next_page );
-		} else {
-			$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
+		switch ( $objects_to_sync ) {
+
+			case 'user':
+				$objects = $this->get_users_to_sync( $next_page );
+				break;
+
+			case 'options':
+				$objects = $this->get_options_to_sync( $next_page );
+				break;
+
+			default:
+				$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
+				break;
 		}
 
 		return $objects;
@@ -285,11 +295,12 @@ class Press_Sync {
 	}
 
 	/**
-	 * Returns the users to sync
+	 * Returns the users to sync.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $next_page
+	 * @param int $next_page The next page of results.
+	 *
 	 * @return WP_Users
 	 */
 	public function get_users_to_sync( $next_page = 1 ) {
@@ -337,6 +348,31 @@ class Press_Sync {
 	}
 
 	/**
+	 * Returns the options to sync.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param int $next_page The next page of results.
+	 *
+	 * @return array $options The results.
+	 */
+	public function get_options_to_sync( $next_page = 1 ) {
+
+		global $wpdb;
+
+		$options       = array();
+
+		// Fill a set of string placeholders.
+		$placeholders  = array_fill( 0, count( $this->options ), '%s' );
+		$format_string = implode( ', ', $placeholders );
+		$prepared_sql  = "SELECT * FROM {$wpdb->options} WHERE option_name IN ({$format_string})";
+		$sql           = $wpdb->prepare( $prepared_sql, $this->options );
+		$options       = $wpdb->get_results( $sql, ARRAY_A );
+
+		return $options;
+	}
+
+	/**
 	 * Return the taxonomies (categories, tags and custom taxonomies) associated with the WP Object provided
 	 *
 	 * @since 0.1.0
@@ -361,18 +397,23 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $objects_to_sync
+	 * @param string       $objects_to_sync The WP objects to sync.
+	 *
 	 * @return integer $total_objects
 	 */
 	public function count_objects_to_sync( $objects_to_sync ) {
 
-		if ( 'user' == $objects_to_sync) {
+		if ( 'user' == $objects_to_sync ) {
 			return $this->count_users_to_sync();
+		}
+
+		if ( 'options' == $objects_to_sync ) {
+			return $this->count_options_to_sync();
 		}
 
 		global $wpdb;
 
-		$sql = "SELECT count(*) FROM $wpdb->posts WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')";
+		$sql = "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')";
 		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync );
 
 		$total_objects = $wpdb->get_var( $prepared_sql );
@@ -391,6 +432,17 @@ class Press_Sync {
 	public function count_users_to_sync() {
 		$result = count_users();
 		return $result['total_users'];
+	}
+
+	/**
+	 * Get the total number of options to sync to remove server.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return integer
+	 */
+	public function count_options_to_sync() {
+		return count( $this->options );
 	}
 
 	/**
@@ -430,6 +482,19 @@ class Press_Sync {
 
 		return $object_args;
 
+	}
+
+	/**
+	 * Preare the WP Options args to sync to the remote server.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param array  $object_args The WP options arguments
+	 *
+	 * @return array $object_args
+	 */
+	public function prepare_options_args_to_sync( $object_args = array() ) {
+		return $object_args;
 	}
 
 	/**
@@ -712,7 +777,7 @@ class Press_Sync {
 	}
 
 	/**
-	 * Synchronize any content type.
+	 * Perform a full synchronization of the specified content type.
 	 *
 	 * @param string  $content_type The WP object you want to sync.
 	 * @param array   $settings     The Press Sync settings.
@@ -720,8 +785,9 @@ class Press_Sync {
 	 */
 	public function sync_content( $content_type = 'post', $settings = array(), $cli_enabled = false ) {
 
-		$next_page = 1;
 		$do_run    = true;
+		$settings  = $this->parse_sync_settings( $settings );
+		$next_page = 1;
 
 		$this->progress->start( 'Syncing ' . $content_type . 's', $this->count_objects_to_sync( $content_type ) );
 
@@ -745,7 +811,7 @@ class Press_Sync {
 	}
 
 	/**
-	 * Synchronize a batch of records.
+	 * Perform a batch synchronization of the specified content type.
 	 *
 	 * @param string  $content_type The WP object you want to sync.
 	 * @param array   $settings     The Press Sync settings.
@@ -763,7 +829,7 @@ class Press_Sync {
 		// Initialize the connection credentials.
 		$this->init_connection( $remote_domain );
 
-		$prepare_object    = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? 'post' : $objects_to_sync;
+		$prepare_object    = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'options' ), true ) ? 'post' : $objects_to_sync;
 		$wp_object         = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
 		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
@@ -800,6 +866,22 @@ class Press_Sync {
 			'log'                     => $logs,
 		);
 
+	}
+
+	public function parse_sync_settings( $settings = array() ) {
+
+		return wp_parse_args( $settings, array(
+			'options' => ''
+		) );
+	}
+
+	/**
+	 * Converts the WP options to an array.
+	 *
+	 * @param string $options The WP options to be queried.
+	 */
+	public function prepare_options( $options = '' ) {
+		$this->options = array_filter( explode( ',', $options ) );
 	}
 
 }

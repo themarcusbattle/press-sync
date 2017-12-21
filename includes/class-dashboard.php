@@ -134,6 +134,13 @@ class Press_Sync_Dashboard {
 		) );
 
 		$cmb_options->add_field( array(
+			'name'    => __( 'Options', 'press-sync' ),
+			'id'      => 'options',
+			'type'    => 'text',
+			'desc'    => __( 'A comma separated list of options from the WP options table you want to sync to the remote domain.', 'press-sync' ),
+		) );
+
+		$cmb_options->add_field( array(
 			'name'       => __( 'How do you want to handle non-synced duplicates?', 'press-sync' ),
 			'id'         => 'duplicate_action',
 			'type'       => 'select',
@@ -205,13 +212,21 @@ class Press_Sync_Dashboard {
 	    <?php
 	}
 
-	public function objects_to_sync( $objects = array() ) {
+	/**
+	 * Prepares a list of WP Objects to sync.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array $objects A list of WP objects.
+	 */
+	public function objects_to_sync() {
 
 		$objects = array(
-			'attachment' 	=> 'Media',
-			'page' 			=> 'Pages',
-			'post' 			=> 'Posts',
-			'user'			=> 'Users',
+			'attachment' => __( 'Media', 'press-sync' ),
+			'page'       => __( 'Pages', 'press-sync' ),
+			'post'       => __( 'Posts', 'press-sync' ),
+			'user'       => __( 'Users', 'press-sync' ),
+			'options'    => __( 'Options', 'press-sync' ),
 		);
 
 		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
@@ -223,7 +238,6 @@ class Press_Sync_Dashboard {
 			foreach ( $custom_post_types as $cpt ) {
 				$objects[ $cpt->name ] = $cpt->label;
 			}
-
 		}
 
 		$objects = apply_filters( 'press_sync_objects_to_sync', $objects );
@@ -261,17 +275,18 @@ class Press_Sync_Dashboard {
 	 */
 	public function get_objects_to_sync_count_via_ajax() {
 
-		$objects_to_sync 	= cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
-		$prepare_object 	= ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? 'post' : $objects_to_sync;
+		$this->plugin->prepare_options( cmb2_get_option( 'press-sync-options', 'options' ) );
 
-		$total_objects 	= $this->plugin->count_objects_to_sync( $objects_to_sync );
+		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+		$prepare_object  = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'options' ) ) ? 'post' : $objects_to_sync;
+		$total_objects   = $this->plugin->count_objects_to_sync( $objects_to_sync );
 
-		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
-		$wp_object = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
+		$wp_object       = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$wp_object       = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		wp_send_json_success( array(
-			'objects_to_sync'	=> $wp_object,
-			'total_objects' 	=> $total_objects
+			'objects_to_sync'  => $wp_object,
+			'total_objects'    => $total_objects,
 		) );
 
 	}
@@ -284,7 +299,12 @@ class Press_Sync_Dashboard {
 	 * @return JSON
 	 */
 	public function sync_wp_data_via_ajax() {
-		wp_send_json_success( $this->plugin->sync_batch() );
+
+		$this->plugin->prepare_options( cmb2_get_option( 'press-sync-options', 'options' ) );
+
+		$objects_to_sync = cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
+
+		wp_send_json_success( $this->plugin->sync_batch( $objects_to_sync ) );
 	}
 
 }
