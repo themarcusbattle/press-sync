@@ -438,13 +438,11 @@ class Press_Sync_API extends WP_REST_Controller {
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param array   $option_args      The WP Options to sync.
-	 * @param string  $duplicate_action A flag to direct whether or not content is duplicated.
-	 * @param boolean $force_update     A flag to overwrite existing content.
+	 * @param  array $option_args The WP Options to sync.
 	 *
 	 * @return array
 	 */
-	public function sync_options( $option_args, $duplicate_action, $force_update = false ) {
+	public function sync_options( $option_args ) {
 
 		$option_name  = isset( $option_args['option_name'] ) ? $option_args['option_name'] : '';
 		$option_value = isset( $option_args['option_value'] ) ? $option_args['option_value'] : '';
