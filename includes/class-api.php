@@ -451,7 +451,7 @@ class Press_Sync_API extends WP_REST_Controller {
 			return false;
 		}
 
-		$autoload = isset( $option_args['option_autoload'] ) ? $option_args['option_autoload'] : true;
+		$autoload = isset( $option_args['autoload'] ) ? $option_args['autoload'] : true;
 		$response['option_id'] = update_option( $option_name, $option_value, (bool) $autoload );
 
 		return $response;
