@@ -60,27 +60,10 @@ class Press_Sync {
 	 */
 	public function hooks() {
 
-		// Include other files.
-		$this->includes();
-
 		// Initialize plugin classes.
 		$this->plugin_classes();
 
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
-	}
-
-	/**
-	 * Files to be loaded when the base plugin class loads.
-	 *
-	 * @since 0.1.0
-	 */
-	public function includes() {
-
-		// Load CMB2 support for fields.
-		if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'includes/third-party/CMB2/init.php' );
-		}
-
 	}
 
 	/**
@@ -96,18 +79,19 @@ class Press_Sync {
 	}
 
 	/**
-	 * Includes a page for display in the WP Admin
+	 * Includes a page for display in the WP Admin.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $filename
+	 * @param string $filename Tge filename of the page to display.
+	 *
 	 * @return boolean
 	 */
 	public function include_page( $filename ) {
 
 		$filename_parts = explode( '/', $filename );
-		$controller 	= isset( $filename_parts[0] ) ? $filename_parts[0] : '';
-		$file			= isset( $filename_parts[1] ) ? $filename_parts[1] : $controller;
+		$controller     = isset( $filename_parts[0] ) ? $filename_parts[0] : '';
+		$file           = isset( $filename_parts[1] ) ? $filename_parts[1] : $controller;
 
 		$filename = plugin_dir_path( __FILE__ ) . "views/{$controller}/html-" . $file . '.php';
 
@@ -131,8 +115,9 @@ class Press_Sync {
 	 *
 	 * @since  0.1.0
 	 *
-	 * @param  	string $filename Name of the file to be included.
-	 * @return 	boolean	Result of include call.
+	 * @param string $filename Name of the file to be included.
+	 *
+	 * @return boolean Result of include call.
 	 */
 	public static function include_file( $filename ) {
 
@@ -150,8 +135,9 @@ class Press_Sync {
 	 *
 	 * @since  0.1.0
 	 *
-	 * @param  	string	$path	(optional) appended path.
-	 * @return	string	Directory and path.
+	 * @param string $path (optional) appended path.
+	 *
+	 * @return string Directory and path.
 	 */
 	public static function dir( $path = '' ) {
 		static $dir;
@@ -164,7 +150,8 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $option
+	 * @param string $option The requested Press Sync option.
+	 *
 	 * @return string
 	 */
 	public function press_sync_option( $option ) {
@@ -181,32 +168,33 @@ class Press_Sync {
 	 */
 	public function init_connection( $remote_domain = '' ) {
 		$this->local_domain  = untrailingslashit( home_url() );
-		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( cmb2_get_option( 'press-sync-options', 'connected_server' ) );
+		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'remote_domain' ) );
 	}
 
 	/**
-	 * Checks the connection to the remote server and returns the connection status
+	 * Checks the connection to the remote site and returns the connection status.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param 	string 	$url
-	 * @return 	boolean
+	 * @param string $url The url of the remote site.
+	 *
+	 * @return boolean
 	 */
 	public function check_connection( $url = '' ) {
 
-		$url = ( $url ) ? $url : cmb2_get_option( 'press-sync-options', 'connected_server' );
-		$press_sync_key = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
+		$url            = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'remote_domain' ) );
+		$press_sync_key = get_option( 'remote_press_sync_key' );
 
 		$remote_get_args = array(
-			'timeout'	=> 30
+			'timeout' => 30,
 		);
 
-		$url .= "wp-json/press-sync/v1/status?press_sync_key=$press_sync_key";
+		$url .= "wp-json/press-sync/v1/status?press_sync_key={$press_sync_key}";
 
 		$response = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 
-		if ( 200 == $response_code ) {
+		if ( 200 === $response_code ) {
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 			return isset( $response_body['success'] ) ? $response_body['success'] : false;
@@ -224,6 +212,7 @@ class Press_Sync {
 	 * @param string  $objects_to_sync The WP object to sync.
 	 * @param integer $next_page       The pagination number for the next request.
 	 * @param array   $taxonomies      The related taxonomies to the WP object.
+	 * @param string  $where_clause    An SQL Where clause to modify the query to retrieve objects.
 	 *
 	 * @return array $objects          The queried objects to sync.
 	 */
@@ -271,8 +260,8 @@ class Press_Sync {
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
 		// Get the results.
-		$results 	= $wpdb->get_results( $prepared_sql, ARRAY_A );
-		$posts 		= array();
+		$results = $wpdb->get_results( $prepared_sql, ARRAY_A );
+		$posts   = array();
 
 		if ( $results ) {
 
@@ -287,7 +276,6 @@ class Press_Sync {
 				array_push( $posts, $object );
 
 			}
-
 		}
 
 		return $posts;
@@ -306,24 +294,24 @@ class Press_Sync {
 	public function get_users_to_sync( $next_page = 1 ) {
 
 		$query_args = array(
-			'number'	=> 5,
-			'offset'	=> ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0,
-			'paged'		=> $next_page
+			'number' => 5,
+			'offset' => ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0,
+			'paged'  => $next_page,
 		);
 
 		$query = new WP_User_Query( $query_args );
 
-		$results 	= $query->get_results();
-		$users 		= array();
+		$results = $query->get_results();
+		$users   = array();
 
 		if ( $results ) {
 
 			foreach ( $results as $user ) {
 
-				// Get user ro;e
+				// Get user role.
 				$role = $user->roles[0];
 
-				// Get user data
+				// Get user data.
 				$user = (array) $user->data;
 				$user_meta = get_user_meta( $user['ID'] );
 
@@ -340,7 +328,6 @@ class Press_Sync {
 				array_push( $users, $user );
 
 			}
-
 		}
 
 		return $users;
@@ -377,8 +364,9 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer $object_id
-	 * @param WP_Taxonomy $taxonomies
+	 * @param integer     $object_id  The ID of the WP object.
+	 * @param WP_Taxonomy $taxonomies The related WP taxonomies.
+	 *
 	 * @return array $taxonomies
 	 */
 	public function get_relationships( $object_id, $taxonomies ) {
@@ -397,7 +385,7 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string       $objects_to_sync The WP objects to sync.
+	 * @param string $objects_to_sync The WP objects to sync.
 	 *
 	 * @return integer $total_objects
 	 */
@@ -446,34 +434,35 @@ class Press_Sync {
 	}
 
 	/**
-	 * Preare the WP Post args to sync to the remote server
+	 * Preare the WP Post args to sync to the remote site.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $object_args
+	 * @param array $object_args The WP Post arguments to send to the remote site.
+	 *
 	 * @return array $object_args
 	 */
 	public function prepare_post_args_to_sync( $object_args ) {
 
 		foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
- 			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
+			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
 		}
 
 		$object_args = apply_filters( 'press_sync_prepare_post_args_to_sync', $object_args );
 
 		$object_args['embedded_media'] = $this->get_embedded_media( $object_args['post_content'] );
 
-		// Send Featured image information along to be imported
+		// Send Featured image information along to be imported.
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 
-		// Get the comments for the post
-		$ignore_comments = cmb2_get_option( 'press-sync-options', 'ignore_comments' );
+		// Get the comments for the post.
+		$ignore_comments = get_option( 'ignore_comments' );
 
 		if ( $object_args['comment_count'] && ! $ignore_comments ) {
 			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
 		}
 
-		// Look for any P2P connections
+		// Look for any P2P connections.
 		if ( class_exists('P2P_Autoload') ) {
 			$object_args['p2p_connections'] = $this->get_p2p_connections( $object_args['ID'] );
 		}
@@ -821,10 +810,10 @@ class Press_Sync {
 
 		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
 		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
-		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : cmb2_get_option( 'press-sync-options', 'sync_method' );
-		$objects_to_sync   = $content_type ? $content_type : cmb2_get_option( 'press-sync-options', 'objects_to_sync' );
-		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : cmb2_get_option( 'press-sync-options', 'duplicate_action' );
-		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : cmb2_get_option( 'press-sync-options', 'force_update' );
+		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'sync_method' );
+		$objects_to_sync   = $content_type ? $content_type : get_option( 'objects_to_sync' );
+		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'duplicate_action' );
+		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'force_update' );
 
 		// Initialize the connection credentials.
 		$this->init_connection( $remote_domain );
@@ -834,8 +823,8 @@ class Press_Sync {
 		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url.
-		$url               = cmb2_get_option( 'press-sync-options', 'connected_server' );
-		$press_sync_key    = cmb2_get_option( 'press-sync-options', 'remote_press_sync_key' );
+		$url               = get_option( 'remote_domain' );
+		$press_sync_key    = get_option( 'remote_press_sync_key' );
 		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
 
 		// Prepare the remote request args.
@@ -884,6 +873,39 @@ class Press_Sync {
 		$this->options = array_filter( explode( ',', $options ) );
 	}
 
+	/**
+	 * Prepares a list of WP Objects to sync.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array $objects A list of WP objects.
+	 */
+	public function objects_to_sync() {
+
+		$objects = array(
+			'attachment' => __( 'Media', 'press-sync' ),
+			'page'       => __( 'Pages', 'press-sync' ),
+			'post'       => __( 'Posts', 'press-sync' ),
+			'user'       => __( 'Users', 'press-sync' ),
+			'options'    => __( 'Options', 'press-sync' ),
+		);
+
+		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
+
+		if ( $custom_post_types ) {
+
+			$objects[] = '-- Custom Post Types --';
+
+			foreach ( $custom_post_types as $cpt ) {
+				$objects[ $cpt->name ] = $cpt->label;
+			}
+		}
+
+		$objects = apply_filters( 'press_sync_objects_to_sync', $objects );
+
+		return $objects;
+
+	}
 }
 
 add_action( 'plugins_loaded', array( Press_Sync::init(), 'hooks' ), 10, 1 );
