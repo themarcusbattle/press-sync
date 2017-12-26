@@ -23,7 +23,7 @@ class Press_Sync {
 	protected static $single_instance = null;
 
 	/**
-	 * Domain of local server
+	 * Domain of local site
 	 *
 	 * @var string
 	 * @since  0.1.0
@@ -31,7 +31,7 @@ class Press_Sync {
 	public $local_domain = null;
 
 	/**
-	 * Domain of remote server
+	 * Domain of remote site
 	 *
 	 * @var string
 	 * @since  0.1.0
@@ -45,7 +45,7 @@ class Press_Sync {
 	 */
 	static function init() {
 
-		if ( self::$single_instance === null ) {
+		if ( null === self::$single_instance ) {
 			self::$single_instance = new self();
 		}
 
@@ -205,7 +205,7 @@ class Press_Sync {
 	}
 
 	/**
-	 * Return the objects to be synced to the remote server.
+	 * Return the objects to be synced to the remote site.
 	 *
 	 * @since 0.1.0
 	 *
@@ -267,11 +267,11 @@ class Press_Sync {
 
 			foreach ( $results as $object ) {
 
-				$object['tax_input'] 							= $this->get_relationships( $object['ID'], $taxonomies );
-				$object['meta_input'] 							= get_post_meta( $object['ID'] );
-				$object['meta_input']['press_sync_post_id'] 	= $object['ID'];
-				$object['meta_input']['press_sync_source']		= home_url();
-				$object['meta_input']['press_sync_gmt_offset'] 	= get_option('gmt_offset');
+				$object['tax_input']                            = $this->get_relationships( $object['ID'], $taxonomies );
+				$object['meta_input']                           = get_post_meta( $object['ID'] );
+				$object['meta_input']['press_sync_post_id']     = $object['ID'];
+				$object['meta_input']['press_sync_source']      = home_url();
+				$object['meta_input']['press_sync_gmt_offset']  = get_option( 'gmt_offset' );
 
 				array_push( $posts, $object );
 
@@ -381,7 +381,7 @@ class Press_Sync {
 	}
 
 	/**
-	 * Get the total number of WP objects to sync to remote server
+	 * Get the total number of WP objects to sync to remote site
 	 *
 	 * @since 0.1.0
 	 *
@@ -391,19 +391,17 @@ class Press_Sync {
 	 */
 	public function count_objects_to_sync( $objects_to_sync ) {
 
-		if ( 'user' == $objects_to_sync ) {
+		if ( 'user' === $objects_to_sync ) {
 			return $this->count_users_to_sync();
 		}
 
-		if ( 'options' == $objects_to_sync ) {
+		if ( 'options' === $objects_to_sync ) {
 			return $this->count_options_to_sync();
 		}
 
 		global $wpdb;
 
-		$sql = "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')";
-		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync );
-
+		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')", $objects_to_sync );
 		$total_objects = $wpdb->get_var( $prepared_sql );
 
 		return $total_objects;
@@ -411,7 +409,7 @@ class Press_Sync {
 	}
 
 	/**
-	 * Get the total number of users to sync to remote server
+	 * Get the total number of users to sync to remote site
 	 *
 	 * @since 0.1.0
 	 *
@@ -423,7 +421,7 @@ class Press_Sync {
 	}
 
 	/**
-	 * Get the total number of options to sync to remove server.
+	 * Get the total number of options to sync to remove site.
 	 *
 	 * @since 0.1.3
 	 *
@@ -463,7 +461,7 @@ class Press_Sync {
 		}
 
 		// Look for any P2P connections.
-		if ( class_exists('P2P_Autoload') ) {
+		if ( class_exists( 'P2P_Autoload' ) ) {
 			$object_args['p2p_connections'] = $this->get_p2p_connections( $object_args['ID'] );
 		}
 
@@ -474,11 +472,11 @@ class Press_Sync {
 	}
 
 	/**
-	 * Preare the WP Options args to sync to the remote server.
+	 * Preare the WP Options args to sync to the remote site.
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param array  $object_args The WP options arguments
+	 * @param array $object_args The WP options arguments.
 	 *
 	 * @return array $object_args
 	 */
@@ -487,11 +485,12 @@ class Press_Sync {
 	}
 
 	/**
-	 * Replace the local domain links in post_content with the remote server domain
+	 * Replace the local domain links in post_content with the remote site domain.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $object_args
+	 * @param array $object_args The WP Object args.
+	 *
 	 * @return array $object_args
 	 */
 	public function update_links( $object_args ) {
@@ -511,50 +510,51 @@ class Press_Sync {
 	}
 
 	/**
-	 * Get the featured image for a WP Post
+	 * Get the featured image for a WP Post.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer $post_id
+	 * @param integer $post_id The WP Post ID.
+	 *
 	 * @return WP_Attachment $media
 	 */
 	public function get_featured_image( $post_id ) {
 
-		$thumbnail_id 				= get_post_meta( $post_id, '_thumbnail_id', true );
+		$thumbnail_id = get_post_meta( $post_id, '_thumbnail_id', true );
 
 		if ( ! $thumbnail_id ) {
 			return false;
 		}
 
-		$media 						= get_post( $thumbnail_id, ARRAY_A );
-		$media['attachment_url'] 	= home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
+		$media                   = get_post( $thumbnail_id, ARRAY_A );
+		$media['attachment_url'] = home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
 
 		return $media;
-
 	}
 
 	/**
-	 * Get all of the comments for a post
+	 * Get all of the comments for a post.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $post_id
+	 * @param int $post_id The WP Post ID.
+	 *
 	 * @return array
 	 */
 	public function get_comments( $post_id ) {
 
 		$query_args = array(
-			'post_id'	=> $post_id,
+			'post_id' => $post_id,
 		);
 
-		$comments =  get_comments( $query_args );
+		$comments = get_comments( $query_args );
 
 		if ( ! $comments ) {
 			return false;
 		}
 
 		foreach ( $comments as $key => $comment_args ) {
-			$comment_args = (array) $comment_args;
+			$comment_args     = (array) $comment_args;
 			$comments[ $key ] = $this->prepare_comment_args_to_sync( $comment_args );
 		}
 
@@ -562,11 +562,12 @@ class Press_Sync {
 	}
 
 	/**
-	 * Return the P2P connections for a single post
+	 * Return the P2P connections for a single post.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param integer $post_id
+	 * @param integer $post_id The WP Post ID.
+	 *
 	 * @return array $p2p_connections
 	 */
 	public function get_p2p_connections( $post_id ) {
@@ -574,112 +575,115 @@ class Press_Sync {
 		global $wpdb;
 
 		$sql = "SELECT p2p_from, p2p_to, p2p_type FROM {$wpdb->prefix}p2p WHERE p2p_from = $post_id OR p2p_to = $post_id";
-		$p2p_connections = $wpdb->get_results( $sql, ARRAY_A );
+		$p2p_connections = $wpdb->get_results( $sql, 'ARRAY_A' );
 
 		return $p2p_connections;
 
 	}
 
 	/**
-	 * Filter user before synced with the remote server
+	 * Filter user before synced with the remote site.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $user_args
+	 * @param array $user_args The WP User arguments to sync.
+	 *
 	 * @return array $user_args
 	 */
 	public function prepare_user_args_to_sync( $user_args ) {
 
-		// Remove the user password
-		$user_args['user_pass'] = NULL;
+		// Remove the user password.
+		$user_args['user_pass'] = null;
 
 		return $user_args;
 	}
 
 	/**
-	 * Filter attachment before synced with the remote server
+	 * Filter attachment before synced with the remote site.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $attachment_args
-	 * @return array $attachment_args
+	 * @param array $object_args The WP Attachment arguments to sync.
+	 *
+	 * @return array $object_args
 	 */
 	public function prepare_attachment_args_to_sync( $object_args ) {
 
 		$attachment_url = $object_args['guid'];
 
 		$args = array(
-			'post_date' => $object_args['post_date'],
-			'post_title'	=> $object_args['post_title'],
-			'post_name'	=> $object_args['post_name'],
-			'attachment_url'	=> $attachment_url,
+			'post_date'      => $object_args['post_date'],
+			'post_title'     => $object_args['post_title'],
+			'post_name'      => $object_args['post_name'],
+			'attachment_url' => $attachment_url,
 		);
 
 		return $args;
-
 	}
 
 	/**
-	 * Filter comment before synced with the remote server
+	 * Filter comment before synced with the remote site.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $comment_args
+	 * @param array $comment_args The WP Comments to sync.
+	 *
 	 * @return array $comment_args
 	 */
 	public function prepare_comment_args_to_sync( $comment_args ) {
 
 		$args = array();
 
-		$args['comment_post_ID'] 						= $comment_args['comment_post_ID'];
-		$args['comment_author'] 						= $comment_args['comment_author'];
-		$args['comment_author_email'] 					= $comment_args['comment_author_email'];
-		$args['comment_author_url'] 					= $comment_args['comment_author_url'];
-		$args['comment_author_IP'] 						= $comment_args['comment_author_IP'];
-		$args['comment_date'] 							= $comment_args['comment_date'];
-		$args['comment_date_gmt'] 						= $comment_args['comment_date_gmt'];
-		$args['comment_content'] 						= $comment_args['comment_content'];
-		$args['comment_karma'] 							= $comment_args['comment_karma'];
-		$args['comment_approved'] 						= $comment_args['comment_approved'];
-		$args['comment_agent'] 							= $comment_args['comment_agent'];
-		$args['comment_type'] 							= $comment_args['comment_type'];
-		$args['comment_parent'] 						= $comment_args['comment_parent'];
-		$args['user_id'] 								= $comment_args['user_id'];
-		$args['meta_input']['press_sync_comment_id'] 	= $comment_args['comment_ID'];
-		$args['meta_input']['press_sync_post_id'] 		= $comment_args['comment_post_ID'];
-		$args['meta_input']['press_sync_source']		= home_url();
+		$args['comment_post_ID']                     = $comment_args['comment_post_ID'];
+		$args['comment_author']                      = $comment_args['comment_author'];
+		$args['comment_author_email']                = $comment_args['comment_author_email'];
+		$args['comment_author_url']                  = $comment_args['comment_author_url'];
+		$args['comment_author_IP']                   = $comment_args['comment_author_IP'];
+		$args['comment_date']                        = $comment_args['comment_date'];
+		$args['comment_date_gmt']                    = $comment_args['comment_date_gmt'];
+		$args['comment_content']                     = $comment_args['comment_content'];
+		$args['comment_karma']                       = $comment_args['comment_karma'];
+		$args['comment_approved']                    = $comment_args['comment_approved'];
+		$args['comment_agent']                       = $comment_args['comment_agent'];
+		$args['comment_type']                        = $comment_args['comment_type'];
+		$args['comment_parent']                      = $comment_args['comment_parent'];
+		$args['user_id']                             = $comment_args['user_id'];
+		$args['meta_input']['press_sync_comment_id'] = $comment_args['comment_ID'];
+		$args['meta_input']['press_sync_post_id']    = $comment_args['comment_post_ID'];
+		$args['meta_input']['press_sync_source']     = home_url();
 
 		return $args;
 	}
 
 	/**
-	 * POST data to the remote server
+	 * POST data to the remote site.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $url
-	 * @param array $args
+	 * @param string $url  The url of the remote site.
+	 * @param array  $args The arguments to send to the remote site.
+	 *
 	 * @return JSON $response_body
 	 */
-	public function send_data_to_remote_server( $url, $args ) {
+	public function send_data_to_remote_site( $url, $args ) {
 
 		$args = array(
-			'timeout'	=> 30,
-			'body'	=> $args,
+			'timeout' => 30,
+			'body'    => $args,
 		);
 
-		$response 		= wp_remote_post( $url, $args );
-		$response_body	= wp_remote_retrieve_body( $response );
+		$response      = wp_remote_post( $url, $args );
+		$response_body = wp_remote_retrieve_body( $response );
 
 		return $response_body;
 	}
 
 	/**
-	 * Find any embedded images in the post content
+	 * Find any embedded images in the post content.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $post_content
+	 * @param string $post_content The WP Post content to search for media.
 	 */
 	public function get_embedded_media( $post_content = '' ) {
 
@@ -714,10 +718,17 @@ class Press_Sync {
 
 	}
 
-	public function get_attachment_details( $attachment_url ) {
+	/**
+	 * Find the meta data for a specified WP Attachment via URL.
+	 *
+	 * @param string $attachment_url The WP Attachment url.
+	 *
+	 * @return array $attachment_details
+	 */
+	public function get_attachment_details( $attachment_url = '' ) {
 
 		$attachment_details = array();
-		$last_dash_pos      = strrpos( $attachment_url, "-" );
+		$last_dash_pos      = strrpos( $attachment_url, '-' );
 		$image_query_string = substr( $attachment_url, 0, $last_dash_pos );
 
 		global $wpdb;
@@ -740,6 +751,14 @@ class Press_Sync {
 		return $attachment_details;
 	}
 
+	/**
+	 * Check to see if a file already exists on the server.
+	 *
+	 * @param string $filename  The filename.
+	 * @param string $post_date The date the file was created.
+	 *
+	 * @return int $attachment_id
+	 */
 	public function file_exists( $filename = '', $post_date = '' ) {
 
 		$filename_partial_path = trailingslashit( $post_date ) . basename( $filename );
@@ -756,6 +775,15 @@ class Press_Sync {
 		return $attachment_id;
 	}
 
+	/**
+	 * Filter to approve localhost urls.
+	 *
+	 * @param boolean $approve Bool to indicate whether the domain is approved or not.
+	 * @param string  $host    The host of the url.
+	 * @param string  $url     The full url.
+	 *
+	 * @return boolean $approve
+	 */
 	public function approve_localhost_urls( $approve, $host, $url ) {
 
 		if ( 0 <= stripos( $host, '.local' ) ) {
@@ -840,12 +868,12 @@ class Press_Sync {
 		$objects           = $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
 		$logs              = array();
 
-		// Prepare each object to be sent to the remote server.
+		// Prepare each object to be sent to the remote site.
 		foreach ( $objects as $key => $object ) {
 			$sync_args['objects'][ $key ] = $this->$sync_class( $object );
 		}
 
-		$logs = $this->send_data_to_remote_server( $url, $sync_args );
+		$logs = $this->send_data_to_remote_site( $url, $sync_args );
 
 		return array(
 			'objects_to_sync'         => $wp_object,
@@ -857,10 +885,17 @@ class Press_Sync {
 
 	}
 
+	/**
+	 * Filter to parse the sync setting provided by a sync request.
+	 *
+	 * @param array $settings The sync settings.
+	 *
+	 * @return array $settings
+	 */
 	public function parse_sync_settings( $settings = array() ) {
 
 		return wp_parse_args( $settings, array(
-			'options' => ''
+			'options' => '',
 		) );
 	}
 
