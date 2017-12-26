@@ -638,7 +638,7 @@ class API extends \WP_REST_Controller {
 
 	public function add_p2p_connections( $post_id, $post_args ) {
 
-		if ( ! class_exists('P2P_Autoload') || ! $post_args['p2p_connections'] ) {
+		if ( ! class_exists('\P2P_Autoload') || ! $post_args['p2p_connections'] ) {
 			return;
 		}
 

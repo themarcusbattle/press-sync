@@ -20,22 +20,22 @@ class CLI {
 	/**
 	 * The constructor.
 	 *
-	 * @param Press_Sync $plugin The Press Sync plugin.
+	 * @param PressSyncPlugin $plugin The Press Sync plugin.
 	 */
-	public function __construct( Press_Sync $plugin ) {
+	public function __construct( PressSyncPlugin $plugin ) {
 
 		$this->plugin = $plugin;
 
-		if ( ! class_exists( 'WP_CLI' ) ) {
+		if ( ! class_exists( '\WP_CLI' ) ) {
 			return;
 		}
 
 		// Register the CLI Commands.
-		WP_CLI::add_command( 'press-sync posts', array( $this, 'sync_posts' ) );
-		WP_CLI::add_command( 'press-sync media', array( $this, 'sync_media' ) );
-		WP_CLI::add_command( 'press-sync pages', array( $this, 'sync_pages' ) );
-		WP_CLI::add_command( 'press-sync users', array( $this, 'sync_users' ) );
-		WP_CLI::add_command( 'press-sync options', array( $this, 'sync_options' ) );
+		\WP_CLI::add_command( 'press-sync posts', array( $this, 'sync_posts' ) );
+		\WP_CLI::add_command( 'press-sync media', array( $this, 'sync_media' ) );
+		\WP_CLI::add_command( 'press-sync pages', array( $this, 'sync_pages' ) );
+		\WP_CLI::add_command( 'press-sync users', array( $this, 'sync_users' ) );
+		\WP_CLI::add_command( 'press-sync options', array( $this, 'sync_options' ) );
 	}
 
 	/**
@@ -125,12 +125,12 @@ class CLI {
 		$total_objects            = isset( $response['total_objects'] ) ? (int) $response['total_objects'] : 0;
 		$total_objects_processed  = isset( $response['total_objects_processed'] ) ? (int) $response['total_objects_processed'] : 0;
 
-		WP_CLI::line( '' ); // Insert a blank line.
+		\WP_CLI::line( '' ); // Insert a blank line.
 
 		if ( $total_objects === $total_objects_processed ) {
-			WP_CLI::success( 'Successfully synced ' . $total_objects . ' objects.' );
+			\WP_CLI::success( 'Successfully synced ' . $total_objects . ' objects.' );
 		} else {
-			WP_CLI::error( 'There was a porblem. All of the content didn\'t sync.' );
+			\WP_CLI::error( 'There was a porblem. All of the content didn\'t sync.' );
 		}
 	}
 }
