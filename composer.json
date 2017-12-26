@@ -1,0 +1,19 @@
+{
+    "name": "geg/wp-plugin-press-sync",
+    "description": "The easiest way to synchronize posts, media and users between two WordPress sites.",
+    "type": "wordpress-plugin",
+    "homepage": "https://stash.mtvi.com/projects/GEG/repos/wp-plugin-press-sync/browse",
+    "license": "Proprietary",
+    "authors": [
+        {
+            "name": "WebDevStudios",
+            "email": "support@webdevstudios.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "VMN\\GEG\\PressSync\\": "includes/"
+        }
+    }
+}
