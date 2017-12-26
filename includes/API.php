@@ -1,6 +1,8 @@
 <?php
 
-class Press_Sync_API extends WP_REST_Controller {
+namespace VMN\GEG\PressSync;
+
+class API extends \WP_REST_Controller {
 
 	/**
 	 * Parent plugin class.

@@ -1,16 +1,18 @@
 <?php
 
+namespace VMN\GEG\PressSync;
+
 /**
  * The Dashboard.
  *
  * @since 0.1.0
  */
-class Press_Sync_Dashboard {
+class Dashboard {
 
 	/**
 	 * Parent plugin class.
 	 *
-	 * @var   Press_Sync
+	 * @var   PressSyncPlugin
 	 * @since 0.1.0
 	 */
 	protected $plugin = null;
@@ -28,7 +30,7 @@ class Press_Sync_Dashboard {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Press_Sync $plugin Main plugin object.
+	 * @param PressSyncPlugin $plugin Main plugin object.
 	 */
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;

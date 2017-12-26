@@ -9,15 +9,19 @@
  * Text Domain: press-sync
  */
 
+namespace VMN\GEG\PressSync;
+
+require_once( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' );
+
 /**
- * The Press_Sync class.
+ * The PressSyncPlugin class.
  */
-class Press_Sync {
+class PressSyncPlugin {
 
 	/**
 	 * Plugin class
 	 *
-	 * @var   Press_Sync
+	 * @var   PressSyncPlugin
 	 * @since 0.1.0
 	 */
 	protected static $single_instance = null;
@@ -72,10 +76,10 @@ class Press_Sync {
 	 * @since  0.1.0
 	 */
 	public function plugin_classes() {
-		$this->dashboard = new Press_Sync_Dashboard( $this );
-		$this->api       = new Press_Sync_API( $this );
-		$this->cli       = new Press_Sync_CLI( $this );
-		$this->progress  = new Press_Sync_Progress( $this );
+		$this->dashboard = new Dashboard( $this );
+		$this->api       = new API( $this );
+		$this->cli       = new CLI( $this );
+		$this->progress  = new Progress( $this );
 	}
 
 	/**
@@ -908,26 +912,4 @@ class Press_Sync {
 	}
 }
 
-add_action( 'plugins_loaded', array( Press_Sync::init(), 'hooks' ), 10, 1 );
-
-/**
- * Autoloads files with classes when needed.
- *
- * @since  0.1.0
- * @param  string $class_name Name of the class being requested.
- */
-function press_sync_autoload_classes( $class_name ) {
-
-	// If our class doesn't have our prefix, don't load it.
-	if ( 0 !== strpos( $class_name, 'Press_Sync_' ) ) {
-		return;
-	}
-
-	// Set up our filename.
-	$filename = strtolower( str_replace( '_', '-', substr( $class_name, strlen( 'Press_Sync_' ) ) ) );
-
-	// Include our file.
-	Press_Sync::include_file( 'includes/class-' . $filename );
-}
-
-spl_autoload_register( 'press_sync_autoload_classes' );
+add_action( 'plugins_loaded', array( PressSyncPlugin::init(), 'hooks' ), 10, 1 );

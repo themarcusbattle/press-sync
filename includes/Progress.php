@@ -1,15 +1,18 @@
 <?php
+
+namespace VMN\GEG\PressSync;
+
 /**
  * Progress Loader for Press Sync.
  *
  * @since 0.1.2
  */
-class Press_Sync_Progress {
+class Progress {
 
 	/**
 	 * Parent plugin class.
 	 *
-	 * @var   Press_Sync
+	 * @var   PressSyncPlugin
 	 * @since 0.1.0
 	 */
 	protected $plugin = null;
@@ -19,11 +22,11 @@ class Press_Sync_Progress {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Press_Sync $plugin Main plugin object.
+	 * @param PressSyncPlugin $plugin Main plugin object.
 	 */
 	public function __construct( $plugin ) {
 		$this->plugin      = $plugin;
-		$this->cli_enabled = class_exists( 'WP_CLI' );
+		$this->cli_enabled = class_exists( '\WP_CLI' );
 	}
 
 	/**

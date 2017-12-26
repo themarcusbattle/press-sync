@@ -1,15 +1,18 @@
 <?php
+
+namespace VMN\GEG\PressSync;
+
 /**
  * CLI Support for Press Sync.
  *
  * @since 0.1.0
  */
-class Press_Sync_CLI {
+class CLI {
 
 	/**
 	 * Parent plugin class.
 	 *
-	 * @var   Press_Sync
+	 * @var   PressSyncPlugin
 	 * @since 0.1.0
 	 */
 	protected $plugin = null;
