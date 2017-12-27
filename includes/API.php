@@ -233,7 +233,7 @@ class API extends \WP_REST_Controller {
 
 			foreach ( $post_args['embedded_media'] as $attachment_args ) {
 
-				$attachment_id = $this->sync_media( $attachment_args );
+				$attachment_id = $this->sync_attachment( $attachment_args );
 
 				if ( $attachment_id ) {
 
@@ -345,7 +345,7 @@ class API extends \WP_REST_Controller {
 	 *
 	 * @return array
 	 */
-	public function sync_media( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
+	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
 
 		// Attachment URL does not exist so bail early.
 		if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
@@ -357,7 +357,9 @@ class API extends \WP_REST_Controller {
 		require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
 		$attachment_url       = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
-		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : '';
+		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : $attachment_args['post_date'];
+		$attachment_title     = isset( $attachment_args['post_title'] ) ? $attachment_args['post_title'] : '';
+		$attachment_name      = isset( $attachment_args['post_name'] ) ? $attachment_args['post_name'] : '';
 
 		// Check to see if the file already exists.
 		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_post_date ) ) {
@@ -398,10 +400,14 @@ class API extends \WP_REST_Controller {
 				$attachment = array(
 					'guid'           => $local_url,
 					'post_mime_type' => $type,
-					'post_title'     => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
+					'post_title'     => $attachment_title ?: preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
 					'post_content'   => '',
 					'post_status'    => 'inherit',
 				);
+
+				if ( strlen( $attachment_name ) ) {
+					$attachment['post_name'] = $attachment_name;
+				}
 
 				// Insert the attachment.
 				$attachment_id = wp_insert_attachment( $attachment, $filename, 0 );
@@ -649,7 +655,7 @@ class API extends \WP_REST_Controller {
 		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
 
 		// Download the attachment.
-		$attachment   = $this->sync_media( $post_args['featured_image'], true );
+		$attachment   = $this->sync_attachment( $post_args['featured_image'], true );
 		$thumbnail_id = isset( $attachment['id'] ) ? $attachment['id'] : 0;
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
