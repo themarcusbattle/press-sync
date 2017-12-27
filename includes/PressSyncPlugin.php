@@ -1,20 +1,16 @@
 <?php
 /**
- * Plugin Name: Press Sync
- * Description: The easiest way to synchronize posts, media and users between two WordPress sites
- * Version: 0.4.1
- * License: GPL
- * Author: Marcus Battle
- * Author URI: http://marcusbattle.com
- * Text Domain: press-sync
+ * Press Sync Plugin
+ *
+ * @package PressSync
  */
 
 namespace VMN\GEG\PressSync;
 
-require_once( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' );
-
 /**
  * The PressSyncPlugin class.
+ *
+ * @since 0.1.0
  */
 class PressSyncPlugin {
 
@@ -303,7 +299,7 @@ class PressSyncPlugin {
 			'paged'  => $next_page,
 		);
 
-		$query = new WP_User_Query( $query_args );
+		$query = new \WP_User_Query( $query_args );
 
 		$results = $query->get_results();
 		$users   = array();
@@ -697,7 +693,7 @@ class PressSyncPlugin {
 			return $embedded_media;
 		}
 
-		$doc = new DOMDocument();
+		$doc = new \DOMDocument();
 		$doc->loadHTML( $post_content );
 
 		$images = $doc->getElementsByTagName( 'img' );
@@ -946,5 +942,3 @@ class PressSyncPlugin {
 
 	}
 }
-
-add_action( 'plugins_loaded', array( PressSyncPlugin::init(), 'hooks' ), 10, 1 );
