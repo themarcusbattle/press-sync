@@ -44,7 +44,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key>
+	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
 	 */
 	public function sync_posts( $args, $assoc_args ) {
 
