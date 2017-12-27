@@ -472,7 +472,7 @@ class API extends \WP_REST_Controller {
 	 *
 	 * @return array
 	 */
-	public function sync_options( $option_args ) {
+	public function sync_option( $option_args ) {
 
 		$option_name  = isset( $option_args['option_name'] ) ? $option_args['option_name'] : '';
 		$option_value = isset( $option_args['option_value'] ) ? $option_args['option_value'] : '';
