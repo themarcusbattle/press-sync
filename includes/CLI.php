@@ -63,7 +63,7 @@ class CLI {
 	 */
 	public function sync_media( $args, $assoc_args ) {
 
-		$response = $this->plugin->sync_content( 'media', $assoc_args );
+		$response = $this->plugin->sync_content( 'attachment', $assoc_args );
 
 		$this->return_response( $response );
 	}
