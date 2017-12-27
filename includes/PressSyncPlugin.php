@@ -842,6 +842,7 @@ class PressSyncPlugin {
 		$objects_to_sync   = $content_type ? $content_type : get_option( 'objects_to_sync' );
 		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'duplicate_action' );
 		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'force_update' );
+		$local_folder      = isset( $settings['local_folder'] ) ? $settings['local_folder'] : '';
 
 		// Initialize the connection credentials.
 		$this->init_connection( $remote_domain );
@@ -862,10 +863,10 @@ class PressSyncPlugin {
 
 		// Prepare the correct sync method.
 		$sync_class        = "prepare_{$prepare_object}_args_to_sync";
-		$total_objects     = $this->count_objects_to_sync( $objects_to_sync );
 		$taxonomies        = get_object_taxonomies( $objects_to_sync );
 		$next_page         = isset( $_POST['paged'] ) ? filter_var( $_POST['paged'], FILTER_VALIDATE_INT ) : $next_page;
-		$objects           = $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
+		$objects           = $local_folder ? $this->get_local_objects_to_sync( $local_folder, $objects_to_sync ) : $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
+        $total_objects     = $local_folder ? count( $objects ) : $this->count_objects_to_sync( $objects_to_sync );
 		$logs              = array();
 
 		// Prepare each object to be sent to the remote site.
@@ -940,5 +941,38 @@ class PressSyncPlugin {
 
 		return $objects;
 
+	}
+
+	public function get_local_objects_to_sync( $local_folder = '', $objects_to_sync = '' ) {
+
+		$objects = array();
+
+		if ( empty( $local_folder ) ) {
+			return $objects;
+		}
+
+		$local_path = trailingslashit( $local_folder ) . $objects_to_sync;
+
+		if ( ! file_exists( $local_path ) ) {
+			return $objects;
+		}
+
+		$directory = new \RecursiveDirectoryIterator( $local_path );
+		$iterator = new \RecursiveIteratorIterator( $directory );
+
+		// Loop through each file to import.
+		foreach ( $iterator as $file ) {
+
+			if ( is_dir( $file ) ) {
+				continue;
+			}
+
+			$contents = file_get_contents( $file->getPathname() );
+			$contents = json_decode( $contents, 1 );
+
+			$objects = array_merge_recursive( $objects, $contents );
+		}
+
+		return $objects;
 	}
 }
