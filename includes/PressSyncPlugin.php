@@ -480,7 +480,7 @@ class PressSyncPlugin {
 	 *
 	 * @return array $object_args
 	 */
-	public function prepare_options_args_to_sync( $object_args = array() ) {
+	public function prepare_option_args_to_sync( $object_args = array() ) {
 		return $object_args;
 	}
 
@@ -847,8 +847,8 @@ class PressSyncPlugin {
 		// Initialize the connection credentials.
 		$this->init_connection( $remote_domain );
 
-		$prepare_object    = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'options' ), true ) ? 'post' : $objects_to_sync;
-		$wp_object         = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ), true ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
+		$prepare_object    = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option' ), true ) ? 'post' : $objects_to_sync;
+		$wp_object         = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option' ), true ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
 		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url.
@@ -866,7 +866,7 @@ class PressSyncPlugin {
 		$taxonomies        = get_object_taxonomies( $objects_to_sync );
 		$next_page         = isset( $_POST['paged'] ) ? filter_var( $_POST['paged'], FILTER_VALIDATE_INT ) : $next_page;
 		$objects           = $local_folder ? $this->get_local_objects_to_sync( $local_folder, $objects_to_sync ) : $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
-        $total_objects     = $local_folder ? count( $objects ) : $this->count_objects_to_sync( $objects_to_sync );
+		$total_objects     = $local_folder ? count( $objects ) : $this->count_objects_to_sync( $objects_to_sync );
 		$logs              = array();
 
 		// Prepare each object to be sent to the remote site.
@@ -943,6 +943,16 @@ class PressSyncPlugin {
 
 	}
 
+	/**
+	 * Search a folder for all WP Objects in local json files.
+	 *
+	 * @since 0.4.3
+	 *
+	 * @param string $local_folder The local folder that contains the json files.
+	 * @param string $objects_to_sync The WP objects to sync.
+	 *
+	 * @return array $objects
+	 */
 	public function get_local_objects_to_sync( $local_folder = '', $objects_to_sync = '' ) {
 
 		$objects = array();
@@ -951,7 +961,36 @@ class PressSyncPlugin {
 			return $objects;
 		}
 
-		$local_path = trailingslashit( $local_folder ) . $objects_to_sync;
+		if ( 'post' === $objects_to_sync ) {
+			return $this->get_local_post_json( $local_folder );
+		}
+
+		$local_path = trailingslashit( $local_folder ) . $objects_to_sync . 's.json';
+
+		if ( ! file_exists( $local_path ) ) {
+			return $objects;
+		}
+
+		$contents   = file_get_contents( $local_path );
+		$objects    = json_decode( $contents, 1 );
+
+		return $objects;
+	}
+
+	/**
+	 * Search a folder for all WP posts in local json files.
+	 *
+	 * @since 0.4.3
+	 *
+	 * @param string $local_folder The local folder that contains the json files.
+	 *
+	 * @return array $objects
+	 */
+	public function get_local_post_json( $local_folder = '' ) {
+
+		$objects = array();
+
+		$local_path = trailingslashit( $local_folder ) . 'posts/';
 
 		if ( ! file_exists( $local_path ) ) {
 			return $objects;
@@ -967,12 +1006,17 @@ class PressSyncPlugin {
 				continue;
 			}
 
+			if ( false === stripos( $file, '.json' ) ) {
+				continue;
+			}
+
 			$contents = file_get_contents( $file->getPathname() );
 			$contents = json_decode( $contents, 1 );
 
-			$objects = array_merge_recursive( $objects, $contents );
+			array_push( $objects, $contents );
 		}
 
 		return $objects;
 	}
+
 }

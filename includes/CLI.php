@@ -59,7 +59,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key>
+	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
 	 */
 	public function sync_media( $args, $assoc_args ) {
 
@@ -74,7 +74,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key>
+	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
 	 */
 	public function sync_pages( $args, $assoc_args ) {
 
@@ -89,7 +89,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key>
+	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
 	 */
 	public function sync_users( $args, $assoc_args ) {
 
@@ -104,13 +104,13 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> --options=<options>
+	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--options=<options>] [--local_folder=<local_folder>]
 	 */
 	public function sync_options( $args, $assoc_args ) {
 
 		$this->plugin->prepare_options( $assoc_args['options'] );
 
-		$response = $this->plugin->sync_content( 'options', $assoc_args );
+		$response = $this->plugin->sync_content( 'option', $assoc_args );
 
 		$this->return_response( $response );
 	}
