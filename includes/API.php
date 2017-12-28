@@ -190,7 +190,7 @@ class API extends \WP_REST_Controller {
 		// Speed up bulk queries by pausing MySQL commits.
 		global $wpdb;
 
-		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
+//		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
 
@@ -202,10 +202,10 @@ class API extends \WP_REST_Controller {
 		}
 
 		// Commit all recent updates.
-		$wpdb->query( 'COMMIT;' );
-		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
-		wp_defer_term_counting( false );
-		wp_defer_comment_counting( false );
+//		$wpdb->query( 'COMMIT;' );
+//		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
+//		wp_defer_term_counting( false );
+//		wp_defer_comment_counting( false );
 
 		return $responses;
 
