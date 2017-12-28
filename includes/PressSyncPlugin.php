@@ -416,8 +416,10 @@ class PressSyncPlugin {
 	 * @return integer $total_users
 	 */
 	public function count_users_to_sync() {
-		$result = count_users();
-		return $result['total_users'];
+        global $wpdb;
+        $sql   = "SELECT COUNT(*) FROM {$wpdb->users}";
+        $count = $wpdb->get_var($sql);
+        return $count;
 	}
 
 	/**
