@@ -224,7 +224,7 @@ class PressSyncPlugin {
 				$objects = $this->get_users_to_sync( $next_page );
 				break;
 
-			case 'options':
+			case 'option':
 				$objects = $this->get_options_to_sync( $next_page );
 				break;
 
@@ -395,7 +395,7 @@ class PressSyncPlugin {
 			return $this->count_users_to_sync();
 		}
 
-		if ( 'options' === $objects_to_sync ) {
+		if ( 'option' === $objects_to_sync ) {
 			return $this->count_options_to_sync();
 		}
 
@@ -923,7 +923,7 @@ class PressSyncPlugin {
 			'page'       => __( 'Pages', 'press-sync' ),
 			'post'       => __( 'Posts', 'press-sync' ),
 			'user'       => __( 'Users', 'press-sync' ),
-			'options'    => __( 'Options', 'press-sync' ),
+			'option'     => __( 'Options', 'press-sync' ),
 		);
 
 		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
