@@ -41,7 +41,7 @@ class PressSyncPlugin {
     /**
      * Initialize the class instance.
      *
-     * @since 0.4.4
+     * @since 0.4.5
      */
     public function __construct() {
 		// Initialize plugin classes.
