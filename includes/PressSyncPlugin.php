@@ -38,6 +38,16 @@ class PressSyncPlugin {
 	 */
 	public $remote_domain = null;
 
+    /**
+     * Initialize the class instance.
+     *
+     * @since 0.4.4
+     */
+    public function __construct() {
+		// Initialize plugin classes.
+		$this->plugin_classes();
+    }
+
 	/**
 	 * Create an instance of the Press Sync object
 	 *
@@ -59,10 +69,6 @@ class PressSyncPlugin {
 	 * @since 0.1.0
 	 */
 	public function hooks() {
-
-		// Initialize plugin classes.
-		$this->plugin_classes();
-
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 	}
 
@@ -253,9 +259,9 @@ class PressSyncPlugin {
 
 		global $wpdb;
 
-		$offset = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
+		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
+		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
-		$where_clause   = ( $where_clause ) ? ' AND ' . $where_clause : '';
 		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
@@ -319,8 +325,8 @@ class PressSyncPlugin {
 					$user['meta_input'][ $key ] = $value[0];
 				}
 
-				$user['meta_input']['press_sync_user_id']	= $user['ID'];
-				$user['meta_input']['press_sync_source']	= home_url();
+				$user['meta_input']['press_sync_user_id'] = $user['ID'];
+				$user['meta_input']['press_sync_source']  = home_url();
 				$user['role'] = $role;
 
 				unset( $user['ID'] );
