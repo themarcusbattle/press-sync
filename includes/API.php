@@ -254,7 +254,7 @@ class API extends \WP_REST_Controller {
 			$post_parent_args['post_type'] = $post_args['post_type'];
 			$post_parent_args['meta_input']['press_sync_post_id'] = $post_parent_id;
 
-			$parent_post = $this->get_synced_post( $post_parent_args );
+			$parent_post = $this->get_synced_post( $post_parent_args, false );
 
 			$post_args['post_parent'] = ( $parent_post ) ? $parent_post['ID'] : 0;
 
@@ -498,10 +498,12 @@ class API extends \WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param array $post_args The WP Post args to query.
-	 *
+     * @since 0.4.5
+     * @param bool $respect_post_type Set false to look for a post regardless of post type.
+     *
 	 * @return WP_Post
 	 */
-	public function get_synced_post( $post_args ) {
+	public function get_synced_post( $post_args, $respect_post_type = true ) {
 
 		global $wpdb;
 
@@ -511,12 +513,19 @@ class API extends \WP_REST_Controller {
 		$sql = "
 			SELECT post_id AS ID, post_title, post_type, post_modified FROM $wpdb->postmeta AS meta
 			LEFT JOIN $wpdb->posts AS posts ON posts.ID = meta.post_id
-			WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = %d AND posts.post_type = %s
-			LIMIT 1
-		";
+            WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = %d";
 
-		$prepared_sql = $wpdb->prepare( $sql, $press_sync_post_id, $post_args['post_type'] );
-		$post = $wpdb->get_row( $prepared_sql, ARRAY_A );
+        $prepare_args = array( $press_sync_post_id );
+
+        if  ( $respect_post_type ) {
+            $sql           .= ' AND posts.post_type = %s ';
+            $prepare_args[] = $post_args['post_type'];
+        }
+
+        $sql .= ' LIMIT 1';
+
+		$prepared_sql = $wpdb->prepare( $sql, $prepare_args );
+		$post         = $wpdb->get_row( $prepared_sql, ARRAY_A );
 
 		return ( $post ) ? $post : false;
 

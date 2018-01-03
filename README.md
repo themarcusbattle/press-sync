@@ -29,3 +29,7 @@ For support, email marcus@marcusbattle.com
 - v0.3.0 - Added WP Options migrations to the plugin.
 - v0.4.0 - Replaced CMB2 Support with native WP Options
 - v0.4.1 - Fixed the WP Coding Standards / PHPCS errors
+
+### v0.4.5
+
+- [AOTECH-6557] - Update lookup for post parent to be able to ignore `post_type`.
