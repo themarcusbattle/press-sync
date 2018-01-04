@@ -33,3 +33,101 @@ For support, email marcus@marcusbattle.com
 ### v0.4.5
 
 - [AOTECH-6557] - Update lookup for post parent to be able to ignore `post_type`.
+
+## Usage
+
+### WordPress Admin
+
+Press Sync can be found in the WordPress admin under *Tools -> Press Sync*. There are two tabs for
+configuring Press Sync - the _Sync_ tab and the _Settings_ tab.
+
+#### Settings
+
+The _Settings_ tab configures your _Sync Key_. This key is used when another instance of Press Sync wants
+to Push into your WordPress installation. You should make this key unique and complex, and only share it
+with the other site that will be connecting. It is *strongly recommended* that you connect to sites over
+SSL to avoid your key being transmitted in plaintext.
+
+#### Sync
+
+The _Sync_ tab is where you'll conifgure your Press Sync installation to connect to another WordPress site. Currently,
+only the "Push" method is available, so the configuration details below will be specific to _Pushing_ content to
+another WordPress site.
+
+- *Remote Domain* - The remote domain of the site you are connecting to. This site should have Press Sync installed and
+  configured.
+- *Remote Press Sync Key* - The Press Sync key configured in the _Settings_ tab of the *remote site*'s Press Sync
+  configuration.
+- *Sync Method* - Determine whether you're _Pushing_ content to a remote site or _Pulling_ content from a remote site.
+  Currently the only method available here is "Push".
+- *Objects to Sync* - This list allows you to pick what type of content to Sync. WordPress built-ins like Post and Page
+  are supported, as well as Custom Post Types.
+- *WP Options* - If your _Objects to Sync_ is set to "Options", this field is used as a comma-separated *whitelist* of
+  options to sync. Only the options specified in this field will be Pushed to the remote site.
+- *Duplicate Action* - Choose what action Press Sync should take when a duplicate record is found on the receiving
+  side. When *Sync* is the selected action, non-synced duplicates will receive a Press Sync meta key to allow them to
+  be synced in the future.
+- *Force Update* - By default, Press Sync only updates content that was modified more recently than it's synced
+  counterpart. If this option is ste to "Yes", content will always be synced regardless of modified date.
+- *Ignore Comments* - Whether or not Comments should be synced with posts.
+
+### Command Line
+
+Press Sync also includes the ability to sync content via the command line using [WP-CLI](http://wp-cli.org/). With
+Press Sync enabled and _WP-CLI_ installed, you can see a list of basic commands:
+
+```
+$ wp press-sync
+usage: wp press-sync media --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+   or: wp press-sync options --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--options=<options>] [--local_folder=<local_folder>]
+   or: wp press-sync pages --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+   or: wp press-sync posts --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+   or: wp press-sync users --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+```
+
+Currently, Press Sync's CLI support includes Posts, Pages, Users, Options, and Media.
+
+#### Common Arguments
+
+All Press Sync CLI commands use the following required parameters:
+
+- `--remote-domain` - The remote site you are connecting to.
+- `--remote_press_sync_key` - The remote site's Press Sync Key, used to authenticate the connection.
+- `--local_folder` - This option allows you to use JSON files instead of local WordPress data to push to the remote
+  site. More on this below.
+
+#### Command-Specific Arguments
+
+Some commands take optional parameters.
+
+- `wp press-sync options`
+  - `--options` - A comma-separated list of option fields to sync.
+
+#### Importing Local JSON
+
+The `--local_folder` folder option allows you to specify a folder with JSON data to push to the remote site instead of
+using the hosting WordPress site's data. This is useful for importing data from systems that aren't necessarily
+WordPress, but that can export their data in an easy-to-use form.
+
+Structurally, your JSON files should be laid out like this:
+
+```
++--local_folder
+|
+| ./posts/
+| ./posts/YYYY
+| ./posts/YYYY/slugged-title.json
+| ./attachments.json
+| ./users.json
+| ./options.json
+```
+
+For Posts (and post-like objects such as Pages or CPTs), the JSON files should be located in a folder called
+`posts/YYYY/`, where `YYYY` is the four-digit year for the post.
+
+All other types supported by CLI should be in the root of the folder specified in `--local_folder` as such:
+
+- Media - `attachments.json`
+- Users - `users.json`
+- Options - `options.json`
+
