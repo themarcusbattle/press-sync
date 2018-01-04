@@ -37,7 +37,7 @@
 				<td>
 					<select name="objects_to_sync">
 						<option value="">--</option>
-						<?php foreach ( VMN\GEG\PressSync\PressSyncPlugin::objects_to_sync() as $key => $value ) : ?>
+						<?php foreach ( \WDS\PressSync\PressSyncPlugin::objects_to_sync() as $key => $value ) : ?>
 							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( get_option( 'objects_to_sync' ), $key ); ?>><?php echo esc_attr( $value ); ?></option>
 						<?php endforeach; ?>
 					</select>
@@ -88,7 +88,7 @@
 		<?php submit_button(); ?>
 	</form>
 	<h2>Sync Data</h2>
-	<?php if ( VMN\GEG\PressSync\PressSyncPlugin::check_connection() ) : ?>
+	<?php if ( \WDS\PressSync\PressSyncPlugin::check_connection() ) : ?>
 		<button class="press-sync-button">Sync</button>
 	<?php else : ?>
 		<p>Check your PressSync key. You are not connected to the target server.</p>

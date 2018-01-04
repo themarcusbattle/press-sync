@@ -5,7 +5,7 @@
  * @package PressSync
  */
 
-namespace VMN\GEG\PressSync;
+namespace WDS\PressSync;
 
 /**
  * The PressSyncPlugin class.

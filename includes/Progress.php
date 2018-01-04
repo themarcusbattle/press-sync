@@ -1,6 +1,6 @@
 <?php
 
-namespace VMN\GEG\PressSync;
+namespace WDS\PressSync;
 
 /**
  * Progress Loader for Press Sync.
