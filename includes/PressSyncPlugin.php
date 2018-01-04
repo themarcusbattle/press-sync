@@ -222,7 +222,7 @@ class PressSyncPlugin {
 	 *
 	 * @return array $objects          The queried objects to sync.
 	 */
-	public function get_objects_to_sync( $objects_to_sync, $next_page = 1, $taxonomies, $where_clause = '' ) {
+	public function get_objects_to_sync( $objects_to_sync, $next_page = 1, $taxonomies = [], $where_clause = '' ) {
 
 		switch ( $objects_to_sync ) {
 
@@ -255,7 +255,7 @@ class PressSyncPlugin {
 	 *
 	 * @return array  $posts           The posts to return.
 	 */
-	public function get_posts_to_sync( $objects_to_sync, $next_page = 1, $taxonomies, $where_clause = '' ) {
+	public function get_posts_to_sync( $objects_to_sync, $next_page = 1, $taxonomies = [], $where_clause = '' ) {
 
 		global $wpdb;
 
