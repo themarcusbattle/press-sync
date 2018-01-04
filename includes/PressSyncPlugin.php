@@ -472,7 +472,7 @@ class PressSyncPlugin {
 		}
 
 		// Look for any P2P connections.
-		if ( class_exists( 'P2P_Autoload' ) ) {
+		if ( class_exists( '\\P2P_Autoload' ) ) {
 			$object_args['p2p_connections'] = $this->get_p2p_connections( $object_args['ID'] );
 		}
 
