@@ -454,9 +454,12 @@ class PressSyncPlugin {
 			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
 		}
 
+        // @TODO document.
 		$object_args = apply_filters( 'press_sync_prepare_post_args_to_sync', $object_args );
 
 		$object_args['embedded_media'] = $this->get_embedded_media( $object_args['post_content'] );
+
+        // @TODO add embedded media filter.
 
 		// Send Featured image information along to be imported.
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
@@ -601,6 +604,7 @@ class PressSyncPlugin {
 	public function prepare_user_args_to_sync( $user_args ) {
 
 		// Remove the user password.
+        // @TODO is there an issue in the API with sending passwords?
 		$user_args['user_pass'] = null;
 
 		return $user_args;
