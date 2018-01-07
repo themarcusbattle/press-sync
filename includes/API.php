@@ -68,6 +68,13 @@ class API extends \WP_REST_Controller {
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
+        register_rest_route( 'press-sync/v1', '/progress/', array(
+            'methods'             => array( 'GET' ),
+            'callback'            => array( $this, 'get_sync_progress' ),
+            'permission_callback' => array( $this, 'validate_sync_key' ),
+            'args'                => array( 'post_type', 'press_sync_key' ),
+        ) );
+
 		/*
 		@todo Complete the individual post syncing.
 		register_rest_route( 'press-sync/v1', '/sync/(?P<id>\d+)', array(
@@ -851,4 +858,42 @@ class API extends \WP_REST_Controller {
 
 	}
 
+    /**
+     * Returns the IDs of synced objects of the given post type.
+     *
+     * @since NEXT
+     *
+     * @param WP_REST_Request $request The REST request.
+     */
+    public function get_sync_progress( $request ) {
+        try {
+            $post_type = $request->get_param( 'post_type' );
+            $sql = <<<SQL
+SELECT DISTINCT
+    pm.meta_value
+FROM
+    {$GLOBALS['wpdb']->postmeta} pm
+WHERE
+    pm.meta_key = 'press_sync_post_id'
+AND
+    pm.post_id IN(
+        SELECT ID FROM
+            {$GLOBALS['wpdb']->posts} p
+        WHERE
+            p.post_status NOT IN( 'auto-draft', 'trash' )
+        AND
+            p.post_type = 'post'
+    )
+SQL;
+
+            $query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );
+            $synced = $GLOBALS['wpdb']->get_col( $query );
+
+            wp_send_json_success( array(
+                'synced' => $synced,
+            ) );
+        } catch ( \Exception $e ) {
+            wp_send_json_error();
+        }
+    }
 }

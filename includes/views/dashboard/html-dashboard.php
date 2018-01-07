@@ -84,6 +84,13 @@
 					<p>Checking this box ommits comments from being synced to the remote site.</p>
 				</td>
 			</tr>
+            <tr valign="top">
+                <th scope="row">Sync Missing</th>
+                <td>
+                <input type="checkbox" name="only_sync_missing" <?php checked( get_option( 'only_sync_missing' ) ); ?> value="1" />
+                    <span>Search for and sync missing objects, if possible.</span>
+                </td>
+            </tr>
 		</table>
 		<?php submit_button(); ?>
 	</form>
