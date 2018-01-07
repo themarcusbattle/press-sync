@@ -68,6 +68,13 @@ class API extends \WP_REST_Controller {
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
+        register_rest_route( 'press-sync/v1', '/progress/', array(
+            'methods'             => array( 'GET' ),
+            'callback'            => array( $this, 'get_sync_progress' ),
+            'permission_callback' => array( $this, 'validate_sync_key' ),
+            'args'                => array( 'post_type', 'press_sync_key' ),
+        ) );
+
 		/*
 		@todo Complete the individual post syncing.
 		register_rest_route( 'press-sync/v1', '/sync/(?P<id>\d+)', array(
@@ -851,4 +858,7 @@ class API extends \WP_REST_Controller {
 
 	}
 
+    public function get_sync_progress( $request ) {
+        echo '<pre>', print_r($request->get_param( 'post_type' ), true); die;
+    }
 }
