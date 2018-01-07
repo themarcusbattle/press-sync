@@ -262,6 +262,10 @@ class PressSyncPlugin {
 		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
+        if ( get_option( 'only_sync_missing' ) ) {
+            $where_clause = $this->get_missing_post_clause( $objects_to_sync );
+        }
+
 		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
@@ -407,7 +411,13 @@ class PressSyncPlugin {
 
 		global $wpdb;
 
-		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')", $objects_to_sync );
+        $where_clause = '';
+
+        if ( get_option( 'only_sync_missing' ) ) {
+            $where_clause = $this->get_missing_post_clause( $objects_to_sync );
+        }
+
+		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}", $objects_to_sync );
 		$total_objects = $wpdb->get_var( $prepared_sql );
 
 		return $total_objects;
@@ -1031,4 +1041,43 @@ class PressSyncPlugin {
 		return $objects;
 	}
 
+    /**
+     * Gets a WHERE clause statement to use for syncing missing objects.
+     *
+     * @since NEXT
+     *
+     * @param string $objects_to_sync The thing we're syncing, in this case post_type.
+     *
+     * @return string
+     */
+    public function get_missing_post_clause( $objects_to_sync ) {
+        $url             = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'remote_domain' ) );
+        $press_sync_key  = get_option( 'remote_press_sync_key' );
+        $remote_get_args = array(
+            'timeout' => 30,
+        );
+
+        $url .= "wp-json/press-sync/v1/progress/?press_sync_key={$press_sync_key}&noproxy=1&post_type={$objects_to_sync}";
+
+        $response = wp_remote_get( $url, $remote_get_args );
+        $response_code = wp_remote_retrieve_response_code( $response );
+
+        if ( 200 !== $response_code ) {
+            return '';
+        }
+
+        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( empty( $response_body['data']['synced'] ) ) {
+            return '';
+        }
+
+        $placeholders  = array_fill( 0, count( $response_body['data']['synced'] ), '%d' );
+        $format_string = implode( ', ', $placeholders );
+        $prepared_sql  = " AND ID NOT IN ({$format_string}) ";
+        $args          = $response_body['data']['synced'];
+        $sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $args );
+
+        return $sql;
+    }
 }
