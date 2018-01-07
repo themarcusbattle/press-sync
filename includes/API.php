@@ -858,7 +858,42 @@ class API extends \WP_REST_Controller {
 
 	}
 
+    /**
+     * Returns the IDs of synced objects of the given post type.
+     *
+     * @since NEXT
+     *
+     * @param WP_REST_Request $request The REST request.
+     */
     public function get_sync_progress( $request ) {
-        echo '<pre>', print_r($request->get_param( 'post_type' ), true); die;
+        try {
+            $post_type = $request->get_param( 'post_type' );
+            $sql = <<<SQL
+SELECT DISTINCT
+    pm.meta_value
+FROM
+    {$GLOBALS['wpdb']->postmeta} pm
+WHERE
+    pm.meta_key = 'press_sync_post_id'
+AND
+    pm.post_id IN(
+        SELECT ID FROM
+            {$GLOBALS['wpdb']->posts} p
+        WHERE
+            p.post_status NOT IN( 'auto-draft', 'trash' )
+        AND
+            p.post_type = 'post'
+    )
+SQL;
+
+            $query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );
+            $synced = $GLOBALS['wpdb']->get_col( $query );
+
+            wp_send_json_success( array(
+                'synced' => $synced,
+            ) );
+        } catch ( \Exception $e ) {
+            wp_send_json_error();
+        }
     }
 }
