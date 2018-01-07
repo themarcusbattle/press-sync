@@ -85,6 +85,20 @@
 				</td>
 			</tr>
             <tr valign="top">
+                <th scope="row">Request Buffer Time</th>
+                <td>
+                    <input type="number" name="request_buffer_time" value="<?php echo esc_attr( get_option( 'request_buffer_time' ) ); ?>" />
+                    <p>This is the time in seconds to buffer between requests.</p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row">Start at Object n</th>
+                <td>
+                    <input type="number" name="start_object_offset" value="<?php echo esc_attr( get_option( 'start_object_offset' ) ); ?>" />
+                    <p>Start the batch at this object index "n" instead of starting at zero.</p>
+                </td>
+            </tr>
+            <tr valign="top">
                 <th scope="row">Sync Missing</th>
                 <td>
                 <input type="checkbox" name="only_sync_missing" <?php checked( get_option( 'only_sync_missing' ) ); ?> value="1" />

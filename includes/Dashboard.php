@@ -100,6 +100,8 @@ class Dashboard {
 		register_setting( 'press-sync-options', 'duplicate_action' );
 		register_setting( 'press-sync-options', 'force_update' );
 		register_setting( 'press-sync-options', 'ignore_comments' );
+		register_setting( 'press-sync-options', 'request_buffer_time' );
+		register_setting( 'press-sync-options', 'start_object_offset' );
 		register_setting( 'press-sync-options', 'only_sync_missing' );
 
 		// Settings page.

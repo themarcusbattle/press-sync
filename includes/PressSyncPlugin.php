@@ -896,6 +896,20 @@ class PressSyncPlugin {
 			$sync_args['objects'][ $key ] = $this->$sync_class( $object );
 		}
 
+        $request_buffer_time = absint( get_option( 'request_buffer_time' ) );
+
+        if ( 0 < $request_buffer_time && 60 >= $request_buffer_time ) {
+            sleep( $request_buffer_time );
+        }
+
+        $page_offset = absint(get_option('start_object_offset'));
+
+        if ( 0 < $page_offset && 1 == $next_page ) {
+            $page_offset = floor( $page_offset / 5 );
+            $next_page  += ( $page_offset - 1);
+            error_log('----NP: ' . $next_page);
+        }
+
 		$logs = $this->send_data_to_remote_site( $url, $sync_args );
 
 		return array(
