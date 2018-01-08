@@ -1,10 +1,5 @@
 <div class="wrap press-sync">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>The easiest way to synchronize content between two WordPress sites.</p>
-	<h2 class="nav-tab-wrapper">
-		<a href="#" class="nav-tab nav-tab-active sync" data-div-name="migrate-tab">Sync</a>
-		<a href="?page=press-sync&amp;tab=settings" class="nav-tab settings" data-div-name="settings-tab">Settings</a>
-	</h2>
+    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-options' ); ?>
 		<?php do_settings_sections( 'press-sync-options' ); ?>
@@ -66,38 +61,6 @@
 					<p>Force the content on the remote site to be overwritten when the sync method is "push".</p>
 				</td>
 			</tr>
-			<tr valign="top">
-				<th scope="row">Ignore Comments?</th>
-				<td>
-					<select name="ignore_comments">
-						<option value="">--</option>
-						<option value="1" <?php selected( get_option( 'ignore_comments' ), 1 ); ?>>Yes</option>
-						<option value="0" <?php selected( get_option( 'ignore_comments' ), 0 ); ?>>No</option>
-					</select>
-					<p>Checking this box ommits comments from being synced to the remote site.</p>
-				</td>
-			</tr>
-            <tr valign="top">
-                <th scope="row">Request Buffer Time</th>
-                <td>
-                    <input type="number" name="request_buffer_time" value="<?php echo esc_attr( get_option( 'request_buffer_time' ) ); ?>" />
-                    <p>This is the time in seconds to buffer between requests.</p>
-                </td>
-            </tr>
-            <tr valign="top">
-                <th scope="row">Start at Object n</th>
-                <td>
-                    <input type="number" name="start_object_offset" value="<?php echo esc_attr( get_option( 'start_object_offset' ) ); ?>" />
-                    <p>Start the batch at this object index "n" instead of starting at zero.</p>
-                </td>
-            </tr>
-            <tr valign="top">
-                <th scope="row">Sync Missing</th>
-                <td>
-                <input type="checkbox" name="only_sync_missing" <?php checked( get_option( 'only_sync_missing' ) ); ?> value="1" />
-                    <span>Search for and sync missing objects, if possible.</span>
-                </td>
-            </tr>
 		</table>
 		<?php submit_button(); ?>
 	</form>
