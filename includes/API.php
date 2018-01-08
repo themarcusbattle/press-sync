@@ -272,7 +272,7 @@ class API extends \WP_REST_Controller {
 
 		// Check to see a non-synced duplicate of the post exists.
 		if ( 'sync' === $duplicate_action && ! $local_post ) {
-			$local_post = $this->get_non_synced_duplicate( $post_args['post_name'], $post_args['post_type'] );
+			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
 		// Update the existing ID of the post if present.
@@ -812,15 +812,25 @@ class API extends \WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $post_name The WP Post name.
-	 * @param string $post_type The WP Post type.
+     * @since NEXT
+	 * @param string $post_args The post arguments for the post being synced.
 	 *
 	 * @return WP_Post
 	 */
-	public function get_non_synced_duplicate( $post_name, $post_type ) {
+	public function get_non_synced_duplicate( $post_args ) {
+        $duplicate_post = false;
 
-		if ( empty( $post_name ) ) {
-			return false;
+        // @TODO post name and content checks should be their own methods...later, in the Post sync class.
+
+        // Post name check.
+		if ( ! empty( $post_args['post_name'] ) ) {
+            global $wpdb;
+
+            $sql          = "SELECT ID, post_title, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
+            $prepared_sql = $wpdb->prepare( $sql, $post_args['post_name'], $post_args['post_type'] );
+
+            // get_row will return "null" or void on failure; in the words of Elvis "Well now goodbye `false` pretender".
+            $duplicate_post = $wpdb->get_row( $prepared_sql, ARRAY_A ) ?: false;
 		}
 
 		global $wpdb;
@@ -832,6 +842,7 @@ class API extends \WP_REST_Controller {
 
 		return ( $post ) ? $post : false;
 
+		return $duplicate_post;
 	}
 
 	/**
