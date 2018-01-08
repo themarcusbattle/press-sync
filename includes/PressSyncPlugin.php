@@ -567,16 +567,11 @@ class PressSyncPlugin {
         );
 
         foreach ( $media_urls as $url ) {
-            // Download the url.
-            $temp_file = download_url( $url, 5000 );
-
-            // Move the file to the proper uploads folder.
-            if ( is_wp_error( $temp_file ) ) {
+            if ( $this->is_404( $url ) ) {
                 continue;
             }
 
             $media['attachment_url'] = $url;
-            unlink( $temp_file );
         }
 
 		return $media;
@@ -1122,5 +1117,20 @@ class PressSyncPlugin {
         $sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $args );
 
         return $sql;
+    }
+
+    // Thanks SO: https://stackoverflow.com/questions/18473325/check-if-a-http-request-returns-404-or-page-not-found
+    private function is_404( $url ) {
+
+        $handle = curl_init($url);
+        curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
+        curl_exec($handle);
+        $code = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+
+        if( $code == '404' ){
+            return true;
+        }
+
+        return false;
     }
 }
