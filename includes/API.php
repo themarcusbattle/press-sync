@@ -833,14 +833,19 @@ class API extends \WP_REST_Controller {
             $duplicate_post = $wpdb->get_row( $prepared_sql, ARRAY_A ) ?: false;
 		}
 
-		global $wpdb;
+        // Post content check.
+        $content_threshold = get_option( 'press_sync_content_threshold', false );
 
-		$sql = "SELECT ID, post_title, post_type, post_modified FROM $wpdb->posts WHERE post_name = %s AND post_type = %s";
-		$prepared_sql = $wpdb->prepare( $sql, $post_name, $post_type );
+        if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
+            $content_threshold = absint( $content_threshold );
 
-		$post = $wpdb->get_row( $prepared_sql, ARRAY_A );
+            // Calculate how similar the post contents are (is?).
+            similar_text( $duplicate_post['post_content'], $post_args['post_content'], $similarity );
 
-		return ( $post ) ? $post : false;
+            if ( $similarity < $content_threshold ) {
+                $duplicate_post = false;
+            }
+        }
 
 		return $duplicate_post;
 	}
