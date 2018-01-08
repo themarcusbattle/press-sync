@@ -92,20 +92,25 @@ class Dashboard {
 	public function register_settings() {
 
 		// Sync page.
-		register_setting( 'press-sync-options', 'remote_domain' );
+		register_setting( 'press-sync-options', 'press_sync_remote_domain' );
 		register_setting( 'press-sync-options', 'remote_press_sync_key' );
-		register_setting( 'press-sync-options', 'sync_method' );
-		register_setting( 'press-sync-options', 'objects_to_sync' );
-		register_setting( 'press-sync-options', 'options' );
-		register_setting( 'press-sync-options', 'duplicate_action' );
-		register_setting( 'press-sync-options', 'force_update' );
-		register_setting( 'press-sync-options', 'ignore_comments' );
-		register_setting( 'press-sync-options', 'request_buffer_time' );
-		register_setting( 'press-sync-options', 'start_object_offset' );
-		register_setting( 'press-sync-options', 'only_sync_missing' );
+		register_setting( 'press-sync-options', 'press_sync_sync_method' );
+		register_setting( 'press-sync-options', 'press_sync_objects_to_sync' );
+		register_setting( 'press-sync-options', 'press_sync_duplicate_action' );
+		register_setting( 'press-sync-options', 'press_sync_force_update' );
 
 		// Settings page.
 		register_setting( 'press-sync-settings', 'press_sync_key' );
+
+        // Export page.
+		register_setting( 'press-sync-export', 'press_sync_options' );
+		register_setting( 'press-sync-export', 'press_sync_ignore_comments' );
+		register_setting( 'press-sync-export', 'press_sync_request_buffer_time' );
+		register_setting( 'press-sync-export', 'press_sync_start_object_offset' );
+		register_setting( 'press-sync-export', 'press_sync_only_sync_missing' );
+
+        // Import page.
+        register_setting( 'press-sync-import', 'press_sync_content_threshold' );
 	}
 
 	/**
@@ -137,9 +142,9 @@ class Dashboard {
 	 */
 	public function get_objects_to_sync_count_via_ajax() {
 
-		$this->plugin->prepare_options( get_option( 'options' ) );
+		$this->plugin->prepare_options( get_option( 'press_sync_options' ) );
 
-		$objects_to_sync = get_option( 'objects_to_sync' );
+		$objects_to_sync = get_option( 'press_sync_objects_to_sync' );
 		$prepare_object  = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'options' ) ) ? 'post' : $objects_to_sync;
 		$total_objects   = $this->plugin->count_objects_to_sync( $objects_to_sync );
 
@@ -162,9 +167,9 @@ class Dashboard {
 	 */
 	public function sync_wp_data_via_ajax() {
 
-		$this->plugin->prepare_options( get_option( 'options' ) );
+		$this->plugin->prepare_options( get_option( 'press_sync_options' ) );
 
-		$objects_to_sync = get_option( 'objects_to_sync' );
+		$objects_to_sync = get_option( 'press_sync_objects_to_sync' );
 
 		wp_send_json_success( $this->plugin->sync_batch( $objects_to_sync ) );
 	}
