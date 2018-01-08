@@ -29,6 +29,13 @@
                     <p>Test your Press Sync connection against a single post by specifying the ID here.</p>
                 </td>
             </tr>
+            <tr>
+                <th scope="row">Don't Sync Media Assets</th>
+                <td>
+                    <input type="checkbox" name="ps_skip_assets" <?php checked( get_option( 'ps_skip_assets' ) ); ?> value="1" />
+                    <p>Attachments will still be synced, however their file assets will <strong>NOT</strong> be copied to the remote site.</p>
+                </td>
+            </tr>
 			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>

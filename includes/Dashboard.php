@@ -108,7 +108,8 @@ class Dashboard {
 		register_setting( 'press-sync-export', 'press_sync_request_buffer_time' );
 		register_setting( 'press-sync-export', 'press_sync_start_object_offset' );
 		register_setting( 'press-sync-export', 'press_sync_only_sync_missing' );
-		register_setting( 'press-sync-export', 'press_sync_testing_post' );
+        register_setting( 'press-sync-export', 'press_sync_testing_post' );
+		register_setting( 'press-sync-export', 'ps_skip_assets' );
 
         // Import page.
         register_setting( 'press-sync-import', 'press_sync_content_threshold' );

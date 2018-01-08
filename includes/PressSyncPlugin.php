@@ -557,6 +557,14 @@ class PressSyncPlugin {
 		}
 
 		$media = get_post( $thumbnail_id, ARRAY_A );
+        $media['meta_input'] = get_post_meta( $thumbnail_id );
+
+        // Filter out wp built-in meta.
+        foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
+            if ( 0 === strpos( $meta_key, '_wp_' ) ) {
+                unset( $media['meta_input'][$meta_key] );
+            }
+        }
 
         // @TODO Filterable?
         $media_urls = array(
@@ -715,6 +723,8 @@ class PressSyncPlugin {
 			'timeout' => 30,
 			'body'    => $args,
 		);
+
+
 
 		$response      = wp_remote_post( $url, $args );
 		$response_body = wp_remote_retrieve_body( $response );
@@ -901,9 +911,10 @@ class PressSyncPlugin {
 		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
 
 		// Prepare the remote request args.
-		$sync_args['duplicate_action']  = $duplicate_action;
-		$sync_args['force_update']      = $force_update;
-		$sync_args['objects_to_sync']   = $prepare_object;
+		$sync_args['duplicate_action'] = $duplicate_action;
+		$sync_args['force_update']     = $force_update;
+		$sync_args['objects_to_sync']  = $prepare_object;
+        $sync_args['skip_assets']      = get_option( 'ps_skip_assets', false );
 
 		// Prepare the correct sync method.
 		$sync_class        = "prepare_{$prepare_object}_args_to_sync";

@@ -170,8 +170,9 @@ class API extends \WP_REST_Controller {
 
 		$objects_to_sync   = $request->get_param( 'objects_to_sync' );
 		$objects           = $request->get_param( 'objects' );
-		$duplicate_action  = ( $request->get_param( 'duplicate_action' ) ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$duplicate_action  = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
 		$force_update      = $request->get_param( 'force_update' );
+        $this->skip_assets = (bool) $request->get_param( 'skip_assets' );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -265,7 +266,6 @@ class API extends \WP_REST_Controller {
 			$parent_post = $this->get_synced_post( $post_parent_args, false );
 
 			$post_args['post_parent'] = ( $parent_post ) ? $parent_post['ID'] : 0;
-
 		}
 
 		// Check to see if the post exists.
@@ -360,71 +360,36 @@ class API extends \WP_REST_Controller {
 			return false;
 		}
 
-		require_once( ABSPATH . '/wp-admin/includes/image.php' );
-		require_once( ABSPATH . '/wp-admin/includes/file.php' );
-		require_once( ABSPATH . '/wp-admin/includes/media.php' );
+        try {
+            if ( ! $this->skip_assets ) {
+                $attachment = $this->maybe_upload_remote_attachment( $attachment_args );
 
-		$attachment_url       = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
-		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : $attachment_args['post_date'];
-		$attachment_title     = isset( $attachment_args['post_title'] ) ? $attachment_args['post_title'] : '';
-		$attachment_name      = isset( $attachment_args['post_name'] ) ? $attachment_args['post_name'] : '';
+                // ID will only be set if we find the attachment is already here.
+                if ( ! isset( $attachment['ID'] ) ) {
+                    $filename = $attachment['filename'];
+                    unset( $attachment['filename'] );
 
-		// Check to see if the file already exists.
-		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_post_date ) ) {
-			return $attachment_id;
-		}
+                    $attachment_id = wp_insert_attachment( $attachment, $filename, 0 );
 
-		// Download the url.
-		$temp_file = download_url( $attachment_url, 5000 );
+                    if ( is_wp_error( $attachment_id ) ) {
+                        throw new \Exception( 'There was an error creating the attachment: ' . $attachment_id->get_error_message() );
+                    }
 
-		// Move the file to the proper uploads folder.
-		if ( ! is_wp_error( $temp_file ) ) {
+                    // Generate the metadata for the attachment, and update the database record.
+                    $attachment_data = wp_generate_attachment_metadata( $attachment_id, $filename );
+                    wp_update_attachment_metadata( $attachment_id, $attachment_data );
+                }
+            } else {
+                unset( $attachment_args['ID'] );
 
-			// Array based on $_FILE as seen in PHP file uploads.
-			$file = array(
-				'name'     => basename( $attachment_url ),
-				'type'     => 'image/png',
-				'tmp_name' => $temp_file,
-				'error'    => 0,
-				'size'     => filesize( $temp_file ),
-			);
-
-			$overrides = array( 'test_form' => false, 'test_size' => true, 'action' => 'custom' );
-
-			// Move the temporary file into the uploads directory.
-			$results = wp_handle_upload( $file, $overrides, $attachment_post_date );
-
-			// Delete the temporary file.
-			@unlink( $temp_file );
-
-			// Upload the file into WP Media Library.
-			if ( $results['file'] ) {
-
-				$filename  = $results['file']; // Full path to the file.
-				$local_url = $results['url'];  // URL to the file in the uploads dir.
-				$type      = $results['type']; // MIME type of the file.
-
-				// Prepare an array of post data for the attachment.
-				$attachment = array(
-					'guid'           => $local_url,
-					'post_mime_type' => $type,
-					'post_title'     => $attachment_title ?: preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
-					'post_content'   => '',
-					'post_status'    => 'inherit',
-				);
-
-				if ( strlen( $attachment_name ) ) {
-					$attachment['post_name'] = $attachment_name;
-				}
-
-				// Insert the attachment.
-				$attachment_id = wp_insert_attachment( $attachment, $filename, 0 );
-
-				// Generate the metadata for the attachment, and update the database record.
-				$attachment_data = wp_generate_attachment_metadata( $attachment_id, $filename );
-				wp_update_attachment_metadata( $attachment_id, $attachment_data );
-			}
-		}
+                // Look for a duplicate.
+                $attachment_id = get_non_synced_duplicate( $attachment_args ) ?: wp_insert_post( $attachment_args );
+            }
+        }
+        catch( \Exception $e ) {
+            // @TODO log it more!
+            error_log( $e->getMessage() );
+        }
 
 		return $attachment_id;
 	}
@@ -912,5 +877,75 @@ SQL;
         } catch ( \Exception $e ) {
             wp_send_json_error();
         }
+    }
+
+    private function maybe_upload_remote_attachment( $attachment_args ) {
+		$attachment_url       = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
+		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : $attachment_args['post_date'];
+		$attachment_title     = isset( $attachment_args['post_title'] ) ? $attachment_args['post_title'] : '';
+		$attachment_name      = isset( $attachment_args['post_name'] ) ? $attachment_args['post_name'] : '';
+
+		// Check to see if the file already exists.
+		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_post_date ) ) {
+			return array( 'ID' => $attachment_id );
+		}
+
+        $attachment_metadata = $this->get_attachment_metadata_from_request( $attachment_args );
+        $temp_file           = false;
+
+        require_once( ABSPATH . '/wp-admin/includes/image.php' );
+        require_once( ABSPATH . '/wp-admin/includes/file.php' );
+        require_once( ABSPATH . '/wp-admin/includes/media.php' );
+
+        // Download the url.
+        $temp_file = download_url( $attachment_url, 5000 );
+
+        // Move the file to the proper uploads folder.
+        if ( is_wp_error( $temp_file ) ) {
+            // @TODO log it!
+            throw new \Exception( 'Something went wrong when downloading the attachment temp file: ' . $temp_file->get_error_message() );
+        }
+
+        // Array based on $_FILE as seen in PHP file uploads.
+        $file = array(
+            'name'     => basename( $attachment_url ),
+            'type'     => 'image/png',
+            'tmp_name' => $temp_file,
+            'error'    => 0,
+            'size'     => filesize( $temp_file ),
+        );
+
+        $overrides = array( 'test_form' => false, 'test_size' => true, 'action' => 'custom' );
+
+        if ( false !== $temp_file ) {
+            // Move the temporary file into the uploads directory.
+            $results = wp_handle_upload( $file, $overrides, $attachment_post_date );
+
+            // Delete the temporary file.
+            @unlink( $temp_file );
+        }
+
+        // Upload the file into WP Media Library.
+        if ( $results['file'] ) {
+            $filename  = $results['file']; // Full path to the file.
+            $local_url = $results['url'];  // URL to the file in the uploads dir.
+            $type      = $results['type']; // MIME type of the file.
+        }
+
+        // Prepare an array of post data for the attachment.
+        $attachment = array(
+            'guid'           => $local_url,
+            'post_mime_type' => $type,
+            'post_title'     => $attachment_title ?: preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
+            'post_content'   => '',
+            'post_status'    => 'inherit',
+            'filename'       => $filename,
+        );
+
+        if ( strlen( $attachment_name ) ) {
+            $attachment['post_name'] = $attachment_name;
+        }
+
+        return $attachment;
     }
 }
