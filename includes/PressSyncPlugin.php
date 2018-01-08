@@ -558,8 +558,25 @@ class PressSyncPlugin {
 			return false;
 		}
 
-		$media                   = get_post( $thumbnail_id, ARRAY_A );
-		$media['attachment_url'] = home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
+		$media       = get_post( $thumbnail_id, ARRAY_A );
+
+        // @TODO Filterable?
+        $media_urls = array(
+            'local_media' => home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) ),
+            'guid_media'  => $media['guid'],
+        );
+
+        foreach ( $media_urls as $url ) {
+            // Download the url.
+            $temp_file = download_url( $url, 5000 );
+
+            // Move the file to the proper uploads folder.
+            if ( is_wp_error( $temp_file ) ) {
+                continue;
+            }
+
+            $media['attachment_url'] = $url;
+        }
 
 		return $media;
 	}
