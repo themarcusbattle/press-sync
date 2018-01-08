@@ -264,7 +264,12 @@ class PressSyncPlugin {
 
         // @TODO let's filter the where clause in general.
         if ( get_option( 'press_sync_only_sync_missing' ) ) {
-            $where_clause = $this->get_missing_post_clause( $objects_to_sync );
+            $where_clause .= $this->get_missing_post_clause( $objects_to_sync );
+        }
+
+        if ( $testing_post_id = absint( get_option( 'press_sync_testing_post' ) ) ) {
+            $id_where_clause = ' AND ID = %d ';
+            $where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
         }
 
 		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
@@ -416,6 +421,11 @@ class PressSyncPlugin {
 
         if ( get_option( 'press_sync_only_sync_missing' ) ) {
             $where_clause = $this->get_missing_post_clause( $objects_to_sync );
+        }
+
+        // If it's just one post return only 1.
+        if ( $testing_post_id = absint( get_option( 'press_sync_testing_post' ) ) ) {
+            return 1;
         }
 
 		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}", $objects_to_sync );

@@ -22,6 +22,13 @@
 					<p>Checking this box ommits comments from being synced to the remote site.</p>
 				</td>
 			</tr>
+            <tr>
+                <th scope="row">Testing Post ID</th>
+                <td>
+                    <input type="number" name="press_sync_testing_post" value="<?php echo esc_attr( get_option( 'press_sync_testing_post' ) ); ?>" />
+                    <p>Test your Press Sync connection against a single post by specifying the ID here.</p>
+                </td>
+            </tr>
 			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
