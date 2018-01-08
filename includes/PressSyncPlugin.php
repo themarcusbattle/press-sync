@@ -558,7 +558,7 @@ class PressSyncPlugin {
 			return false;
 		}
 
-		$media       = get_post( $thumbnail_id, ARRAY_A );
+		$media = get_post( $thumbnail_id, ARRAY_A );
 
         // @TODO Filterable?
         $media_urls = array(
@@ -576,6 +576,7 @@ class PressSyncPlugin {
             }
 
             $media['attachment_url'] = $url;
+            unlink( $temp_file );
         }
 
 		return $media;
