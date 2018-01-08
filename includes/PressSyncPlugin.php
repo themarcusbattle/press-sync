@@ -480,8 +480,6 @@ class PressSyncPlugin {
 
 		$object_args['embedded_media'] = $this->get_embedded_media( $object_args['post_content'] );
 
-        // @TODO add embedded media filter.
-
 		// Send Featured image information along to be imported.
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 

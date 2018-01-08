@@ -226,6 +226,7 @@ class API extends \WP_REST_Controller {
 	 * @param array   $post_args        The WP Posts to sync.
 	 * @param string  $duplicate_action A flag to direct whether or not content is duplicated.
 	 * @param boolean $force_update     A flag to overwrite existing content.
+     * @TODO add filter for incoming post data before save.
 	 *
 	 * @return array
 	 */
