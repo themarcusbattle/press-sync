@@ -242,7 +242,7 @@ class API extends \WP_REST_Controller {
 
 				$attachment_id = $this->sync_attachment( $attachment_args );
 
-				if ( $attachment_id ) {
+				if ( abinst( $attachment_id ) ) {
 
 					$sync_source = $post_args['meta_input']['press_sync_source'];
 					$attachment_url = str_ireplace( $sync_source, home_url(), $attachment_args['attachment_url'] );
@@ -350,13 +350,13 @@ class API extends \WP_REST_Controller {
 	 * @param string  $duplicate_action A flag to direct whether or not content is duplicated.
 	 * @param boolean $force_update     A flag to overwrite existing content.
 	 *
-	 * @return array
+	 * @return int
 	 */
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
 
 		// Attachment URL does not exist so bail early.
 		if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
-			return $response;
+			return false;
 		}
 
 		require_once( ABSPATH . '/wp-admin/includes/image.php' );
@@ -672,7 +672,7 @@ class API extends \WP_REST_Controller {
 
 		// Download the attachment.
 		$attachment   = $this->sync_attachment( $post_args['featured_image'], true );
-		$thumbnail_id = isset( $attachment['id'] ) ? $attachment['id'] : 0;
+		$thumbnail_id = absint( $attachment ) ?: 0;
 
 		$response = set_post_thumbnail( $post_id, $thumbnail_id );
 
