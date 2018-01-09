@@ -29,3 +29,4 @@ For support, email marcus@marcusbattle.com
 - v0.3.0 - Added WP Options migrations to the plugin.
 - v0.4.0 - Replaced CMB2 Support with native WP Options
 - v0.4.1 - Fixed the WP Coding Standards / PHPCS errors
+- v0.5.0 - Overhauled the dashboard for better UX
