@@ -383,7 +383,7 @@ class API extends \WP_REST_Controller {
                 unset( $attachment_args['ID'] );
 
                 // Look for a duplicate.
-                $attachment_id = get_non_synced_duplicate( $attachment_args ) ?: wp_insert_post( $attachment_args );
+                $attachment_id = $this->get_non_synced_duplicate( $attachment_args ) ?: wp_insert_post( $attachment_args );
             }
         }
         catch( \Exception $e ) {
