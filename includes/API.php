@@ -316,7 +316,7 @@ class API extends \WP_REST_Controller {
 		}
 
 		// Attach featured image.
-		$this->attach_featured_image( $local_post_id, $post_args );
+		$featured_result = $this->attach_featured_image( $local_post_id, $post_args );
 
 		// Attach any comments.
 		$comments = isset( $post_args['comments'] ) ? $post_args['comments'] : array();
@@ -335,9 +335,10 @@ class API extends \WP_REST_Controller {
 
 		return array(
 			'debug' => array(
-				'remote_post_id' => $post_args['meta_input']['press_sync_post_id'],
-				'local_post_id'  => $local_post_id,
-				'message'        => __( 'The post has been synced with the remote site', 'press-sync' ),
+				'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
+				'local_post_id'   => $local_post_id,
+				'message'         => __( 'The post has been synced with the remote site', 'press-sync' ),
+                'featured_result' => $featured_result,
 			),
 		);
 	}
@@ -642,13 +643,14 @@ class API extends \WP_REST_Controller {
 		add_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ), 10, 3 );
 
 		// Download the attachment.
-		$attachment   = $this->sync_attachment( $post_args['featured_image'], true );
+		$attachment   = $this->sync_attachment( $post_args['featured_image'] );
 		$thumbnail_id = absint( $attachment ) ?: 0;
-
-		$response = set_post_thumbnail( $post_id, $thumbnail_id );
+		$response     = set_post_thumbnail( $post_id, $thumbnail_id );
 
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
+
+        return $response ? '' : "Error attaching thumbnail {$thumbnail_id} to post {$post_id}";
 	}
 
 	/**
