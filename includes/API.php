@@ -383,7 +383,12 @@ class API extends \WP_REST_Controller {
                 unset( $attachment_args['ID'] );
 
                 // Look for a duplicate.
-                $attachment_id = $this->get_non_synced_duplicate( $attachment_args ) ?: wp_insert_post( $attachment_args );
+                if ( $duplicate = $this->get_non_synced_duplicate( $attachment_args ) ) {
+                    $attachment_id = $duplicate['ID'];
+                    $this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
+                } else {
+                    $attachment_id = wp_insert_post( $attachment_args );
+                }
             }
         }
         catch( \Exception $e ) {
@@ -947,5 +952,19 @@ SQL;
         }
 
         return $attachment;
+    }
+
+    /**
+     * Bulk updates meta data from an array.
+     *
+     * @since NEXT
+     *
+     * @param int   $post_id   The ID of the post you want to update meta on.
+     * @param array $meta_data A key/value array of meta keys and values.
+     */
+    private function update_post_meta_array( $post_id, $meta_data = array() ) {
+        foreach ( $meta_data as $field => $value ) {
+            update_post_meta( $post_id, $field, $value );
+        }
     }
 }
