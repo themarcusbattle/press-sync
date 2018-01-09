@@ -155,7 +155,7 @@ class Press_Sync {
 	 * @return string
 	 */
 	public function press_sync_option( $option ) {
-		$press_sync_options = get_option( 'press-sync-options' );
+		$press_sync_options = get_option( 'press-sync' );
 		return isset( $press_sync_options[ $option ] ) ? $press_sync_options[ $option ] : '';
 	}
 
@@ -168,7 +168,7 @@ class Press_Sync {
 	 */
 	public function init_connection( $remote_domain = '' ) {
 		$this->local_domain  = untrailingslashit( home_url() );
-		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'remote_domain' ) );
+		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'ps_remote_domain' ) );
 	}
 
 	/**
@@ -182,16 +182,15 @@ class Press_Sync {
 	 */
 	public function check_connection( $url = '' ) {
 
-		$url            = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'remote_domain' ) );
-		$press_sync_key = get_option( 'remote_press_sync_key' );
-
+		$url             = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
+		$ps_remote_key   = get_option( 'ps_remote_key' );
 		$remote_get_args = array(
 			'timeout' => 30,
 		);
 
-		$url .= "wp-json/press-sync/v1/status?press_sync_key={$press_sync_key}";
+		$url .= "wp-json/press-sync/v1/status?press_sync_key={$ps_remote_key}";
 
-		$response = wp_remote_get( $url, $remote_get_args );
+		$response      = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 === $response_code ) {
@@ -454,7 +453,7 @@ class Press_Sync {
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 
 		// Get the comments for the post.
-		$ignore_comments = get_option( 'ignore_comments' );
+		$ignore_comments = get_option( 'ps_ignore_comments' );
 
 		if ( $object_args['comment_count'] && ! $ignore_comments ) {
 			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
@@ -838,10 +837,10 @@ class Press_Sync {
 
 		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
 		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
-		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'sync_method' );
-		$objects_to_sync   = $content_type ? $content_type : get_option( 'objects_to_sync' );
-		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'duplicate_action' );
-		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'force_update' );
+		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'ps_sync_method' );
+		$objects_to_sync   = $content_type ? $content_type : get_option( 'ps_objects_to_sync' );
+		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'ps_duplicate_action' );
+		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'ps_force_update' );
 
 		// Initialize the connection credentials.
 		$this->init_connection( $remote_domain );
@@ -851,9 +850,9 @@ class Press_Sync {
 		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url.
-		$url               = get_option( 'remote_domain' );
-		$press_sync_key    = get_option( 'remote_press_sync_key' );
-		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
+		$url               = get_option( 'ps_remote_domain' );
+		$ps_remote_key    = get_option( 'ps_remote_key' );
+		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $ps_remote_key;
 
 		// Prepare the remote request args.
 		$sync_args['duplicate_action']  = $duplicate_action;

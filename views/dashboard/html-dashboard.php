@@ -1,102 +1,39 @@
-<div class="wrap press-sync">
+<div class="wrap about-wrap press-sync">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>The easiest way to synchronize content between two WordPress sites.</p>
+	<p>&nbsp;</p>
 	<h2 class="nav-tab-wrapper">
-		<a href="#" class="nav-tab nav-tab-active sync" data-div-name="migrate-tab">Sync</a>
-		<a href="?page=press-sync&amp;tab=settings" class="nav-tab settings" data-div-name="settings-tab">Settings</a>
+		<a href="?page=press-sync&amp;tab=dashboard" class="nav-tab nav-tab-active dashboard" data-div-name="dashboard-tab">Dashboard</a>
+		<!-- <a href="?page=press-sync&amp;tab=post-sync" class="nav-tab post-sync" data-div-name="post-sync-tab">Post Sync</a> -->
+		<a href="?page=press-sync&amp;tab=bulk-sync" class="nav-tab bulk-sync" data-div-name="bulk-sync-tab">Bulk Sync</a>
+		<a href="?page=press-sync&amp;tab=credentials" class="nav-tab credentials" data-div-name="credentials-tab">Credentials</a>
+		<a href="?page=press-sync&amp;tab=help" class="nav-tab help" data-div-name="help-tab">Help</a>
 	</h2>
-	<form class="form" method="post" action="options.php">
-		<?php settings_fields( 'press-sync-options' ); ?>
-		<?php do_settings_sections( 'press-sync-options' ); ?>
-		<table class="form-table">
-			<tr valign="top">
-				<th scope="row">Remote Domain</th>
-				<td>
-					<input type="text" name="remote_domain" value="<?php echo esc_attr( get_option( 'remote_domain' ) ); ?>" />
-					<p>The domain of the remote site that you want to push/pull data from/to.</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Remote Press Sync Key</th>
-				<td>
-					<input type="text" name="remote_press_sync_key" value="<?php echo esc_attr( get_option( 'remote_press_sync_key' ) ); ?>" />
-					<p>The unique key that allows you to communicate with the remote site.</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Sync Method</th>
-				<td>
-					<select name="sync_method">
-						<option value="">--</option>
-						<option value="push" <?php selected( get_option( 'sync_method' ), 'push' ); ?>>Push</option>
-					</select>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Objects to Sync</th>
-				<td>
-					<select name="objects_to_sync">
-						<option value="">--</option>
-						<?php foreach ( Press_Sync::objects_to_sync() as $key => $value ) : ?>
-							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( get_option( 'objects_to_sync' ), $key ); ?>><?php echo esc_attr( $value ); ?></option>
-						<?php endforeach; ?>
-					</select>
-					<p>Define the WP objects you want to synchronize with the remote site.</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">WP Options</th>
-				<td>
-					<input type="text" name="options" value="<?php echo esc_attr( get_option( 'options' ) ); ?>" />
-					<p>The comma-separated list of WP options you want to synchronize when "Objects To Sync" is "Options".</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Duplicate Action</th>
-				<td>
-					<select name="duplicate_action">
-						<option value="">--</option>
-						<option value="sync" <?php selected( get_option( 'duplicate_action' ), 'sync' ); ?>>Sync</option>
-						<option value="skip" <?php selected( get_option( 'duplicate_action' ), 'skip' ); ?>>Skip</option>
-					</select>
-					<p>How do you want to handle non-synced duplicates? The "sync" option will give a non-synced duplicate a press sync ID to be synced for the future.</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Force Update?</th>
-				<td>
-					<select name="force_update">
-						<option value="">--</option>
-						<option value="1" <?php selected( get_option( 'force_update' ), 1 ); ?>>Yes</option>
-						<option value="0" <?php selected( get_option( 'force_update' ), 0 ); ?>>No</option>
-					</select>
-					<p>Force the content on the remote site to be overwritten when the sync method is "push".</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Ignore Comments?</th>
-				<td>
-					<select name="ignore_comments">
-						<option value="">--</option>
-						<option value="1" <?php selected( get_option( 'ignore_comments' ), 1 ); ?>>Yes</option>
-						<option value="0" <?php selected( get_option( 'ignore_comments' ), 0 ); ?>>No</option>
-					</select>
-					<p>Checking this box ommits comments from being synced to the remote site.</p>
-				</td>
-			</tr>
-		</table>
-		<?php submit_button(); ?>
-	</form>
-	<h2>Sync Data</h2>
-	<?php if ( Press_Sync::check_connection() ) : ?>
-		<button class="press-sync-button">Sync</button>
-	<?php else : ?>
-		<p>Check your PressSync key. You are not connected to the target server.</p>
-	<?php endif; ?>
-	<div class="progress-stats" style="display: none;">
-		Loading...
+	<div class="feature-section one-col">
+		<div class="col">
+			<h2>The easiest way to synchronize content between WordPress sites.</h2>
+			<p class="lead-description">Synchronize posts, pages, media, users, options and more.</p>
+			<p style="text-align: center;"><a href="?page=press-sync&amp;tab=credentials" class="button button-primary button-large">Create Your Press Sync Key</a></p>
+			<p style="text-align: center;"><a href="?page=press-sync&amp;tab=help#credentials">(Not sure what that is?)</a></p>
+		</div>
 	</div>
-	<div class="progress-bar-wrapper" style="height: 24px; display: none; width: 100%; background-color: #DDD; border-radius: 6px; overflow: hidden; box-sizing: border-box;">
-		<div class="progress-bar" style="height:24px; width: 0px; background-color: #666; color: #fff; line-height: 24px; padding: 0 10px;"></div>
+	<hr />
+	<div class="feature-section two-col">
+		<div class="col">
+			<h3>Synchronize Individual Posts</h3>
+			<p>Are you an editor looking for a way to push individual posts to your product site? Good news! Each post type has the ability to be synced to your remote site - individually. <a href="?page=press-sync&amp;tab=credentials">Connect your site.</a></p>
+		</div>
+		<div class="col">
+			<h3>Move Your Entire Site</h3>
+			<p>Need to move a lot of your posts at one time? The bulk sync option allows you to migrate your entire website to a new (or existing) environment. <a href="#">Prepare for migration.</a></p>
+		</div>
+		<div class="col">
+			<h3>WP-CLI Support Built-In</h3>
+			<p>Sometimes you don't feel comfortable unless you can see the command line. Custom commands for WP-CLI allow you to synchronize an entire site with a few keywords. <a href="?page=press-sync&amp;tab=help#cli-commands">View CLI commands.</a></p>
+		</div>
+		<div class="col">
+			<h3>Import From Local Backup</h3>
+			<p>Looks like you've been here before? If so, you might have a local backup of your website provided by Press Sync. <a href="?page=press-sync&amp;tab=help#json-import">Load your JSON.</a></p>
+		</div>
 	</div>
+	<hr />
 </div>
