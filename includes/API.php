@@ -960,11 +960,24 @@ SQL;
      * @since NEXT
      *
      * @param int   $post_id   The ID of the post you want to update meta on.
-     * @param array $meta_data A key/value array of meta keys and values.
+     * @param array $meta_data An array with keys and values also contained in an array ala get_post_meta( $ID ).
      */
     private function update_post_meta_array( $post_id, $meta_data = array() ) {
-        foreach ( $meta_data as $field => $value ) {
-            update_post_meta( $post_id, $field, $value );
+        foreach ( $meta_data as $field => $values ) {
+            if ( is_array( $values ) ) {
+                // Handle $values as an array.
+                if ( 1 === count( $values ) ) {
+                    update_post_meta( $post_id, $field, current( $values ) );
+                } else {
+                    // Also handle multiple keys by removing and re-adding.
+                    delete_post_meta( $post_id, $field );
+                    foreach ( $values as $value ) {
+                        add_post_meta( $post_id, $field, $value );
+                    }
+                }
+            } else {
+                update_post_meta( $post_id, $field, $values );
+            }
         }
     }
 }
