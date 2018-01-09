@@ -174,7 +174,7 @@ class PressSyncPlugin {
 	 */
 	public function init_connection( $remote_domain = '' ) {
 		$this->local_domain  = untrailingslashit( home_url() );
-		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'remote_domain' ) );
+		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'press_sync_remote_domain' ) );
 	}
 
 	/**
@@ -188,7 +188,7 @@ class PressSyncPlugin {
 	 */
 	public function check_connection( $url = '' ) {
 
-		$url            = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'remote_domain' ) );
+		$url            = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'press_sync_remote_domain' ) );
 		$press_sync_key = get_option( 'remote_press_sync_key' );
 
 		$remote_get_args = array(
@@ -261,6 +261,16 @@ class PressSyncPlugin {
 
 		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
+
+        // @TODO let's filter the where clause in general.
+        if ( get_option( 'press_sync_only_sync_missing' ) ) {
+            $where_clause .= $this->get_missing_post_clause( $objects_to_sync );
+        }
+
+        if ( $testing_post_id = absint( get_option( 'press_sync_testing_post' ) ) ) {
+            $id_where_clause = ' AND ID = %d ';
+            $where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
+        }
 
 		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
@@ -407,7 +417,18 @@ class PressSyncPlugin {
 
 		global $wpdb;
 
-		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash')", $objects_to_sync );
+        $where_clause = '';
+
+        if ( get_option( 'press_sync_only_sync_missing' ) ) {
+            $where_clause = $this->get_missing_post_clause( $objects_to_sync );
+        }
+
+        // If it's just one post return only 1.
+        if ( $testing_post_id = absint( get_option( 'press_sync_testing_post' ) ) ) {
+            return 1;
+        }
+
+		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}", $objects_to_sync );
 		$total_objects = $wpdb->get_var( $prepared_sql );
 
 		return $total_objects;
@@ -459,13 +480,11 @@ class PressSyncPlugin {
 
 		$object_args['embedded_media'] = $this->get_embedded_media( $object_args['post_content'] );
 
-        // @TODO add embedded media filter.
-
 		// Send Featured image information along to be imported.
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 
 		// Get the comments for the post.
-		$ignore_comments = get_option( 'ignore_comments' );
+		$ignore_comments = get_option( 'press_sync_ignore_comments' );
 
 		if ( $object_args['comment_count'] && ! $ignore_comments ) {
 			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
@@ -537,8 +556,29 @@ class PressSyncPlugin {
 			return false;
 		}
 
-		$media                   = get_post( $thumbnail_id, ARRAY_A );
-		$media['attachment_url'] = home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) );
+		$media = get_post( $thumbnail_id, ARRAY_A );
+        $media['meta_input'] = get_post_meta( $thumbnail_id );
+
+        // Filter out wp built-in meta.
+        foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
+            if ( 0 === strpos( $meta_key, '_wp_' ) ) {
+                unset( $media['meta_input'][$meta_key] );
+            }
+        }
+
+        // @TODO Filterable?
+        $media_urls = array(
+            'local_media' => home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) ),
+            'guid_media'  => $media['guid'],
+        );
+
+        foreach ( $media_urls as $url ) {
+            if ( $this->is_404( $url ) ) {
+                continue;
+            }
+
+            $media['attachment_url'] = $url;
+        }
 
 		return $media;
 	}
@@ -683,6 +723,8 @@ class PressSyncPlugin {
 			'timeout' => 30,
 			'body'    => $args,
 		);
+
+
 
 		$response      = wp_remote_post( $url, $args );
 		$response_body = wp_remote_retrieve_body( $response );
@@ -850,10 +892,10 @@ class PressSyncPlugin {
 
 		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
 		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
-		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'sync_method' );
-		$objects_to_sync   = $content_type ? $content_type : get_option( 'objects_to_sync' );
-		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'duplicate_action' );
-		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'force_update' );
+		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'press_sync_sync_method' );
+		$objects_to_sync   = $content_type ? $content_type : get_option( 'press_sync_objects_to_sync' );
+		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'press_sync_duplicate_action' );
+		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'press_sync_force_update' );
 		$local_folder      = isset( $settings['local_folder'] ) ? $settings['local_folder'] : '';
 
 		// Initialize the connection credentials.
@@ -864,14 +906,15 @@ class PressSyncPlugin {
 		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url.
-		$url               = get_option( 'remote_domain' );
+		$url               = get_option( 'press_sync_remote_domain' );
 		$press_sync_key    = get_option( 'remote_press_sync_key' );
 		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
 
 		// Prepare the remote request args.
-		$sync_args['duplicate_action']  = $duplicate_action;
-		$sync_args['force_update']      = $force_update;
-		$sync_args['objects_to_sync']   = $prepare_object;
+		$sync_args['duplicate_action'] = $duplicate_action;
+		$sync_args['force_update']     = $force_update;
+		$sync_args['objects_to_sync']  = $prepare_object;
+        $sync_args['skip_assets']      = get_option( 'ps_skip_assets', false );
 
 		// Prepare the correct sync method.
 		$sync_class        = "prepare_{$prepare_object}_args_to_sync";
@@ -885,6 +928,20 @@ class PressSyncPlugin {
 		foreach ( $objects as $key => $object ) {
 			$sync_args['objects'][ $key ] = $this->$sync_class( $object );
 		}
+
+        $request_buffer_time = absint( get_option( 'press_sync_request_buffer_time' ) );
+
+        if ( 0 < $request_buffer_time && 60 >= $request_buffer_time ) {
+            sleep( $request_buffer_time );
+        }
+
+        $page_offset = absint(get_option( 'press_sync_start_object_offset'));
+
+        if ( 0 < $page_offset && 1 == $next_page ) {
+            $page_offset = floor( $page_offset / 5 );
+            $next_page  += ( $page_offset - 1);
+            error_log('----NP: ' . $next_page);
+        }
 
 		$logs = $this->send_data_to_remote_site( $url, $sync_args );
 
@@ -1031,4 +1088,58 @@ class PressSyncPlugin {
 		return $objects;
 	}
 
+    /**
+     * Gets a WHERE clause statement to use for syncing missing objects.
+     *
+     * @since NEXT
+     *
+     * @param string $objects_to_sync The thing we're syncing, in this case post_type.
+     *
+     * @return string
+     */
+    public function get_missing_post_clause( $objects_to_sync ) {
+        $url             = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'press_sync_remote_domain' ) );
+        $press_sync_key  = get_option( 'remote_press_sync_key' );
+        $remote_get_args = array(
+            'timeout' => 30,
+        );
+
+        $url .= "wp-json/press-sync/v1/progress/?press_sync_key={$press_sync_key}&noproxy=1&post_type={$objects_to_sync}";
+
+        $response = wp_remote_get( $url, $remote_get_args );
+        $response_code = wp_remote_retrieve_response_code( $response );
+
+        if ( 200 !== $response_code ) {
+            return '';
+        }
+
+        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( empty( $response_body['data']['synced'] ) ) {
+            return '';
+        }
+
+        $placeholders  = array_fill( 0, count( $response_body['data']['synced'] ), '%d' );
+        $format_string = implode( ', ', $placeholders );
+        $prepared_sql  = " AND ID NOT IN ({$format_string}) ";
+        $args          = $response_body['data']['synced'];
+        $sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $args );
+
+        return $sql;
+    }
+
+    // Thanks SO: https://stackoverflow.com/questions/18473325/check-if-a-http-request-returns-404-or-page-not-found
+    private function is_404( $url ) {
+
+        $handle = curl_init($url);
+        curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
+        curl_exec($handle);
+        $code = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+
+        if( $code == '404' ){
+            return true;
+        }
+
+        return false;
+    }
 }
