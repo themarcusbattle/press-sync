@@ -160,7 +160,7 @@ class PressSyncPlugin {
 	 */
 	public function init_connection( $remote_domain = '' ) {
 		$this->local_domain  = untrailingslashit( home_url() );
-		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'press_sync_remote_domain' ) );
+		$this->remote_domain = ( $remote_domain ) ? trailingslashit( $remote_domain ) : untrailingslashit( get_option( 'ps_remote_domain' ) );
 	}
 
 	/**
@@ -174,16 +174,16 @@ class PressSyncPlugin {
 	 */
 	public function check_connection( $url = '' ) {
 
-		$url            = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'press_sync_remote_domain' ) );
-		$press_sync_key = get_option( 'remote_press_sync_key' );
+		$url           = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
+		$ps_remote_key = get_option( 'ps_remote_key' );
 
 		$remote_get_args = array(
 			'timeout' => 30,
 		);
 
-		$url .= "wp-json/press-sync/v1/status?press_sync_key={$press_sync_key}";
+		$url .= "wp-json/press-sync/v1/status?press_sync_key={$ps_remote_key}";
 
-		$response = wp_remote_get( $url, $remote_get_args );
+		$response      = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 === $response_code ) {
@@ -249,11 +249,11 @@ class PressSyncPlugin {
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
         // @TODO let's filter the where clause in general.
-        if ( get_option( 'press_sync_only_sync_missing' ) ) {
+        if ( get_option( 'ps_only_sync_missing' ) ) {
             $where_clause .= $this->get_missing_post_clause( $objects_to_sync );
         }
 
-        if ( $testing_post_id = absint( get_option( 'press_sync_testing_post' ) ) ) {
+        if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
             $id_where_clause = ' AND ID = %d ';
             $where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
         }
@@ -405,12 +405,12 @@ class PressSyncPlugin {
 
         $where_clause = '';
 
-        if ( get_option( 'press_sync_only_sync_missing' ) ) {
+        if ( get_option( 'ps_only_sync_missing' ) ) {
             $where_clause = $this->get_missing_post_clause( $objects_to_sync );
         }
 
         // If it's just one post return only 1.
-        if ( $testing_post_id = absint( get_option( 'press_sync_testing_post' ) ) ) {
+        if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
             return 1;
         }
 
@@ -470,7 +470,7 @@ class PressSyncPlugin {
 		$object_args['featured_image'] = $this->get_featured_image( $object_args['ID'] );
 
 		// Get the comments for the post.
-		$ignore_comments = get_option( 'press_sync_ignore_comments' );
+		$ignore_comments = get_option( 'ps_ignore_comments' );
 
 		if ( $object_args['comment_count'] && ! $ignore_comments ) {
 			$object_args['comments'] = $this->get_comments( $object_args['ID'] );
@@ -884,11 +884,11 @@ class PressSyncPlugin {
 	public function sync_batch( $content_type = 'post', $settings = array(), $next_page = 1 ) {
 
 		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
-		$press_sync_key    = isset( $settings['remote_press_sync_key'] ) ? $settings['remote_press_sync_key'] : '';
-		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'press_sync_sync_method' );
-		$objects_to_sync   = $content_type ? $content_type : get_option( 'press_sync_objects_to_sync' );
-		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'press_sync_duplicate_action' );
-		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'press_sync_force_update' );
+		$press_sync_key    = isset( $settings['ps_remote_key'] ) ? $settings['ps_remote_key'] : '';
+		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'ps_sync_method' );
+		$objects_to_sync   = $content_type ? $content_type : get_option( 'ps_objects_to_sync' );
+		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'ps_duplicate_action' );
+		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'ps_force_update' );
 		$local_folder      = isset( $settings['local_folder'] ) ? $settings['local_folder'] : '';
 
 		// Initialize the connection credentials.
@@ -899,8 +899,8 @@ class PressSyncPlugin {
 		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		// Build out the url.
-		$url               = get_option( 'press_sync_remote_domain' );
-		$press_sync_key    = get_option( 'remote_press_sync_key' );
+		$url               = get_option( 'ps_remote_domain' );
+		$press_sync_key    = get_option( 'ps_remote_key' );
 		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
 
 		// Prepare the remote request args.
@@ -922,13 +922,13 @@ class PressSyncPlugin {
 			$sync_args['objects'][ $key ] = $this->$sync_class( $object );
 		}
 
-        $request_buffer_time = absint( get_option( 'press_sync_request_buffer_time' ) );
+        $request_buffer_time = absint( get_option( 'ps_request_buffer_time' ) );
 
         if ( 0 < $request_buffer_time && 60 >= $request_buffer_time ) {
             sleep( $request_buffer_time );
         }
 
-        $page_offset = absint(get_option( 'press_sync_start_object_offset'));
+        $page_offset = absint(get_option( 'ps_start_object_offset'));
 
         if ( 0 < $page_offset && 1 == $next_page ) {
             $page_offset = floor( $page_offset / 5 );
@@ -1091,8 +1091,8 @@ class PressSyncPlugin {
      * @return string
      */
     public function get_missing_post_clause( $objects_to_sync ) {
-        $url             = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'press_sync_remote_domain' ) );
-        $press_sync_key  = get_option( 'remote_press_sync_key' );
+        $url             = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
+        $press_sync_key  = get_option( 'ps_remote_key' );
         $remote_get_args = array(
             'timeout' => 30,
         );

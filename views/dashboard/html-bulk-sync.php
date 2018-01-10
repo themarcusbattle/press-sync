@@ -1,13 +1,7 @@
 <div class="wrap about-wrap press-sync">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 	<p>&nbsp;</p>
-	<h2 class="nav-tab-wrapper">
-		<a href="?page=press-sync&amp;tab=dashboard" class="nav-tab dashboard" data-div-name="dashboard-tab">Dashboard</a>
-		<!-- <a href="?page=press-sync&amp;tab=post-sync" class="nav-tab post-sync" data-div-name="post-sync-tab">Post Sync</a> -->
-		<a href="?page=press-sync&amp;tab=bulk-sync" class="nav-tab nav-tab-active bulk-sync" data-div-name="bulk-sync-tab">Bulk Sync</a>
-		<a href="?page=press-sync&amp;tab=credentials" class="nav-tab credentials" data-div-name="credentials-tab">Credentials</a>
-		<a href="?page=press-sync&amp;tab=help" class="nav-tab help" data-div-name="help-tab">Help</a>
-	</h2>
+    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
 	<div class="feature-section one-col">
 		<div class="col">
 			<p class="lead-description">This tool allows you to synchronize this entire site (or a portion of it) with another WordPress site.</p>
