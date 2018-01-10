@@ -152,20 +152,6 @@ class PressSyncPlugin {
 	}
 
 	/**
-	 * Returns the specified press sync option
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $option The requested Press Sync option.
-	 *
-	 * @return string
-	 */
-	public function press_sync_option( $option ) {
-		$press_sync_options = get_option( 'press-sync-options' );
-		return isset( $press_sync_options[ $option ] ) ? $press_sync_options[ $option ] : '';
-	}
-
-	/**
 	 * Initialize the connection variables
 	 *
 	 * @since 0.1.0

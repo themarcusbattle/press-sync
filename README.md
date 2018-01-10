@@ -34,6 +34,10 @@ For support, email marcus@marcusbattle.com
 
 - [AOTECH-6557] - Update lookup for post parent to be able to ignore `post_type`.
 
+### v0.5.0
+
+- Overhauled the dashboard for better UX
+
 ## Usage
 
 ### WordPress Admin
@@ -130,4 +134,3 @@ All other types supported by CLI should be in the root of the folder specified i
 - Media - `attachments.json`
 - Users - `users.json`
 - Options - `options.json`
-

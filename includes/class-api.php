@@ -147,7 +147,7 @@ class API extends \WP_REST_Controller {
 	public function validate_sync_key() {
 
 		$press_sync_key_from_remote = isset( $_REQUEST['press_sync_key'] ) ? $_REQUEST['press_sync_key'] : '';
-		$press_sync_key = get_option( 'press_sync_key' );
+		$press_sync_key = get_option( 'ps_key' );
 
 		if ( ! $press_sync_key || ( $press_sync_key_from_remote !== $press_sync_key ) ) {
 			return false;
