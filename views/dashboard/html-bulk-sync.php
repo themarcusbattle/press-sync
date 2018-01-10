@@ -1,12 +1,10 @@
 <div class="wrap about-wrap press-sync">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>&nbsp;</p>
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<div class="feature-section one-col">
 		<div class="col">
 			<p class="lead-description">This tool allows you to synchronize this entire site (or a portion of it) with another WordPress site.</p>
 			<p style="text-align: center;">Enter your settings below. Save the changes. Press "Sync" to trigger Press Sync.</p>
-			<?php if ( Press_Sync::check_connection() ) : ?>
+			<?php if ( \Press_Sync\Press_Sync::check_connection() ) : ?>
 				<p style="text-align: center;"><button class="press-sync-button button button-primary button-large" style="min-width: 150px;">Sync</button></p>
 			<?php else : ?>
 				<p style="text-align: center;"><strong>Check your <a href="?page=press-sync&amp;tab=credentials">remote Press Sync key</a>. You are not connected to the remote site.</strong></p>
@@ -42,7 +40,7 @@
 				<td>
 					<select name="ps_objects_to_sync" required>
 						<option value="">--</option>
-						<?php foreach ( Press_Sync::objects_to_sync() as $key => $value ) : ?>
+						<?php foreach ( \Press_Sync\Press_Sync::objects_to_sync() as $key => $value ) : ?>
 							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( get_option( 'ps_objects_to_sync' ), $key ); ?>><?php echo esc_attr( $value ); ?></option>
 						<?php endforeach; ?>
 					</select>

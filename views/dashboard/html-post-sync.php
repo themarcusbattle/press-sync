@@ -1,7 +1,5 @@
 <div class="wrap press-sync">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>The easiest way to synchronize content between two WordPress sites.</p>
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'ps-sync-options' ); ?>
 		<?php do_settings_sections( 'ps-sync-options' ); ?>

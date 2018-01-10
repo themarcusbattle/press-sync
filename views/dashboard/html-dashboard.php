@@ -1,7 +1,5 @@
 <div class="wrap about-wrap press-sync">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>&nbsp;</p>
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<div class="feature-section one-col">
 		<div class="col">
 			<h2>The easiest way to synchronize content between WordPress sites.</h2>

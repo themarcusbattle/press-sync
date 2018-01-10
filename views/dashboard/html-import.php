@@ -1,5 +1,10 @@
-<div class="wrap press-sync">
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+<?php
+if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
+    wp_die();
+}
+?>
+<div class="wrap about-wrap press-sync">
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-import' ); ?>
 		<?php do_settings_sections( 'press-sync-import' ); ?>

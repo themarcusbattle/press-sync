@@ -1,7 +1,5 @@
 <div class="wrap about-wrap press-sync">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>&nbsp;</p>
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync' ); ?>
 		<?php do_settings_sections( 'press-sync' ); ?>
@@ -30,7 +28,7 @@
 			<tr valign="top">
 				<th scope="row">Status</th>
 				<td>
-					<?php if ( Press_Sync::check_connection() ) : ?>
+					<?php if ( \Press_Sync\Press_Sync::check_connection() ) : ?>
 						<span style="color: green;">Connected</span>
 					<?php else : ?>
 						Not connected. Please check your remote secret key and domain for incorrect spellings.

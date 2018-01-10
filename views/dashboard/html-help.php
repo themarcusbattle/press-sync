@@ -1,7 +1,5 @@
 <div class="wrap about-wrap press-sync">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<p>&nbsp;</p>
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<div id="cli-commands" style="max-width: 800px; margin-bottom: 20px;">
 		<h3>Credentials</h3>
 		<p class="question">Q: What is a Press Sync Key?</p>
