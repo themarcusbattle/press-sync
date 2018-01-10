@@ -99,7 +99,7 @@ class Press_Sync {
 		$controller     = isset( $filename_parts[0] ) ? $filename_parts[0] : '';
 		$file           = isset( $filename_parts[1] ) ? $filename_parts[1] : $controller;
 
-		$filename = plugin_dir_path( __FILE__ ) . "views/{$controller}/html-" . $file . '.php';
+		$filename = plugin_dir_path( __FILE__ ) . "../views/{$controller}/html-" . $file . '.php';
 
 		if ( ! file_exists( $filename ) ) {
 			return false;
