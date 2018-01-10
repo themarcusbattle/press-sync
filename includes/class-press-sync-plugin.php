@@ -5,19 +5,19 @@
  * @package PressSync
  */
 
-namespace WDS\PressSync;
+namespace Press_Sync;
 
 /**
- * The PressSyncPlugin class.
+ * The Press_Sync class.
  *
  * @since 0.1.0
  */
-class PressSyncPlugin {
+class Press_Sync {
 
 	/**
 	 * Plugin class
 	 *
-	 * @var   PressSyncPlugin
+	 * @var   Press_Sync
 	 * @since 0.1.0
 	 */
 	protected static $single_instance = null;

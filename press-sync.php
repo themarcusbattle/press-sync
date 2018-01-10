@@ -22,8 +22,8 @@ if (file_exists($autoload)) {
     require_once $autoload;
 }
 
-if (!class_exists('\Press_Sync\Press_Sync_Plugin')) {
+if (!class_exists('\Press_Sync\Press_Sync')) {
     return;
 }
 
-add_action( 'plugins_loaded', array( \Press_Sync\Press_Sync_Plugin::init(), 'hooks' ), 10, 1 );
+add_action( 'plugins_loaded', array( \Press_Sync\Press_Sync::init(), 'hooks' ), 10, 1 );

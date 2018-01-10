@@ -1,6 +1,6 @@
 <?php
 
-namespace WDS\PressSync;
+namespace Press_Sync;
 
 /**
  * CLI Support for Press Sync.
@@ -12,7 +12,7 @@ class CLI {
 	/**
 	 * Parent plugin class.
 	 *
-	 * @var   PressSyncPlugin
+	 * @var   Press_Sync
 	 * @since 0.1.0
 	 */
 	protected $plugin = null;
@@ -20,9 +20,9 @@ class CLI {
 	/**
 	 * The constructor.
 	 *
-	 * @param PressSyncPlugin $plugin The Press Sync plugin.
+	 * @param Press_Sync $plugin The Press Sync plugin.
 	 */
-	public function __construct( PressSyncPlugin $plugin ) {
+	public function __construct( Press_Sync $plugin ) {
 
 		$this->plugin = $plugin;
 

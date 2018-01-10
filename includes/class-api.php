@@ -1,6 +1,6 @@
 <?php
 
-namespace WDS\PressSync;
+namespace Press_Sync;
 
 /**
  * The Press_Sync_API class.
