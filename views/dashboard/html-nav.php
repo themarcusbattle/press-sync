@@ -20,7 +20,7 @@ namespace Press_Sync;
 function active_tab( $tab = '' ) {
     $selected = '';
 
-    if ( ! isset( $_GET['tab'] ) ) {
+    if ( ! isset( $_GET['tab'] ) && 'dashboard' === $tab ) {
         return 'nav-tab-active';
     }
 
