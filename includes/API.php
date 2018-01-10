@@ -397,6 +397,11 @@ class API extends \WP_REST_Controller {
             error_log( $e->getMessage() );
         }
 
+        // Ensure we can track down the attachment later.
+        if ( $attachment_id ) {
+            $this->add_press_sync_id( $attachment_id, $attachment_args );
+        }
+
 		return $attachment_id;
 	}
 

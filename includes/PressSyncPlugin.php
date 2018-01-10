@@ -573,12 +573,19 @@ class PressSyncPlugin {
         );
 
         foreach ( $media_urls as $url ) {
+            if ( get_option( 'ps_skip_assets' ) ) {
+                continue;
+            }
+
             if ( $this->is_404( $url ) ) {
                 continue;
             }
 
             $media['attachment_url'] = $url;
+            break;
         }
+
+        $media['meta_input']['press_sync_id'] = $thumbnail_id;
 
 		return $media;
 	}
