@@ -967,7 +967,7 @@ SQL;
     private function update_post_meta_array( $post_id, $meta_data = array() ) {
         foreach ( $meta_data as $field => $values ) {
             if ( is_array( $values ) ) {
-                update_post_meta( $post_id, $field, current( $avlues ) );
+                update_post_meta( $post_id, $field, current( $values ) );
                 continue;
 
                 // Handle $values as an array.
