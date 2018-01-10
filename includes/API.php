@@ -645,7 +645,7 @@ class API extends \WP_REST_Controller {
 		// Download the attachment.
 		$attachment   = $this->sync_attachment( $post_args['featured_image'] );
 		$thumbnail_id = absint( $attachment ) ?: 0;
-		$response     = set_post_thumbnail( $post_id, $thumbnail_id );
+		$response     = update_post_meta( $post_id, '_thumbnail_id', $thumbnail_id );
 
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
