@@ -1080,7 +1080,7 @@ class Press_Sync {
     /**
      * Gets a WHERE clause statement to use for syncing missing objects.
      *
-     * @since NEXT
+     * @since 0.6.0
      *
      * @param string $objects_to_sync The thing we're syncing, in this case post_type.
      *
