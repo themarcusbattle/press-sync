@@ -1,27 +1,14 @@
-<div class="wrap press-sync">
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+<?php
+if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
+    wp_die();
+}
+?>
+<div class="wrap about-wrap press-sync">
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-export' ); ?>
 		<?php do_settings_sections( 'press-sync-export' ); ?>
 		<table class="form-table">
-			<tr valign="top">
-				<th scope="row">WP Options</th>
-				<td>
-					<input type="text" name="press_sync_options" value="<?php echo esc_attr( get_option( 'press_sync_options' ) ); ?>" />
-					<p>The comma-separated list of WP options you want to synchronize when "Objects To Sync" is "Options".</p>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Ignore Comments?</th>
-				<td>
-					<select name="press_sync_ignore_comments">
-						<option value="">--</option>
-						<option value="1" <?php selected( get_option( 'press_sync_ignore_comments' ), 1 ); ?>>Yes</option>
-						<option value="0" <?php selected( get_option( 'press_sync_ignore_comments' ), 0 ); ?>>No</option>
-					</select>
-					<p>Checking this box ommits comments from being synced to the remote site.</p>
-				</td>
-			</tr>
             <tr>
                 <th scope="row">Testing Post ID</th>
                 <td>
@@ -65,17 +52,5 @@
 		</table>
 		<?php submit_button(); ?>
 	</form>
-	<h2>Sync Data</h2>
-	<?php if ( \WDS\PressSync\PressSyncPlugin::check_connection() ) : ?>
-		<button class="press-sync-button">Sync</button>
-	<?php else : ?>
-		<p>Check your PressSync key. You are not connected to the target server.</p>
-	<?php endif; ?>
-	<div class="progress-stats" style="display: none;">
-		Loading...
-	</div>
-	<div class="progress-bar-wrapper" style="height: 24px; display: none; width: 100%; background-color: #DDD; border-radius: 6px; overflow: hidden; box-sizing: border-box;">
-		<div class="progress-bar" style="height:24px; width: 0px; background-color: #666; color: #fff; line-height: 24px; padding: 0 10px;"></div>
-	</div>
 </div>
 
