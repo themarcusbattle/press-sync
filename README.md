@@ -24,6 +24,11 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.6.1
+
+- Update README for updated Dashboard and installation.
+- Reintroduce SPL autoloader for non-composer setups.
+
 ### v0.6.0
 
 - Merge in major functional updates for Bulk Sync.
@@ -41,6 +46,16 @@ For support, email marcus@marcusbattle.com
 - v0.3.0 - Added WP Options migrations to the plugin.
 - v0.2.0 - Addition of CLI support.
 - v0.1.0 - The initial commit and development of Press Sync.
+
+## Installation
+
+### Using `composer`
+
+If you have `composer` on your system, simply run `composer dump-autoload` to generate an autoloader classmap.
+
+### Non-composer
+
+The plugin still works without composer and will register an autoloader using `spl_autoload_register`.
 
 ## Usage
 
