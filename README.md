@@ -49,28 +49,29 @@ For support, email marcus@marcusbattle.com
 Press Sync can be found in the WordPress admin under *Tools -> Press Sync*. There are two tabs for
 configuring Press Sync - the _Sync_ tab and the _Settings_ tab.
 
-#### Settings
+#### Press Sync Dashboard
 
-The _Settings_ tab configures your _Sync Key_. This key is used when another instance of Press Sync wants
-to Push into your WordPress installation. You should make this key unique and complex, and only share it
-with the other site that will be connecting. It is *strongly recommended* that you connect to sites over
-SSL to avoid your key being transmitted in plaintext.
+The _Credentials_ tab is where you'll conifgure your Press Sync installation to connect to another WordPress site.
 
-#### Sync
-
-The _Sync_ tab is where you'll conifgure your Press Sync installation to connect to another WordPress site. Currently,
-only the "Push" method is available, so the configuration details below will be specific to _Pushing_ content to
-another WordPress site.
-
+- *Press Sync Key* - You should make this key unique and complex, and only share it with the other site that will be
+  connecting to this site. It is *strongly recommended* that you connect to sites over SSL to avoid your key being
+  transmitted in plaintext.
 - *Remote Domain* - The remote domain of the site you are connecting to. This site should have Press Sync installed and
   configured.
+- *Remote URL Arguments* - This is an *advanced setting* that you can use to supply additional arguments to the request
+  URL. You should format this string as an HTTP GET query string, starting with a `?` (question mark).
+  See https://en.wikipedia.org/wiki/Query_string for more details.
 - *Remote Press Sync Key* - The Press Sync key configured in the _Settings_ tab of the *remote site*'s Press Sync
   configuration.
+
+Once configured to connect to a remote Press Sync site, you can configure your sync job on the _Bulk Sync_ tab. Options
+on that tab include.
+
 - *Sync Method* - Determine whether you're _Pushing_ content to a remote site or _Pulling_ content from a remote site.
   Currently the only method available here is "Push".
 - *Objects to Sync* - This list allows you to pick what type of content to Sync. WordPress built-ins like Post and Page
   are supported, as well as Custom Post Types.
-- *WP Options* - If your _Objects to Sync_ is set to "Options", this field is used as a comma-separated *whitelist* of
+- *WP Options to Sync* - If your _Objects to Sync_ is set to "Options", this field is used as a comma-separated *whitelist* of
   options to sync. Only the options specified in this field will be Pushed to the remote site.
 - *Duplicate Action* - Choose what action Press Sync should take when a duplicate record is found on the receiving
   side. When *Sync* is the selected action, non-synced duplicates will receive a Press Sync meta key to allow them to
