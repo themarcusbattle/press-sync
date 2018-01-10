@@ -19,6 +19,13 @@
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row">Remote URL Arguments (Advanced)</th>
+				<td>
+					<input type="text" name="ps_remote_query_args" value="<?php echo esc_attr( get_option( 'ps_remote_query_args' ) ); ?>" required />
+					<p>Specify additional arguments as a GET query string (starting with <code>?</code>).</p>
+				</td>
+			</tr>
+			<tr valign="top">
 				<th scope="row">Remote Press Sync Key</th>
 				<td>
 					<input type="text" name="ps_remote_key" value="<?php echo esc_attr( get_option( 'ps_remote_key' ) ); ?>" required />

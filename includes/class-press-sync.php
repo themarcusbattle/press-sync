@@ -173,15 +173,11 @@ class Press_Sync {
 	 * @return boolean
 	 */
 	public function check_connection( $url = '' ) {
-
-		$url           = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
-		$ps_remote_key = get_option( 'ps_remote_key' );
+        $url = $this->get_remote_url( $url );
 
 		$remote_get_args = array(
 			'timeout' => 30,
 		);
-
-		$url .= "wp-json/press-sync/v1/status?press_sync_key={$ps_remote_key}";
 
 		$response      = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
@@ -901,7 +897,7 @@ class Press_Sync {
 		// Build out the url.
 		$url               = get_option( 'ps_remote_domain' );
 		$press_sync_key    = get_option( 'ps_remote_key' );
-		$url               = untrailingslashit( $url ) . '/wp-json/press-sync/v1/sync?press_sync_key=' . $press_sync_key;
+		$url               = $this->get_remote_url( $url, 'sync' );
 
 		// Prepare the remote request args.
 		$sync_args['duplicate_action'] = $duplicate_action;
@@ -1091,13 +1087,10 @@ class Press_Sync {
      * @return string
      */
     public function get_missing_post_clause( $objects_to_sync ) {
-        $url             = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
-        $press_sync_key  = get_option( 'ps_remote_key' );
+        $url = $this->get_remote_url( '', 'progress' );
         $remote_get_args = array(
             'timeout' => 30,
         );
-
-        $url .= "wp-json/press-sync/v1/progress/?press_sync_key={$press_sync_key}&noproxy=1&post_type={$objects_to_sync}";
 
         $response = wp_remote_get( $url, $remote_get_args );
         $response_code = wp_remote_retrieve_response_code( $response );
@@ -1134,5 +1127,30 @@ class Press_Sync {
         }
 
         return false;
+    }
+
+    /**
+     * Gets the remote site URL and appends query parameters.
+     *
+     * @since 0.5.1
+     *
+     * @param  string $url      A URL other than the stored remote URL to use.
+     * @param  string $endpoint The remote site endpoint.
+     *
+     * @return string
+     */
+    public function get_remote_url( $url = '', $endpoint = 'status' ) {
+		$url        = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
+        $query_args = array(
+            'press_sync_key' => get_option( 'ps_remote_key' ),
+        );
+
+        if ( $remote_args = get_option( 'ps_remote_query_args' ) ) {
+            $remote_args = ltrim( $remote_args, '?' );
+            parse_str( $remote_args, $remote_args_array );
+            $query_args = array_merge( $query_args, $remote_args_array );
+        }
+
+		return  "{$url}wp-json/press-sync/v1/{$endpoint}?" . http_build_query( $query_args );
     }
 }

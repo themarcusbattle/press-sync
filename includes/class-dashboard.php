@@ -97,6 +97,7 @@ class Dashboard {
 		// Credentials page.
 		register_setting( 'press-sync', 'ps_key' );
 		register_setting( 'press-sync', 'ps_remote_domain' );
+		register_setting( 'press-sync', 'ps_remote_query_args' );
 		register_setting( 'press-sync', 'ps_remote_key' );
 
         // @TODO update option names and locations below this line.
