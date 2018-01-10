@@ -102,16 +102,16 @@ class Dashboard {
 
         // @TODO update option names and locations below this line.
         // Export page.
-		register_setting( 'press-sync-export', 'press_sync_options' );
-		register_setting( 'press-sync-export', 'press_sync_ignore_comments' );
-		register_setting( 'press-sync-export', 'press_sync_request_buffer_time' );
-		register_setting( 'press-sync-export', 'press_sync_start_object_offset' );
-		register_setting( 'press-sync-export', 'press_sync_only_sync_missing' );
-        register_setting( 'press-sync-export', 'press_sync_testing_post' );
+		register_setting( 'press-sync-export', 'ps_options' );
+		register_setting( 'press-sync-export', 'ps_ignore_comments' );
+		register_setting( 'press-sync-export', 'ps_request_buffer_time' );
+		register_setting( 'press-sync-export', 'ps_start_object_offset' );
+		register_setting( 'press-sync-export', 'ps_only_sync_missing' );
+        register_setting( 'press-sync-export', 'ps_testing_post' );
 		register_setting( 'press-sync-export', 'ps_skip_assets' );
 
         // Import page.
-        register_setting( 'press-sync-import', 'press_sync_content_threshold' );
+        register_setting( 'press-sync-import', 'ps_content_threshold' );
 	}
 
 	/**

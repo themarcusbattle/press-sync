@@ -12,7 +12,7 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
             <tr>
                 <th scope="row">Testing Post ID</th>
                 <td>
-                    <input type="number" name="press_sync_testing_post" value="<?php echo esc_attr( get_option( 'press_sync_testing_post' ) ); ?>" />
+                    <input type="number" name="ps_testing_post" value="<?php echo esc_attr( get_option( 'ps_testing_post' ) ); ?>" />
                     <p>Test your Press Sync connection against a single post by specifying the ID here.</p>
                 </td>
             </tr>
@@ -31,21 +31,21 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
             <tr valign="top">
                 <th scope="row">Request Buffer Time</th>
                 <td>
-                    <input type="number" name="press_sync_request_buffer_time" value="<?php echo esc_attr( get_option( 'press_sync_request_buffer_time' ) ); ?>" />
+                    <input type="number" name="ps_request_buffer_time" value="<?php echo esc_attr( get_option( 'ps_request_buffer_time' ) ); ?>" />
                     <p>This is the time in seconds to buffer between requests.</p>
                 </td>
             </tr>
             <tr valign="top">
                 <th scope="row">Start at Object n</th>
                 <td>
-                    <input type="number" name="press_sync_start_object_offset" value="<?php echo esc_attr( get_option( 'press_sync_start_object_offset' ) ); ?>" />
+                    <input type="number" name="ps_start_object_offset" value="<?php echo esc_attr( get_option( 'ps_start_object_offset' ) ); ?>" />
                     <p>Start the batch at this object index "n" instead of starting at zero.</p>
                 </td>
             </tr>
             <tr valign="top">
                 <th scope="row">Sync Missing</th>
                 <td>
-                <input type="checkbox" name="press_sync_only_sync_missing" <?php checked( get_option( 'press_sync_only_sync_missing' ) ); ?> value="1" />
+                <input type="checkbox" name="ps_only_sync_missing" <?php checked( get_option( 'ps_only_sync_missing' ) ); ?> value="1" />
                     <span>Search for and sync missing objects, if possible.</span>
                 </td>
             </tr>
