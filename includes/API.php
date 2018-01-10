@@ -357,7 +357,7 @@ class API extends \WP_REST_Controller {
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
 
 		// Attachment URL does not exist so bail early.
-		if ( ! array_key_exists( 'attachment_url', $attachment_args ) ) {
+		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
 		}
 
