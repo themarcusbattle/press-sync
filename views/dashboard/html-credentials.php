@@ -14,21 +14,21 @@
 			<tr valign="top">
 				<th scope="row">Remote Domain</th>
 				<td>
-					<input type="text" name="ps_remote_domain" value="<?php echo esc_attr( get_option( 'ps_remote_domain' ) ); ?>" required />
+					<input type="text" name="ps_remote_domain" value="<?php echo esc_attr( get_option( 'ps_remote_domain' ) ); ?>" />
 					<p>The domain of the remote site that you want to push/pull data from/to.</p>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Remote URL Arguments (Advanced)</th>
 				<td>
-					<input type="text" name="ps_remote_query_args" value="<?php echo esc_attr( get_option( 'ps_remote_query_args' ) ); ?>" required />
+					<input type="text" name="ps_remote_query_args" value="<?php echo esc_attr( get_option( 'ps_remote_query_args' ) ); ?>" />
 					<p>Specify additional arguments as a GET query string (starting with <code>?</code>).</p>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Remote Press Sync Key</th>
 				<td>
-					<input type="text" name="ps_remote_key" value="<?php echo esc_attr( get_option( 'ps_remote_key' ) ); ?>" required />
+					<input type="text" name="ps_remote_key" value="<?php echo esc_attr( get_option( 'ps_remote_key' ) ); ?>" />
 					<p>The unique key that allows you to communicate with the remote site.</p>
 				</td>
 			</tr>
