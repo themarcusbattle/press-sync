@@ -480,7 +480,7 @@ class Press_Sync {
 	 *
 	 * @return array $object_args
 	 */
-	public function prepare_post_args_to_sync( $object_args ) {
+	public function prepare_post_args_to_sync( $object_args = array() ) {
 
 		foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
 			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
@@ -911,8 +911,8 @@ class Press_Sync {
 
 		// Get all of the objects within this batch.
 		$taxonomies        = get_object_taxonomies( $content_type );
-		$objects           = $local_folder ? $this->get_local_objects_to_sync( $local_folder, $content_type ) : $this->get_objects_to_sync( $content_type, $next_page, $taxonomies );
-		$total_objects     = $local_folder ? count( $objects ) : $this->count_objects_to_sync( $content_type );
+		$objects           = $settings['local_folder'] ? $this->get_local_objects_to_sync( $local_folder, $content_type ) : $this->get_objects_to_sync( $content_type, $next_page, $taxonomies );
+		$total_objects     = $settings['local_folder'] ? count( $objects ) : $this->count_objects_to_sync( $content_type );
 
 		// Prepare each object to be sent to the remote site.
 		$objects_args = $this->prepare_objects_to_sync( $objects, $settings );

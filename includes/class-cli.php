@@ -55,7 +55,8 @@ class CLI {
 		$order_to_sync_all = apply_filters( 'press_sync_order_to_sync_all', array() );
 
 		foreach ( $order_to_sync_all as $wp_object ) {
-			$response = $this->plugin->sync_object( $wp_object, $assoc_args, true );
+			$assoc_args['objects_to_sync'] = $wp_object;
+			$response = $this->plugin->sync_object( $wp_object, $assoc_args, 1, false, true );
 			$this->return_response( $response );
 		}
 
@@ -72,7 +73,7 @@ class CLI {
 	 */
 	public function sync_posts( $args, $assoc_args ) {
 
-		$response = $this->plugin->sync_content( 'post', $assoc_args, true );
+		$response = $this->plugin->sync_object( 'post', $assoc_args, 1, false, true );
 
 		$this->return_response( $response );
 	}
@@ -87,7 +88,7 @@ class CLI {
 	 */
 	public function sync_media( $args, $assoc_args ) {
 
-		$response = $this->plugin->sync_content( 'attachment', $assoc_args );
+		$response = $this->plugin->sync_object( 'attachment', $assoc_args, 1, false, true );
 
 		$this->return_response( $response );
 	}
@@ -102,7 +103,7 @@ class CLI {
 	 */
 	public function sync_pages( $args, $assoc_args ) {
 
-		$response = $this->plugin->sync_content( 'page', $assoc_args );
+		$response = $this->plugin->sync_object( 'page', $assoc_args, 1, false, true );
 
 		$this->return_response( $response );
 	}
@@ -117,7 +118,7 @@ class CLI {
 	 */
 	public function sync_users( $args, $assoc_args ) {
 
-		$response = $this->plugin->sync_content( 'user', $assoc_args );
+		$response = $this->plugin->sync_object( 'user', $assoc_args, 1, false, true );
 
 		$this->return_response( $response );
 	}
@@ -134,7 +135,7 @@ class CLI {
 
 		$this->plugin->prepare_options( $assoc_args['options'] );
 
-		$response = $this->plugin->sync_content( 'option', $assoc_args );
+		$response = $this->plugin->sync_content( 'option', $assoc_args, 1, false, true );
 
 		$this->return_response( $response );
 	}
