@@ -204,6 +204,8 @@ class API extends \WP_REST_Controller {
 
 		$responses = array();
 
+		$objects_to_sync = ( 'page' == $objects_to_sync ) ? 'post' : $objects_to_sync;
+
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
 			$responses[] = $this->$sync_method( $object, $duplicate_action, $force_update );
