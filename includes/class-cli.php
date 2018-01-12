@@ -31,6 +31,7 @@ class CLI {
 		}
 
 		// Register the CLI Commands.
+		\WP_CLI::add_command( 'press-sync all', array( $this, 'sync_all' ) );
 		\WP_CLI::add_command( 'press-sync posts', array( $this, 'sync_posts' ) );
 		\WP_CLI::add_command( 'press-sync media', array( $this, 'sync_media' ) );
 		\WP_CLI::add_command( 'press-sync pages', array( $this, 'sync_pages' ) );
@@ -39,12 +40,35 @@ class CLI {
 	}
 
 	/**
+	 * Synchronize ALL content.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @param array $args       The arguments.
+	 * @param array $assoc_args The associative arugments.
+	 *
+	 * @synopsis [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--local_folder=<local_folder>]
+	 */
+	public function sync_all( $args, $assoc_args ) {
+
+		// Get all of the objects to sync in the order that we need them.
+		$order_to_sync_all = apply_filters( 'press_sync_order_to_sync_all', array() );
+
+		foreach ( $order_to_sync_all as $wp_object ) {
+			$response = $this->plugin->sync_object( $wp_object, $assoc_args, true );
+			$this->return_response( $response );
+		}
+
+		\WP_CLI::line( 'Syncing of all objects is complete.' );
+	}
+
+	/**
 	 * Synchronize posts.
 	 *
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+	 * @synopsis [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--local_folder=<local_folder>]
 	 */
 	public function sync_posts( $args, $assoc_args ) {
 
@@ -59,7 +83,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+	 * @synopsis [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--local_folder=<local_folder>]
 	 */
 	public function sync_media( $args, $assoc_args ) {
 
@@ -74,7 +98,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+	 * @synopsis [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--local_folder=<local_folder>]
 	 */
 	public function sync_pages( $args, $assoc_args ) {
 
@@ -89,7 +113,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--local_folder=<local_folder>]
+	 * @synopsis [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--local_folder=<local_folder>]
 	 */
 	public function sync_users( $args, $assoc_args ) {
 
@@ -104,7 +128,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis --remote_domain=<remote_domain> --remote_press_sync_key=<remote_press_sync_key> [--options=<options>] [--local_folder=<local_folder>]
+	 * @synopsis [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--options=<options>] [--local_folder=<local_folder>]
 	 */
 	public function sync_options( $args, $assoc_args ) {
 
