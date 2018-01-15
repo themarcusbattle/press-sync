@@ -764,7 +764,14 @@ class Press_Sync {
 		}
 
 		$doc = new \DOMDocument();
+
+		// set error level.
+		$internal_errors = libxml_use_internal_errors( true );
+
 		$doc->loadHTML( $post_content );
+
+		// Restore error level.
+		libxml_use_internal_errors( $internal_errors );
 
 		$images = $doc->getElementsByTagName( 'img' );
 
@@ -876,8 +883,9 @@ class Press_Sync {
 	 */
 	public function sync_object( $content_type = 'post', $settings = array(), $next_page = 1, $is_batch = false, $cli_enabled = false ) {
 
-		$do_run    = true;
-		$settings  = $this->parse_sync_settings( $settings );
+		$do_run                      = true;
+		$settings                    = $this->parse_sync_settings( $settings );
+		$settings['objects_to_sync'] = $content_type;
 
 		$this->progress->start( 'Syncing ' . $content_type . 's', $this->count_objects_to_sync( $content_type ) );
 
@@ -911,7 +919,7 @@ class Press_Sync {
 
 		// Get all of the objects within this batch.
 		$taxonomies        = get_object_taxonomies( $content_type );
-		$objects           = $settings['local_folder'] ? $this->get_local_objects_to_sync( $local_folder, $content_type ) : $this->get_objects_to_sync( $content_type, $next_page, $taxonomies );
+		$objects           = $settings['local_folder'] ? $this->get_local_objects_to_sync( $settings['local_folder'], $content_type ) : $this->get_objects_to_sync( $content_type, $next_page, $taxonomies );
 		$total_objects     = $settings['local_folder'] ? count( $objects ) : $this->count_objects_to_sync( $content_type );
 
 		// Prepare each object to be sent to the remote site.
