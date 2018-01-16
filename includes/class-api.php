@@ -389,10 +389,11 @@ class API extends \WP_REST_Controller {
                 // Look for a duplicate.
                 if ( $duplicate = $this->get_non_synced_duplicate( $attachment_args ) ) {
                     $attachment_id = $duplicate['ID'];
-                    $this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
                 } else {
                     $attachment_id = wp_insert_post( $attachment_args );
                 }
+
+                $this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
             }
         }
         catch( \Exception $e ) {
