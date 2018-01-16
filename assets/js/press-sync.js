@@ -25,28 +25,66 @@ window.PressSync = ( function( window, document, $ ) {
 				action: 'get_objects_to_sync_count',
 			}
 		}).done(function( response ) {
+			
 			app.updateProgressBar( response.data.objects_to_sync, 0, response.data.total_objects );
-			app.syncData(1);
+
+			if ( 'all' == response.data.objects_to_sync ) {
+				app.syncAll();
+			} else {
+				app.syncData( 1, response.data.objects_to_sync );
+			}
+			
 		});
 
 	}
 
-	app.updateProgressBar = function( objects_to_sync, total_objects_processed, total_objects ) {
-
-		var progress_complete = ( total_objects_processed / total_objects ) * 100;
-
-		$('.progress-bar').css('width', progress_complete + '%' ).text( Math.ceil( progress_complete ) + '%' );
-		$('.progress-stats').text( total_objects_processed + '/' + total_objects + ' ' + objects_to_sync + ' synced' );
-	}
-
-	app.syncData = function( paged ) {
+	app.syncAll = function() {
 
 		$.ajax({
 			method: "POST",
 			url: press_sync.ajax_url,
 			data: {
+				action: 'get_order_to_sync_all',
+			}
+		}).done(function( response ) {
+
+			if ( ! response.success ) {
+				alert( 'There was a connection error. We could not determine the order to sync all objects.' );
+				return;
+			}
+
+			var order_to_sync_all = response.data;
+
+			for ( var i = 0, length = order_to_sync_all.length; i < length; i++ ) {
+				app.syncData( 1, order_to_sync_all[i] );
+			}
+
+		});
+	}
+
+	app.updateProgressBar = function( objects_to_sync, total_objects_processed, total_objects ) {
+
+		var progress_complete = ( total_objects_processed / total_objects ) * 100;
+		var percent_complete  = Math.ceil( progress_complete );
+		
+		if ( percent_complete > 100 ) {
+			percent_complete = 100;
+		}
+
+		$('.progress-bar').css('width', progress_complete + '%' ).text( percent_complete + '%' );
+		$('.progress-stats').text( total_objects_processed + '/' + total_objects + ' ' + objects_to_sync + ' synced' );
+	}
+
+	app.syncData = function( paged, objects_to_sync ) {
+
+		$.ajax({
+			async: false,
+			method: "POST",
+			url: press_sync.ajax_url,
+			data: {
 				action: 'sync_wp_data',
 				paged: paged,
+				objects_to_sync: objects_to_sync
 			}
 		}).done(function( response ) {
 
@@ -56,7 +94,7 @@ window.PressSync = ( function( window, document, $ ) {
 				$('.press-sync-button').show();
 				$('.progress-stats').text('Sync completed!');
 			} else {
-				app.syncData( response.data.next_page );
+				app.syncData( response.data.next_page, response.data.objects_to_sync );
 			}
 
 		});

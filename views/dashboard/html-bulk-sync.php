@@ -22,9 +22,6 @@
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-bulk-sync' ); ?>
 		<?php do_settings_sections( 'press-sync-bulk-sync' ); ?>
-		<div style="max-width: 800px;">
-			
-		</div>
 		<table class="form-table">
 			<tr valign="top">
 				<th scope="row">Sync Method</th>
