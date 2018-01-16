@@ -6,4 +6,9 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Press_Sync\\API' => $baseDir . '/includes/class-api.php',
+    'Press_Sync\\CLI' => $baseDir . '/includes/class-cli.php',
+    'Press_Sync\\Dashboard' => $baseDir . '/includes/class-dashboard.php',
+    'Press_Sync\\Press_Sync' => $baseDir . '/includes/class-press-sync.php',
+    'Press_Sync\\Progress' => $baseDir . '/includes/class-progress.php',
 );
