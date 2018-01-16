@@ -695,10 +695,25 @@ class Press_Sync {
 			'post_title'     => $object_args['post_title'],
 			'post_name'      => $object_args['post_name'],
 			'attachment_url' => $attachment_url,
-            'ID'             => $object_args['ID'],
-            'post_status'    => $object_args['post_status'],
             'post_type'      => $object_args['post_type'],
+            'meta_input' => array(
+                'press_sync_post_id' => $object_args['ID'],
+            ),
 		);
+
+        $meta = get_post_meta( $object_args['import_id'] );
+
+        foreach ( $meta as $key => $values ) {
+            $args['meta_input'][ $key ] = $values[0];
+        }
+
+        if ( get_option( 'ps_skip_assets' ) ) {
+            $args['guid'] = $object_args['guid'];
+        }
+
+        if ( get_option( 'ps_preserve_ids' ) ) {
+            $args['import_id'] = $object_args['ID'];
+        }
 
 		return $args;
 	}
@@ -1318,11 +1333,13 @@ class Press_Sync {
      * @return array
      */
     public function maybe_remove_post_id( $object_args ) {
-        if ( true === (bool) get_option( 'ps_preserve_ids' ) ) {
-            return $object_args;
+        $object_args['import_id'] = $object_args['ID'];
+        unset( $object_args['ID'] );
+
+        if ( true !== (bool) get_option( 'ps_preserve_ids' ) ) {
+            unset( $object_args['import_id'] );
         }
 
-        unset( $object_args['ID'] );
         return $object_args;
     }
 }
