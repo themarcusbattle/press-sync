@@ -701,7 +701,7 @@ class Press_Sync {
             ),
 		);
 
-        $meta = get_post_meta( $object_args['import_id'] );
+        $meta = get_post_meta( $object_args['ID'] );
 
         foreach ( $meta as $key => $values ) {
             $args['meta_input'][ $key ] = $values[0];
