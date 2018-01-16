@@ -1,5 +1,10 @@
-<div class="wrap press-sync">
-    <?php \WDS\PressSync\PressSyncPlugin::init()->include_page( 'dashboard/nav' ); ?>
+<?php
+if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
+    wp_die();
+}
+?>
+<div class="wrap about-wrap press-sync">
+    <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-import' ); ?>
 		<?php do_settings_sections( 'press-sync-import' ); ?>
@@ -12,7 +17,7 @@
 			<tr valign="top">
 				<th scope="row">Post Content Match Threshold</th>
 				<td>
-					<input type="number" min="0" max="100" name="press_sync_content_threshold" value="<?php echo esc_attr( get_option( 'press_sync_content_threshold' ) ?: '0' ); ?>" />%
+					<input type="number" min="0" max="100" name="ps_content_threshold" value="<?php echo esc_attr( get_option( 'ps_content_threshold' ) ?: '0' ); ?>" />%
                     <p>
                         A threshold &gt; 0% will result in a post_content check for duplicates upon import. If the duplicate post_content fields are
                         not as similar as the threshold value, they will be treated as <strong>non-duplicates</strong> and a new post will be created.

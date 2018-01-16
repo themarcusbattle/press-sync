@@ -24,15 +24,23 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
-- v0.1.0 - The initial commit and development of Press Sync.
-- v0.2.0 - Addition of CLI support.
-- v0.3.0 - Added WP Options migrations to the plugin.
-- v0.4.0 - Replaced CMB2 Support with native WP Options
-- v0.4.1 - Fixed the WP Coding Standards / PHPCS errors
+### v0.6.0
+
+- Merge in major functional updates for Bulk Sync.
+
+### v0.5.0
+
+- Overhauled the dashboard for better UX
 
 ### v0.4.5
 
-- [AOTECH-6557] - Update lookup for post parent to be able to ignore `post_type`.
+- Update lookup for post parent to be able to ignore `post_type`.
+
+- v0.4.1 - Fixed the WP Coding Standards / PHPCS errors
+- v0.4.0 - Replaced CMB2 Support with native WP Options
+- v0.3.0 - Added WP Options migrations to the plugin.
+- v0.2.0 - Addition of CLI support.
+- v0.1.0 - The initial commit and development of Press Sync.
 
 ## Usage
 
@@ -130,4 +138,3 @@ All other types supported by CLI should be in the root of the folder specified i
 - Media - `attachments.json`
 - Users - `users.json`
 - Options - `options.json`
-

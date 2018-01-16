@@ -11,8 +11,8 @@
     ],
     "minimum-stability": "stable",
     "autoload": {
-        "psr-4": {
-            "WDS\\PressSync\\": "includes/"
-        }
+        "classmap": [
+            "includes/"
+        ]
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace WDS\PressSync;
+namespace Press_Sync;
 
 /**
  * The Press_Sync_API class.
@@ -147,7 +147,7 @@ class API extends \WP_REST_Controller {
 	public function validate_sync_key() {
 
 		$press_sync_key_from_remote = isset( $_REQUEST['press_sync_key'] ) ? $_REQUEST['press_sync_key'] : '';
-		$press_sync_key = get_option( 'press_sync_key' );
+		$press_sync_key = get_option( 'ps_key' );
 
 		if ( ! $press_sync_key || ( $press_sync_key_from_remote !== $press_sync_key ) ) {
 			return false;
@@ -785,7 +785,7 @@ class API extends \WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-     * @since NEXT
+     * @since 0.6.0
 	 * @param string $post_args The post arguments for the post being synced.
 	 *
 	 * @return WP_Post
@@ -850,7 +850,7 @@ class API extends \WP_REST_Controller {
     /**
      * Returns the IDs of synced objects of the given post type.
      *
-     * @since NEXT
+     * @since 0.6.0
      *
      * @param WP_REST_Request $request The REST request.
      */
@@ -959,7 +959,7 @@ SQL;
     /**
      * Bulk updates meta data from an array.
      *
-     * @since NEXT
+     * @since 0.6.0
      *
      * @param int   $post_id   The ID of the post you want to update meta on.
      * @param array $meta_data An array with keys and values also contained in an array ala get_post_meta( $ID ).

@@ -1,6 +1,6 @@
 <?php
 
-namespace WDS\PressSync;
+namespace Press_Sync;
 
 /**
  * Progress Loader for Press Sync.
@@ -12,7 +12,7 @@ class Progress {
 	/**
 	 * Parent plugin class.
 	 *
-	 * @var   PressSyncPlugin
+	 * @var   Press_Sync
 	 * @since 0.1.0
 	 */
 	protected $plugin = null;
@@ -22,7 +22,7 @@ class Progress {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param PressSyncPlugin $plugin Main plugin object.
+	 * @param Press_Sync $plugin Main plugin object.
 	 */
 	public function __construct( $plugin ) {
 		$this->plugin      = $plugin;
