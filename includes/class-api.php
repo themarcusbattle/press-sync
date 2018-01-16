@@ -981,16 +981,16 @@ SQL;
 
                 // Handle $values as an array.
                 if ( 1 === count( $values ) ) {
-                    update_post_meta( $post_id, $field, current( $values ) );
+                    update_post_meta( $post_id, $field, maybe_unserialize( current( $values ) ) );
                 } else {
                     // Also handle multiple keys by removing and re-adding.
                     delete_post_meta( $post_id, $field );
                     foreach ( $values as $value ) {
-                        add_post_meta( $post_id, $field, $value );
+                        add_post_meta( $post_id, $field, maybe_unserialize( $value ) );
                     }
                 }
             } else {
-                update_post_meta( $post_id, $field, $values );
+                update_post_meta( $post_id, $field, maybe_unserialize( $values ) );
             }
         }
     }
