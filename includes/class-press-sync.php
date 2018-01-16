@@ -699,6 +699,8 @@ class Press_Sync {
             'meta_input' => array(
                 'press_sync_post_id' => $object_args['ID'],
             ),
+            'post_author' => $object_args['post_author'],
+            'post_parent' => $object_args['post_parent'],
 		);
 
         $meta = get_post_meta( $object_args['ID'] );
@@ -708,7 +710,8 @@ class Press_Sync {
         }
 
         if ( get_option( 'ps_skip_assets' ) ) {
-            $args['guid'] = $object_args['guid'];
+            $args['guid']           = $object_args['guid'];
+            $args['post_mime_type'] = $object_args['post_mime_type'];
         }
 
         if ( get_option( 'ps_preserve_ids' ) ) {

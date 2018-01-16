@@ -261,7 +261,7 @@ class API extends \WP_REST_Controller {
 		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
 
 		// Check for post parent and update IDs accordingly.
-		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
+		if ( ! $this->preserve_ids && isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
 
 			$post_parent_args['post_type'] = $post_args['post_type'];
 			$post_parent_args['meta_input']['press_sync_post_id'] = $post_parent_id;
