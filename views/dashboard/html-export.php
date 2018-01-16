@@ -23,6 +23,14 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
                     <p>Attachments will still be synced, however their file assets will <strong>NOT</strong> be copied to the remote site.</p>
                 </td>
             </tr>
+            <tr valign="top">
+                <th scope="row">Preserve Post-type Object IDs</th>
+                <td>
+                <input type="checkbox" name="ps_preserve_ids" <?php checked( get_option( 'ps_preserve_ids' ) ); ?> value="1" />
+                    <span>Enable this option to maintain post IDs. <strong>N.B.:</strong> this can cause issues if you're syncing
+                    to a site that has content that was not synced with Press Sync due to ID collisions, use with care.</span>
+                </td>
+            </tr>
 			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
