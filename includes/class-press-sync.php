@@ -686,6 +686,9 @@ class Press_Sync {
 			'post_title'     => $object_args['post_title'],
 			'post_name'      => $object_args['post_name'],
 			'attachment_url' => $attachment_url,
+            'ID'             => $object_args['ID'],
+            'post_status'    => $object_args['post_status'],
+            'post_type'      => $object_args['post_type'],
 		);
 
 		return $args;
@@ -823,6 +826,7 @@ class Press_Sync {
 			'filename'  => $filename_parts[2],
 			'post_date' => $filename_parts[0] . '/' . $filename_parts[1],
 			'url'       => $attachment->guid,
+            'ID'        => $attachment->ID,
 		);
 
 		return $attachment_details;
@@ -993,6 +997,7 @@ class Press_Sync {
 			'skip_assets'      => get_option( 'ps_skip_assets', false ),
 			'options'          => get_option( 'ps_options_to_sync' ),
 			'local_folder'     => '',
+            'preserve_ids'     => get_option( 'ps_preserve_ids', false ),
 		) );
 	}
 

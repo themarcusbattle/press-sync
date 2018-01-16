@@ -168,11 +168,12 @@ class API extends \WP_REST_Controller {
 	 */
 	public function sync_objects( $request ) {
 
-		$objects_to_sync   = $request->get_param( 'objects_to_sync' );
-		$objects           = $request->get_param( 'objects' );
-		$duplicate_action  = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
-		$force_update      = $request->get_param( 'force_update' );
-		$this->skip_assets = (bool) $request->get_param( 'skip_assets' );
+		$objects_to_sync    = $request->get_param( 'objects_to_sync' );
+		$objects            = $request->get_param( 'objects' );
+		$duplicate_action   = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$force_update       = $request->get_param( 'force_update' );
+		$this->skip_assets  = (bool) $request->get_param( 'skip_assets' );
+        $this->preserve_ids = (bool) $request->get_param( 'preserve_ids' );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -278,8 +279,10 @@ class API extends \WP_REST_Controller {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
-		// Update the existing ID of the post if present.
-		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+        if ( ! $this->preserve_ids ) {
+            // Update the existing ID of the post if present.
+            $post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+        }
 
 		// Determine which content is newer, local or remote.
 		if ( ! $force_update && $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
@@ -383,8 +386,6 @@ class API extends \WP_REST_Controller {
                     wp_update_attachment_metadata( $attachment_id, $attachment_data );
                 }
             } else {
-                unset( $attachment_args['ID'] );
-
                 // Look for a duplicate.
                 if ( $duplicate = $this->get_non_synced_duplicate( $attachment_args ) ) {
                     $attachment_id = $duplicate['ID'];
