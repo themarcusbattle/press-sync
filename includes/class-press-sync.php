@@ -70,6 +70,7 @@ class Press_Sync {
 	 */
 	public function hooks() {
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
+        add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 	}
 
 	/**
@@ -477,7 +478,15 @@ class Press_Sync {
 			$object_args['p2p_connections'] = $this->get_p2p_connections( $object_args['ID'] );
 		}
 
-		unset( $object_args['ID'] );
+        /**
+         * Runs after a post's arguments are prepared for syncing.
+         *
+         * @since NEXT
+         *
+         * @param  array $object_args The arguments after preparation.
+         * @return array
+         */
+        $object_args = apply_filters( 'press_sync_after_prepare_post_args_to_sync', $object_args );
 
 		return $object_args;
 
@@ -1152,5 +1161,22 @@ class Press_Sync {
         }
 
 		return  "{$url}wp-json/press-sync/v1/{$endpoint}?" . http_build_query( $query_args );
+    }
+
+    /**
+     * Removes post IDs if the option to preserve them isn't active.
+     *
+     * @since NEXT
+     *
+     * @param  array $object_args The object's prepared arguments.
+     * @return array
+     */
+    public function maybe_remove_post_id( $object_args ) {
+        if ( true === (bool) get_option( 'ps_preserve_ids' ) ) {
+            return $object_args;
+        }
+
+        unset( $object_args['ID'] );
+        return $object_args;
     }
 }
