@@ -282,6 +282,11 @@ class API extends \WP_REST_Controller {
         if ( ! $this->preserve_ids ) {
             // Update the existing ID of the post if present.
             $post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+        } else {
+            if ( isset( $post_args['ID'] ) ) {
+                $post_args['import_id'] = $post_args['ID'];
+                unset( $post_args['ID'] );
+            }
         }
 
 		// Determine which content is newer, local or remote.
