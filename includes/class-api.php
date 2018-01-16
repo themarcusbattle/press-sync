@@ -799,7 +799,7 @@ class API extends \WP_REST_Controller {
 		if ( ! empty( $post_args['post_name'] ) ) {
             global $wpdb;
 
-            $sql          = "SELECT ID, post_title, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
+            $sql          = "SELECT ID, post_title, post_content, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
             $prepared_sql = $wpdb->prepare( $sql, $post_args['post_name'], $post_args['post_type'] );
 
             // get_row will return "null" or void on failure; in the words of Elvis "Well now goodbye `false` pretender".
@@ -807,7 +807,7 @@ class API extends \WP_REST_Controller {
 		}
 
         // Post content check.
-        $content_threshold = get_option( 'press_sync_content_threshold', false );
+        $content_threshold = get_option( 'ps_content_threshold', false );
 
         if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
             $content_threshold = absint( $content_threshold );
