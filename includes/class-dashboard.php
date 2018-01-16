@@ -44,6 +44,7 @@ class Dashboard {
 		// AJAX Requests.
 		add_action( 'wp_ajax_get_objects_to_sync_count', array( $this, 'get_objects_to_sync_count_via_ajax' ) );
 		add_action( 'wp_ajax_sync_wp_data', array( $this, 'sync_wp_data_via_ajax' ) );
+		add_action( 'wp_ajax_get_order_to_sync_all', array( $this, 'get_order_to_sync_all_via_ajax' ) );
 
 	}
 
@@ -73,7 +74,10 @@ class Dashboard {
 	 * @since 0.1.0
 	 */
 	public function load_scripts() {
-		wp_enqueue_script( 'press-sync', plugins_url( 'assets/js/press-sync.js', dirname( __FILE__ ) ), true );
+
+		$press_sync_js = plugins_url( 'assets/js/press-sync.js', dirname( __FILE__ ) );
+
+		wp_enqueue_script( 'press-sync', $press_sync_js, true );
 		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 	}
 
@@ -100,18 +104,18 @@ class Dashboard {
 		register_setting( 'press-sync', 'ps_remote_query_args' );
 		register_setting( 'press-sync', 'ps_remote_key' );
 
-        // @TODO update option names and locations below this line.
-        // Export page.
+		// @TODO update option names and locations below this line.
+		// Export page.
 		register_setting( 'press-sync-export', 'ps_options' );
 		register_setting( 'press-sync-export', 'ps_ignore_comments' );
 		register_setting( 'press-sync-export', 'ps_request_buffer_time' );
 		register_setting( 'press-sync-export', 'ps_start_object_offset' );
 		register_setting( 'press-sync-export', 'ps_only_sync_missing' );
-        register_setting( 'press-sync-export', 'ps_testing_post' );
+		register_setting( 'press-sync-export', 'ps_testing_post' );
 		register_setting( 'press-sync-export', 'ps_skip_assets' );
 
-        // Import page.
-        register_setting( 'press-sync-import', 'ps_content_threshold' );
+		// Import page.
+		register_setting( 'press-sync-import', 'ps_content_threshold' );
 	}
 
 	/**
@@ -139,24 +143,31 @@ class Dashboard {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return JSON
+	 * @return JSON 
 	 */
 	public function get_objects_to_sync_count_via_ajax() {
 
-		$this->plugin->prepare_options( get_option( 'ps_options_to_sync' ) );
-
 		$objects_to_sync = get_option( 'ps_objects_to_sync' );
-		$prepare_object  = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'options' ) ) ? 'post' : $objects_to_sync;
-		$total_objects   = $this->plugin->count_objects_to_sync( $objects_to_sync );
-
-		$wp_object       = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user' ) ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
-		$wp_object       = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
 
 		wp_send_json_success( array(
-			'objects_to_sync'  => $wp_object,
-			'total_objects'    => $total_objects,
+			'objects_to_sync'  => $objects_to_sync,
+			'total_objects'    => $this->plugin->count_objects_to_sync( $objects_to_sync ),
 		) );
+	}
 
+	/**
+	 * Get the order to sync all objects.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @return JSON
+	 */
+	public function get_order_to_sync_all_via_ajax() {
+
+		// Get all of the objects to sync in the order that we need them.
+		$order_to_sync_all = apply_filters( 'press_sync_order_to_sync_all', array() );
+
+		wp_send_json_success( $order_to_sync_all );
 	}
 
 	/**
@@ -168,11 +179,13 @@ class Dashboard {
 	 */
 	public function sync_wp_data_via_ajax() {
 
-		$this->plugin->prepare_options( get_option( 'ps_options_to_sync' ) );
+		$objects_to_sync = isset( $_REQUEST['objects_to_sync'] ) ? $_REQUEST['objects_to_sync'] : get_option( 'ps_objects_to_sync' );
+		$next_page       = isset( $_REQUEST['paged'] ) ? $_REQUEST['paged'] : 1;
 
-		$objects_to_sync = get_option( 'ps_objects_to_sync' );
+		$settings = array(
+			'objects_to_sync' => $objects_to_sync,
+		);
 
-		wp_send_json_success( $this->plugin->sync_batch( $objects_to_sync ) );
+		wp_send_json_success( $this->plugin->sync_object( $objects_to_sync, $settings, $next_page, true ) );
 	}
-
 }
