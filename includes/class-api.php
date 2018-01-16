@@ -395,7 +395,8 @@ class API extends \WP_REST_Controller {
                 if ( $duplicate = $this->get_non_synced_duplicate( $attachment_args ) ) {
                     $attachment_id = $duplicate['ID'];
                 } else {
-                    $attachment_id = wp_insert_post( $attachment_args );
+                    $attachment_args['post_author'] = $this->get_press_sync_author_id( $attachment_args['post_author'] );
+                    $attachment_id                  = wp_insert_post( $attachment_args );
                 }
 
                 $this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
