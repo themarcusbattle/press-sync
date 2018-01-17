@@ -579,10 +579,12 @@ class Press_Sync {
 		$media = get_post( $thumbnail_id, ARRAY_A );
 		$media['meta_input'] = get_post_meta( $thumbnail_id );
 
-		// Filter out wp built-in meta.
-		foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
-			if ( 0 === strpos( $meta_key, '_wp_' ) ) {
-				unset( $media['meta_input'][$meta_key] );
+		// Maybe filter out wp built-in meta.
+		if ( ! get_option( 'ps_skip_assets' ) ) {
+			foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
+				if ( 0 === strpos( $meta_key, '_wp_' ) ) {
+					unset( $media['meta_input'][$meta_key] );
+				}
 			}
 		}
 
