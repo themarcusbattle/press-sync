@@ -202,6 +202,9 @@ class API extends \WP_REST_Controller {
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
 
+		// Trust the HTML we're syncing is clean.
+		remove_filter( 'content_save_pre', 'wp_filter_post_kses' );
+
 		$responses = array();
 
 		foreach ( $objects as $object ) {
@@ -209,11 +212,7 @@ class API extends \WP_REST_Controller {
 			$responses[] = $this->$sync_method( $object, $duplicate_action, $force_update );
 		}
 
-		// Commit all recent updates.
-//		$wpdb->query( 'COMMIT;' );
-//		$wpdb->query( 'SET AUTOCOMMIT = 1;' );
-//		wp_defer_term_counting( false );
-//		wp_defer_comment_counting( false );
+		add_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
 		return $responses;
 
