@@ -38,15 +38,15 @@ class Press_Sync {
 	 */
 	public $remote_domain = null;
 
-    /**
-     * Initialize the class instance.
-     *
-     * @since 0.4.5
-     */
-    public function __construct() {
+	/**
+	 * Initialize the class instance.
+	 *
+	 * @since 0.4.5
+	 */
+	public function __construct() {
 		// Initialize plugin classes.
 		$this->plugin_classes();
-    }
+	}
 
 	/**
 	 * Create an instance of the Press Sync object
@@ -70,6 +70,7 @@ class Press_Sync {
 	 */
 	public function hooks() {
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
+		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
 	}
 
 	/**
@@ -173,7 +174,8 @@ class Press_Sync {
 	 * @return boolean
 	 */
 	public function check_connection( $url = '' ) {
-        $url = $this->get_remote_url( $url );
+
+		$url = $this->get_remote_url( $url );
 
 		$remote_get_args = array(
 			'timeout' => 30,
@@ -244,15 +246,15 @@ class Press_Sync {
 		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
-        // @TODO let's filter the where clause in general.
-        if ( get_option( 'ps_only_sync_missing' ) ) {
-            $where_clause .= $this->get_missing_post_clause( $objects_to_sync );
-        }
+		// @TODO let's filter the where clause in general.
+		if ( get_option( 'ps_only_sync_missing' ) ) {
+			$where_clause .= $this->get_missing_post_clause( $objects_to_sync );
+		}
 
-        if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
-            $id_where_clause = ' AND ID = %d ';
-            $where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
-        }
+		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
+			$id_where_clause = ' AND ID = %d ';
+			$where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
+		}
 
 		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
@@ -389,6 +391,10 @@ class Press_Sync {
 	 */
 	public function count_objects_to_sync( $objects_to_sync ) {
 
+		if ( 'all' === $objects_to_sync ) {
+			return $this->count_all_to_sync();
+		}
+
 		if ( 'user' === $objects_to_sync ) {
 			return $this->count_users_to_sync();
 		}
@@ -399,22 +405,38 @@ class Press_Sync {
 
 		global $wpdb;
 
-        $where_clause = '';
+		$where_clause = '';
 
-        if ( get_option( 'ps_only_sync_missing' ) ) {
-            $where_clause = $this->get_missing_post_clause( $objects_to_sync );
-        }
+		if ( get_option( 'ps_only_sync_missing' ) ) {
+			$where_clause = $this->get_missing_post_clause( $objects_to_sync );
+		}
 
-        // If it's just one post return only 1.
-        if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
-            return 1;
-        }
+		// If it's just one post return only 1.
+		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
+			return 1;
+		}
 
 		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}", $objects_to_sync );
 		$total_objects = $wpdb->get_var( $prepared_sql );
 
 		return $total_objects;
+	}
 
+	/**
+	 * Get the total number of all objects to sync.
+	 *
+	 * @since 0.6.1
+	 */
+	public function count_all_to_sync() {
+
+		$count           = 0;
+		$objects_to_sync = $this->objects_to_sync( array( 'all' ) );
+
+		foreach ( $objects_to_sync as $object => $label ) {
+			$count += absint( $this->count_objects_to_sync( $object ) );
+		}
+
+		return $count;
 	}
 
 	/**
@@ -425,10 +447,13 @@ class Press_Sync {
 	 * @return integer $total_users
 	 */
 	public function count_users_to_sync() {
-        global $wpdb;
-        $sql   = "SELECT COUNT(*) FROM {$wpdb->users}";
-        $count = $wpdb->get_var($sql);
-        return $count;
+
+		global $wpdb;
+
+		$sql   = "SELECT COUNT(*) FROM {$wpdb->users}";
+		$count = $wpdb->get_var($sql);
+
+		return $count;
 	}
 
 	/**
@@ -439,6 +464,10 @@ class Press_Sync {
 	 * @return integer
 	 */
 	public function count_options_to_sync() {
+
+		// Parse the WP Options to be synced.
+		$this->prepare_options( get_option( 'ps_options_to_sync' ) );
+
 		return count( $this->options );
 	}
 
@@ -451,13 +480,13 @@ class Press_Sync {
 	 *
 	 * @return array $object_args
 	 */
-	public function prepare_post_args_to_sync( $object_args ) {
+	public function prepare_post_args_to_sync( $object_args = array() ) {
 
 		foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
 			$object_args['meta_input'][ $meta_key ] = is_array( $meta_value ) ? $meta_value[0] : $meta_value;
 		}
 
-        // @TODO document.
+		// @TODO document.
 		$object_args = apply_filters( 'press_sync_prepare_post_args_to_sync', $object_args );
 
 		$object_args['embedded_media'] = $this->get_embedded_media( $object_args['post_content'] );
@@ -539,35 +568,35 @@ class Press_Sync {
 		}
 
 		$media = get_post( $thumbnail_id, ARRAY_A );
-        $media['meta_input'] = get_post_meta( $thumbnail_id );
+		$media['meta_input'] = get_post_meta( $thumbnail_id );
 
-        // Filter out wp built-in meta.
-        foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
-            if ( 0 === strpos( $meta_key, '_wp_' ) ) {
-                unset( $media['meta_input'][$meta_key] );
-            }
-        }
+		// Filter out wp built-in meta.
+		foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
+			if ( 0 === strpos( $meta_key, '_wp_' ) ) {
+				unset( $media['meta_input'][$meta_key] );
+			}
+		}
 
-        // @TODO Filterable?
-        $media_urls = array(
-            'local_media' => home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) ),
-            'guid_media'  => $media['guid'],
-        );
+		// @TODO Filterable?
+		$media_urls = array(
+			'local_media' => home_url( 'wp-content/uploads/' . get_post_meta( $thumbnail_id, '_wp_attached_file', true ) ),
+			'guid_media'  => $media['guid'],
+		);
 
-        foreach ( $media_urls as $url ) {
-            if ( get_option( 'ps_skip_assets' ) ) {
-                continue;
-            }
+		foreach ( $media_urls as $url ) {
+			if ( get_option( 'ps_skip_assets' ) ) {
+				continue;
+			}
 
-            if ( $this->is_404( $url ) ) {
-                continue;
-            }
+			if ( $this->is_404( $url ) ) {
+				continue;
+			}
 
-            $media['attachment_url'] = $url;
-            break;
-        }
+			$media['attachment_url'] = $url;
+			break;
+		}
 
-        $media['meta_input']['press_sync_id'] = $thumbnail_id;
+		$media['meta_input']['press_sync_id'] = $thumbnail_id;
 
 		return $media;
 	}
@@ -633,7 +662,7 @@ class Press_Sync {
 	public function prepare_user_args_to_sync( $user_args ) {
 
 		// Remove the user password.
-        // @TODO is there an issue in the API with sending passwords?
+		// @TODO is there an issue in the API with sending passwords?
 		$user_args['user_pass'] = null;
 
 		return $user_args;
@@ -713,8 +742,6 @@ class Press_Sync {
 			'body'    => $args,
 		);
 
-
-
 		$response      = wp_remote_post( $url, $args );
 		$response_body = wp_remote_retrieve_body( $response );
 
@@ -737,7 +764,14 @@ class Press_Sync {
 		}
 
 		$doc = new \DOMDocument();
+
+		// set error level.
+		$internal_errors = libxml_use_internal_errors( true );
+
 		$doc->loadHTML( $post_content );
+
+		// Restore error level.
+		libxml_use_internal_errors( $internal_errors );
 
 		$images = $doc->getElementsByTagName( 'img' );
 
@@ -841,13 +875,17 @@ class Press_Sync {
 	 *
 	 * @param string  $content_type The WP object you want to sync.
 	 * @param array   $settings     The Press Sync settings.
+	 * @param integer $next_page    The pagination number for querying results.
+	 * @param boolean $is_batch     Falg to determine if this is a batch sync or not.
 	 * @param boolean $cli_enabled  Flag used to display WP CLI messages.
+	 *
+	 * @return array $response
 	 */
-	public function sync_content( $content_type = 'post', $settings = array(), $cli_enabled = false ) {
+	public function sync_object( $content_type = 'post', $settings = array(), $next_page = 1, $is_batch = false, $cli_enabled = false ) {
 
-		$do_run    = true;
-		$settings  = $this->parse_sync_settings( $settings );
-		$next_page = 1;
+		$do_run                      = true;
+		$settings                    = $this->parse_sync_settings( $settings );
+		$settings['objects_to_sync'] = $content_type;
 
 		$this->progress->start( 'Syncing ' . $content_type . 's', $this->count_objects_to_sync( $content_type ) );
 
@@ -858,7 +896,7 @@ class Press_Sync {
 			$total_objects_processed = isset( $response['total_objects_processed'] ) ? (int) $response['total_objects_processed'] : 0;
 			$next_page               = isset( $response['next_page'] ) ? $response['next_page'] : 0;
 
-			if ( $total_objects === $total_objects_processed ) {
+			if ( $total_objects === $total_objects_processed || $is_batch ) {
 				$do_run = false;
 			}
 
@@ -879,69 +917,61 @@ class Press_Sync {
 	 */
 	public function sync_batch( $content_type = 'post', $settings = array(), $next_page = 1 ) {
 
-		$remote_domain     = isset( $settings['remote_domain'] ) ? $settings['remote_domain'] : '';
-		$press_sync_key    = isset( $settings['ps_remote_key'] ) ? $settings['ps_remote_key'] : '';
-		$sync_method       = isset( $settings['sync_method'] ) ? $settings['sync_method'] : get_option( 'ps_sync_method' );
-		$objects_to_sync   = $content_type ? $content_type : get_option( 'ps_objects_to_sync' );
-		$duplicate_action  = isset( $settings['duplicate_action'] ) ? $settings['duplicate_action'] : get_option( 'ps_duplicate_action' );
-		$force_update      = isset( $settings['force_update'] ) ? $settings['force_update'] : get_option( 'ps_force_update' );
-		$local_folder      = isset( $settings['local_folder'] ) ? $settings['local_folder'] : '';
-
-		// Initialize the connection credentials.
-		$this->init_connection( $remote_domain );
-
-		$prepare_object    = ! in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option' ), true ) ? 'post' : $objects_to_sync;
-		$wp_object         = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option' ), true ) ? ucwords( $objects_to_sync ) . 's' : get_post_type_object( $objects_to_sync );
-		$wp_object         = isset( $wp_object->labels->name ) ? $wp_object->labels->name : $wp_object;
-
-		// Build out the url.
-		$url               = get_option( 'ps_remote_domain' );
-		$press_sync_key    = get_option( 'ps_remote_key' );
-		$url               = $this->get_remote_url( $url, 'sync' );
-
-		// Prepare the remote request args.
-		$sync_args['duplicate_action'] = $duplicate_action;
-		$sync_args['force_update']     = $force_update;
-		$sync_args['objects_to_sync']  = $prepare_object;
-        $sync_args['skip_assets']      = get_option( 'ps_skip_assets', false );
-
-		// Prepare the correct sync method.
-		$sync_class        = "prepare_{$prepare_object}_args_to_sync";
-		$taxonomies        = get_object_taxonomies( $objects_to_sync );
-		$next_page         = isset( $_POST['paged'] ) ? filter_var( $_POST['paged'], FILTER_VALIDATE_INT ) : $next_page;
-		$objects           = $local_folder ? $this->get_local_objects_to_sync( $local_folder, $objects_to_sync ) : $this->get_objects_to_sync( $objects_to_sync, $next_page, $taxonomies );
-		$total_objects     = $local_folder ? count( $objects ) : $this->count_objects_to_sync( $objects_to_sync );
-		$logs              = array();
+		// Get all of the objects within this batch.
+		$taxonomies        = get_object_taxonomies( $content_type );
+		$objects           = $settings['local_folder'] ? $this->get_local_objects_to_sync( $settings['local_folder'], $content_type ) : $this->get_objects_to_sync( $content_type, $next_page, $taxonomies );
+		$total_objects     = $settings['local_folder'] ? count( $objects ) : $this->count_objects_to_sync( $content_type );
 
 		// Prepare each object to be sent to the remote site.
-		foreach ( $objects as $key => $object ) {
-			$sync_args['objects'][ $key ] = $this->$sync_class( $object );
-		}
+		$objects_args = $this->prepare_objects_to_sync( $objects, $settings );
 
-        $request_buffer_time = absint( get_option( 'ps_request_buffer_time' ) );
+		// Slow down the sync.
+		$this->slow_down_sync();
 
-        if ( 0 < $request_buffer_time && 60 >= $request_buffer_time ) {
-            sleep( $request_buffer_time );
-        }
+		// Resume the sync from a previous location.
+		$next_page = $this->change_the_next_page( $next_page );
 
-        $page_offset = absint(get_option( 'ps_start_object_offset'));
+		// Initialize the connection credentials.
+		$this->init_connection( $settings['remote_domain'] );
 
-        if ( 0 < $page_offset && 1 == $next_page ) {
-            $page_offset = floor( $page_offset / 5 );
-            $next_page  += ( $page_offset - 1);
-            error_log('----NP: ' . $next_page);
-        }
-
-		$logs = $this->send_data_to_remote_site( $url, $sync_args );
+		// Build out the url and send the data to the remote site.
+		$url  = $this->get_remote_url( '', 'sync' );
+		$logs = $this->send_data_to_remote_site( $url, $objects_args );
 
 		return array(
-			'objects_to_sync'         => $wp_object,
+			'objects_to_sync'         => $content_type,
 			'total_objects'           => $total_objects,
 			'total_objects_processed' => ( $next_page * 5 ) - ( 5 - count( $objects ) ),
 			'next_page'               => $next_page + 1,
 			'log'                     => $logs,
 		);
+	}
 
+	/**
+	 * Get the order to sync all objects.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @param array $order_to_sync_all The objects in order of sync.
+	 *
+	 * @return array $order_to_sync_all
+	 */
+	public function order_to_sync_all( $order_to_sync_all = array() ) {
+
+		// An array of all of the core WP objects in the desired order to sync.
+		$order_to_sync_all = array( 'user', 'option', 'post', 'page' );
+
+		// Get any CPTs.
+		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
+
+		if ( $custom_post_types ) {
+
+			foreach ( $custom_post_types as $cpt ) {
+				array_push( $order_to_sync_all, $cpt->name );
+			}
+		}
+
+		return $order_to_sync_all;
 	}
 
 	/**
@@ -954,8 +984,42 @@ class Press_Sync {
 	public function parse_sync_settings( $settings = array() ) {
 
 		return wp_parse_args( $settings, array(
-			'options' => '',
+			'remote_domain'    => get_option( 'ps_remote_domain' ),
+			'ps_remote_key'    => get_option( 'ps_remote_key' ),
+			'sync_method'      => get_option( 'ps_sync_method' ),
+			'objects_to_sync'  => get_option( 'ps_objects_to_sync' ),
+			'duplicate_action' => get_option( 'ps_duplicate_action' ),
+			'force_update'     => get_option( 'ps_force_update', false ),
+			'skip_assets'      => get_option( 'ps_skip_assets', false ),
+			'options'          => get_option( 'ps_options_to_sync' ),
+			'local_folder'     => '',
 		) );
+	}
+
+	/**
+	 * Prepare the arguments that need to be passed to the remote site.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @param array $objects  The objects that will be sent to the remote site.
+	 * @param array $settings The sync settings.
+	 *
+	 * @return array $settings
+	 */
+	public function prepare_objects_to_sync( $objects = array(), $settings = array() ) {
+
+		// Select the proper sync function for the object to sync.
+		$sync_function = $this->get_sync_function_name( $settings['objects_to_sync'] );
+
+		if ( empty( $objects ) ) {
+			return $settings;
+		}
+
+		foreach ( $objects as $key => $object ) {
+			$settings['objects'][ $key ] = $this->$sync_function( $object );
+		}
+
+		return $settings;
 	}
 
 	/**
@@ -972,11 +1036,14 @@ class Press_Sync {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param array $exclude The slugs of the objects to sync you want to exclude.
+	 *
 	 * @return array $objects A list of WP objects.
 	 */
-	public function objects_to_sync() {
+	public function objects_to_sync( $exclude = array() ) {
 
 		$objects = array(
+			'all'        => __( 'All', 'press-sync' ),
 			'attachment' => __( 'Media', 'press-sync' ),
 			'page'       => __( 'Pages', 'press-sync' ),
 			'post'       => __( 'Posts', 'press-sync' ),
@@ -997,8 +1064,12 @@ class Press_Sync {
 
 		$objects = apply_filters( 'press_sync_objects_to_sync', $objects );
 
-		return $objects;
+		// Remove any unwanted objects.
+		foreach ( $exclude as $object_type ) {
+			unset( $objects[ $object_type ] );
+		}
 
+		return $objects;
 	}
 
 	/**
@@ -1077,80 +1148,150 @@ class Press_Sync {
 		return $objects;
 	}
 
-    /**
-     * Gets a WHERE clause statement to use for syncing missing objects.
-     *
-     * @since 0.6.0
-     *
-     * @param string $objects_to_sync The thing we're syncing, in this case post_type.
-     *
-     * @return string
-     */
-    public function get_missing_post_clause( $objects_to_sync ) {
-        $url = $this->get_remote_url( '', 'progress' );
-        $remote_get_args = array(
-            'timeout' => 30,
-        );
+	/**
+	 * Gets a WHERE clause statement to use for syncing missing objects.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $objects_to_sync The thing we're syncing, in this case post_type.
+	 *
+	 * @return string
+	 */
+	public function get_missing_post_clause( $objects_to_sync ) {
 
-        $response = wp_remote_get( $url, $remote_get_args );
-        $response_code = wp_remote_retrieve_response_code( $response );
+		$url = $this->get_remote_url( '', 'progress' );
 
-        if ( 200 !== $response_code ) {
-            return '';
-        }
+		$remote_get_args = array(
+			'timeout' => 30,
+		);
 
-        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$response = wp_remote_get( $url, $remote_get_args );
+		$response_code = wp_remote_retrieve_response_code( $response );
 
-        if ( empty( $response_body['data']['synced'] ) ) {
-            return '';
-        }
+		if ( 200 !== $response_code ) {
+			return '';
+		}
 
-        $placeholders  = array_fill( 0, count( $response_body['data']['synced'] ), '%d' );
-        $format_string = implode( ', ', $placeholders );
-        $prepared_sql  = " AND ID NOT IN ({$format_string}) ";
-        $args          = $response_body['data']['synced'];
-        $sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $args );
+		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-        return $sql;
-    }
+		if ( empty( $response_body['data']['synced'] ) ) {
+			return '';
+		}
 
-    // Thanks SO: https://stackoverflow.com/questions/18473325/check-if-a-http-request-returns-404-or-page-not-found
-    private function is_404( $url ) {
+		$placeholders  = array_fill( 0, count( $response_body['data']['synced'] ), '%d' );
+		$format_string = implode( ', ', $placeholders );
+		$prepared_sql  = " AND ID NOT IN ({$format_string}) ";
+		$args          = $response_body['data']['synced'];
+		$sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $args );
 
-        $handle = curl_init($url);
-        curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
-        curl_exec($handle);
-        $code = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+		return $sql;
+	}
 
-        if( $code == '404' ){
-            return true;
-        }
+	/**
+	 * Checkts to see if a url is 404ing.
+	 *
+	 * Thanks SO: https://stackoverflow.com/questions/18473325/check-if-a-http-request-returns-404-or-page-not-found
+	 *
+	 * @param string $url The url we're requesting.
+	 *
+	 * @return boolean
+	 */
+	private function is_404( $url ) {
 
-        return false;
-    }
+		$handle = curl_init( $url );
 
-    /**
-     * Gets the remote site URL and appends query parameters.
-     *
-     * @since 0.5.1
-     *
-     * @param  string $url      A URL other than the stored remote URL to use.
-     * @param  string $endpoint The remote site endpoint.
-     *
-     * @return string
-     */
-    public function get_remote_url( $url = '', $endpoint = 'status' ) {
-		$url        = ( $url ) ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
-        $query_args = array(
-            'press_sync_key' => get_option( 'ps_remote_key' ),
-        );
+		curl_setopt( $handle,  CURLOPT_RETURNTRANSFER, TRUE );
+		curl_exec( $handle );
 
-        if ( $remote_args = get_option( 'ps_remote_query_args' ) ) {
-            $remote_args = ltrim( $remote_args, '?' );
-            parse_str( $remote_args, $remote_args_array );
-            $query_args = array_merge( $query_args, $remote_args_array );
-        }
+		$code = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+
+		if ( '404' === $code ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Gets the remote site URL and appends query parameters.
+	 *
+	 * @since 0.5.1
+	 *
+	 * @param  string $url      A URL other than the stored remote URL to use.
+	 * @param  string $endpoint The remote site endpoint.
+	 *
+	 * @return string
+	 */
+	public function get_remote_url( $url = '', $endpoint = 'status' ) {
+
+		$url        = $url ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
+		$query_args = array(
+			'press_sync_key' => get_option( 'ps_remote_key' ),
+		);
+
+		if ( $remote_args = get_option( 'ps_remote_query_args' ) ) {
+			$remote_args = ltrim( $remote_args, '?' );
+			parse_str( $remote_args, $remote_args_array );
+			$query_args = array_merge( $query_args, $remote_args_array );
+		}
 
 		return  "{$url}wp-json/press-sync/v1/{$endpoint}?" . http_build_query( $query_args );
-    }
+	}
+
+	/**
+	 * Converts a object to sync into it's sync function name.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @param string $objects_to_sync The objects to sync.
+	 *
+	 * @return string $wp_object
+	 */
+	public function get_sync_function_name( $objects_to_sync = '' ) {
+
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option' ), true ) ? $objects_to_sync : 'post';
+
+		return "prepare_{$wp_object}_args_to_sync";
+	}
+
+	/**
+	 * Slows down the sync process to prevent db locking on the remote site.
+	 *
+	 * @since 0.6.1
+	 */
+	public function slow_down_sync() {
+
+		$request_buffer_time = absint( get_option( 'ps_request_buffer_time' ) );
+
+		if ( 0 < $request_buffer_time && 60 >= $request_buffer_time ) {
+			sleep( $request_buffer_time );
+		}
+
+	}
+
+	/**
+	 * Change the $next_page value for a batch synce.
+	 *
+	 * Useful so that the sync can resume from a previous location.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @param integer $next_page The next page in the sync process.
+	 *
+	 * @return integer $next_page
+	 */
+	public function change_the_next_page( $next_page = 1 ) {
+
+		$page_offset = absint( get_option( 'ps_start_object_offset' ) );
+
+		if ( 0 < $page_offset && 1 === $next_page ) {
+
+			$page_offset = floor( $page_offset / 5 );
+			$next_page  += ( $page_offset - 1);
+
+			error_log( '----NP: ' . $next_page );
+		}
+
+		return $next_page;
+	}
 }

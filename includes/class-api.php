@@ -172,7 +172,7 @@ class API extends \WP_REST_Controller {
 		$objects           = $request->get_param( 'objects' );
 		$duplicate_action  = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
 		$force_update      = $request->get_param( 'force_update' );
-        $this->skip_assets = (bool) $request->get_param( 'skip_assets' );
+		$this->skip_assets = (bool) $request->get_param( 'skip_assets' );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -198,7 +198,7 @@ class API extends \WP_REST_Controller {
 		// Speed up bulk queries by pausing MySQL commits.
 		global $wpdb;
 
-//		$wpdb->query( 'SET AUTOCOMMIT = 0;' );
+		// $wpdb->query( 'SET AUTOCOMMIT = 0;' );
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
 
@@ -206,6 +206,8 @@ class API extends \WP_REST_Controller {
 		remove_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
 		$responses = array();
+
+		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'post', 'page' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
