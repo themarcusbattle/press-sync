@@ -282,7 +282,7 @@ class API extends \WP_REST_Controller {
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
 
 		// Keep the ID because we found a regular ol' duplicate.
-		if ( $this->preserve_ids && ! $local_post ) {
+		if ( $this->preserve_ids && ! $local_post && ! empty( $post_args['ID'] ) ) {
 			$post_args['import_id'] = $post_args['ID'];
 			unset( $post_args['ID'] );
 		}
