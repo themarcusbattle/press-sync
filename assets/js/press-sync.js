@@ -78,7 +78,6 @@ window.PressSync = ( function( window, document, $ ) {
 	app.syncData = function( paged, objects_to_sync ) {
 
 		$.ajax({
-			async: false,
 			method: "POST",
 			url: press_sync.ajax_url,
 			data: {
