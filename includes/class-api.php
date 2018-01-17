@@ -279,13 +279,10 @@ class API extends \WP_REST_Controller {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
-        // @TODO this logic needs cleanup.
-        if ( ! $this->preserve_ids ) {
-            // Update the existing ID of the post if present.
-            $post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
-        }
+        $post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
 
-        if ( $this->preserve_ids && ! $local_post && isset( $post_args['ID'] ) ) {
+        // Keep the ID because we found a regular ol' duplicate.
+        if ( $this->preserve_ids && ! $local_post ) {
             $post_args['import_id'] = $post_args['ID'];
             unset( $post_args['ID'] );
         }
