@@ -1316,7 +1316,7 @@ class Press_Sync {
 
 		$page_offset = absint( get_option( 'ps_start_object_offset' ) );
 
-		if ( 0 < $page_offset && 1 === $next_page ) {
+		if ( 0 < $page_offset && 1 === absint( $next_page ) ) {
 
 			$page_offset = floor( $page_offset / 5 );
 			$next_page  += ( $page_offset - 1);
