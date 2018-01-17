@@ -202,6 +202,9 @@ class API extends \WP_REST_Controller {
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
 
+		// Trust the HTML we're syncing is clean.
+		remove_filter( 'content_save_pre', 'wp_filter_post_kses' );
+
 		$responses = array();
 
 		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'post', 'page' ), true ) ? $objects_to_sync : 'post';
@@ -211,11 +214,7 @@ class API extends \WP_REST_Controller {
 			$responses[] = $this->$sync_method( $object, $duplicate_action, $force_update );
 		}
 
-		// Commit all recent updates.
-		// $wpdb->query( 'COMMIT;' );
-		// $wpdb->query( 'SET AUTOCOMMIT = 1;' );
-		// wp_defer_term_counting( false );
-		// wp_defer_comment_counting( false );
+		add_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
 		return $responses;
 
@@ -801,7 +800,7 @@ class API extends \WP_REST_Controller {
 		if ( ! empty( $post_args['post_name'] ) ) {
             global $wpdb;
 
-            $sql          = "SELECT ID, post_title, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
+            $sql          = "SELECT ID, post_title, post_content, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
             $prepared_sql = $wpdb->prepare( $sql, $post_args['post_name'], $post_args['post_type'] );
 
             // get_row will return "null" or void on failure; in the words of Elvis "Well now goodbye `false` pretender".
@@ -809,7 +808,7 @@ class API extends \WP_REST_Controller {
 		}
 
         // Post content check.
-        $content_threshold = get_option( 'press_sync_content_threshold', false );
+        $content_threshold = get_option( 'ps_content_threshold', false );
 
         if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
             $content_threshold = absint( $content_threshold );
