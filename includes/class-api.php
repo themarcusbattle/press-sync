@@ -858,6 +858,11 @@ class API extends \WP_REST_Controller {
     public function get_sync_progress( $request ) {
         try {
             $post_type = $request->get_param( 'post_type' );
+
+            if ( ! post_type_exists( $post_type ) ) {
+                $post_type = 'post';
+            }
+
             $sql = <<<SQL
 SELECT DISTINCT
     pm.meta_value
@@ -872,7 +877,7 @@ AND
         WHERE
             p.post_status NOT IN( 'auto-draft', 'trash' )
         AND
-            p.post_type = 'post'
+            p.post_type = %s
     )
 SQL;
 
