@@ -606,7 +606,7 @@ class Press_Sync {
 			break;
 		}
 
-		$media['meta_input']['press_sync_post_id'] = $thumbnail_id;
+		$media['meta_input']['press_sync_id'] = $thumbnail_id;
 
 		return $media;
 	}
