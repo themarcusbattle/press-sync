@@ -68,12 +68,12 @@ class API extends \WP_REST_Controller {
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
-        register_rest_route( 'press-sync/v1', '/progress/', array(
-            'methods'             => array( 'GET' ),
-            'callback'            => array( $this, 'get_sync_progress' ),
-            'permission_callback' => array( $this, 'validate_sync_key' ),
-            'args'                => array( 'post_type', 'press_sync_key' ),
-        ) );
+		register_rest_route( 'press-sync/v1', '/progress/', array(
+			'methods'             => array( 'GET' ),
+			'callback'            => array( $this, 'get_sync_progress' ),
+			'permission_callback' => array( $this, 'validate_sync_key' ),
+			'args'                => array( 'post_type', 'press_sync_key' ),
+		) );
 
 		/*
 		@todo Complete the individual post syncing.
@@ -81,7 +81,7 @@ class API extends \WP_REST_Controller {
 			'methods' => array( 'GET', 'POST' ),
 			'callback' => array( $this, 'sync_objects' ),
 		) );
-		*/
+		 */
 
 	}
 
@@ -168,11 +168,12 @@ class API extends \WP_REST_Controller {
 	 */
 	public function sync_objects( $request ) {
 
-		$objects_to_sync   = $request->get_param( 'objects_to_sync' );
-		$objects           = $request->get_param( 'objects' );
-		$duplicate_action  = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
-		$force_update      = $request->get_param( 'force_update' );
-		$this->skip_assets = (bool) $request->get_param( 'skip_assets' );
+		$objects_to_sync    = $request->get_param( 'objects_to_sync' );
+		$objects            = $request->get_param( 'objects' );
+		$duplicate_action   = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$force_update       = $request->get_param( 'force_update' );
+		$this->skip_assets  = (bool) $request->get_param( 'skip_assets' );
+		$this->preserve_ids = (bool) $request->get_param( 'preserve_ids' );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -228,7 +229,7 @@ class API extends \WP_REST_Controller {
 	 * @param array   $post_args        The WP Posts to sync.
 	 * @param string  $duplicate_action A flag to direct whether or not content is duplicated.
 	 * @param boolean $force_update     A flag to overwrite existing content.
-     * @TODO add filter for incoming post data before save.
+	 * @TODO add filter for incoming post data before save.
 	 *
 	 * @return array
 	 */
@@ -259,7 +260,7 @@ class API extends \WP_REST_Controller {
 		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
 
 		// Check for post parent and update IDs accordingly.
-		if ( isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
+		if ( ! $this->preserve_ids && isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
 
 			$post_parent_args['post_type'] = $post_args['post_type'];
 			$post_parent_args['meta_input']['press_sync_post_id'] = $post_parent_id;
@@ -277,8 +278,13 @@ class API extends \WP_REST_Controller {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
-		// Update the existing ID of the post if present.
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+
+		// Keep the ID because we found a regular ol' duplicate.
+		if ( $this->preserve_ids && ! $local_post && ! empty( $post_args['ID'] ) ) {
+			$post_args['import_id'] = $post_args['ID'];
+			unset( $post_args['ID'] );
+		}
 
 		// Determine which content is newer, local or remote.
 		if ( ! $force_update && $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
@@ -339,7 +345,7 @@ class API extends \WP_REST_Controller {
 				'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
 				'local_post_id'   => $local_post_id,
 				'message'         => __( 'The post has been synced with the remote site', 'press-sync' ),
-                'featured_result' => $featured_result,
+				'featured_result' => $featured_result,
 			),
 		);
 	}
@@ -362,41 +368,46 @@ class API extends \WP_REST_Controller {
 			return false;
 		}
 
-        try {
-            if ( ! $this->skip_assets ) {
-                $attachment = $this->maybe_upload_remote_attachment( $attachment_args );
+		try {
+			if ( ! $this->skip_assets ) {
+				$attachment = $this->maybe_upload_remote_attachment( $attachment_args );
 
-                // ID will only be set if we find the attachment is already here.
-                if ( ! isset( $attachment['ID'] ) ) {
-                    $filename = $attachment['filename'];
-                    unset( $attachment['filename'] );
+				// ID will only be set if we find the attachment is already here.
+				if ( ! isset( $attachment['ID'] ) ) {
+					$filename = $attachment['filename'];
+					unset( $attachment['filename'] );
 
-                    $attachment_id = wp_insert_attachment( $attachment, $filename, 0 );
+					$attachment_id = wp_insert_attachment( $attachment, $filename, 0 );
 
-                    if ( is_wp_error( $attachment_id ) ) {
-                        throw new \Exception( 'There was an error creating the attachment: ' . $attachment_id->get_error_message() );
-                    }
+					if ( is_wp_error( $attachment_id ) ) {
+						throw new \Exception( 'There was an error creating the attachment: ' . $attachment_id->get_error_message() );
+					}
 
-                    // Generate the metadata for the attachment, and update the database record.
-                    $attachment_data = wp_generate_attachment_metadata( $attachment_id, $filename );
-                    wp_update_attachment_metadata( $attachment_id, $attachment_data );
-                }
-            } else {
-                unset( $attachment_args['ID'] );
+					// Generate the metadata for the attachment, and update the database record.
+					$attachment_data = wp_generate_attachment_metadata( $attachment_id, $filename );
+					wp_update_attachment_metadata( $attachment_id, $attachment_data );
+				}
+			} else {
+				// Look for a duplicate.
+				if ( $duplicate = $this->get_non_synced_duplicate( $attachment_args ) ) {
+					$attachment_id = $duplicate['ID'];
+				} else {
+					$attachment_args['post_author'] = $this->get_press_sync_author_id( $attachment_args['post_author'] );
+					if ( isset( $attachment_args['ID'] ) ) {
+						$attachment_args['import_id'] = $attachment_args['ID'];
+						unset( $attachment_args['ID'] );
+					}
 
-                // Look for a duplicate.
-                if ( $duplicate = $this->get_non_synced_duplicate( $attachment_args ) ) {
-                    $attachment_id = $duplicate['ID'];
-                    $this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
-                } else {
-                    $attachment_id = wp_insert_post( $attachment_args );
-                }
-            }
-        }
-        catch( \Exception $e ) {
-            // @TODO log it more!
-            error_log( $e->getMessage() );
-        }
+					$attachment_id = wp_insert_post( $attachment_args );
+				}
+
+				$this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
+			}
+		}
+		catch( \Exception $e ) {
+			// @TODO log it more!
+			error_log( $e->getMessage() );
+		}
 
 		return $attachment_id;
 	}
@@ -478,9 +489,9 @@ class API extends \WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param array $post_args The WP Post args to query.
-     * @since 0.4.5
-     * @param bool $respect_post_type Set false to look for a post regardless of post type.
-     *
+	 * @since 0.4.5
+	 * @param bool $respect_post_type Set false to look for a post regardless of post type.
+	 *
 	 * @return WP_Post
 	 */
 	public function get_synced_post( $post_args, $respect_post_type = true ) {
@@ -493,16 +504,16 @@ class API extends \WP_REST_Controller {
 		$sql = "
 			SELECT post_id AS ID, post_title, post_type, post_modified FROM $wpdb->postmeta AS meta
 			LEFT JOIN $wpdb->posts AS posts ON posts.ID = meta.post_id
-            WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = %d";
+			WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = %d";
 
-        $prepare_args = array( $press_sync_post_id );
+		$prepare_args = array( $press_sync_post_id );
 
-        if  ( $respect_post_type ) {
-            $sql           .= ' AND posts.post_type = %s ';
-            $prepare_args[] = $post_args['post_type'];
-        }
+		if  ( $respect_post_type ) {
+			$sql           .= ' AND posts.post_type = %s ';
+			$prepare_args[] = $post_args['post_type'];
+		}
 
-        $sql .= ' LIMIT 1';
+		$sql .= ' LIMIT 1';
 
 		$prepared_sql = $wpdb->prepare( $sql, $prepare_args );
 		$post         = $wpdb->get_row( $prepared_sql, ARRAY_A );
@@ -592,9 +603,9 @@ class API extends \WP_REST_Controller {
 		global $wpdb;
 
 		$sql = "SELECT ID, post_modified
-		FROM $wpdb->posts AS posts
-		LEFT JOIN $wpdb->postmeta AS meta ON meta.post_id = posts.ID
-		WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = $press_sync_post_id";
+			FROM $wpdb->posts AS posts
+			LEFT JOIN $wpdb->postmeta AS meta ON meta.post_id = posts.ID
+			WHERE meta.meta_key = 'press_sync_post_id' AND meta.meta_value = $press_sync_post_id";
 
 		return $wpdb->get_row( $sql );
 	}
@@ -651,7 +662,7 @@ class API extends \WP_REST_Controller {
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
 
-        return $response ? '' : "Error attaching thumbnail {$thumbnail_id} to post {$post_id}";
+		return $response ? '' : "Error attaching thumbnail {$thumbnail_id} to post {$post_id}";
 	}
 
 	/**
@@ -786,40 +797,40 @@ class API extends \WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-     * @since 0.6.0
+	 * @since 0.6.0
 	 * @param string $post_args The post arguments for the post being synced.
 	 *
 	 * @return WP_Post
 	 */
 	public function get_non_synced_duplicate( $post_args ) {
-        $duplicate_post = false;
+		$duplicate_post = false;
 
-        // @TODO post name and content checks should be their own methods...later, in the Post sync class.
+		// @TODO post name and content checks should be their own methods...later, in the Post sync class.
 
-        // Post name check.
+		// Post name check.
 		if ( ! empty( $post_args['post_name'] ) ) {
-            global $wpdb;
+			global $wpdb;
 
             $sql          = "SELECT ID, post_title, post_content, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
             $prepared_sql = $wpdb->prepare( $sql, $post_args['post_name'], $post_args['post_type'] );
 
-            // get_row will return "null" or void on failure; in the words of Elvis "Well now goodbye `false` pretender".
-            $duplicate_post = $wpdb->get_row( $prepared_sql, ARRAY_A ) ?: false;
+			// get_row will return "null" or void on failure; in the words of Elvis "Well now goodbye `false` pretender".
+			$duplicate_post = $wpdb->get_row( $prepared_sql, ARRAY_A ) ?: false;
 		}
 
         // Post content check.
         $content_threshold = get_option( 'ps_content_threshold', false );
 
-        if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
-            $content_threshold = absint( $content_threshold );
+		if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
+			$content_threshold = absint( $content_threshold );
 
-            // Calculate how similar the post contents are (is?).
-            similar_text( $duplicate_post['post_content'], $post_args['post_content'], $similarity );
+			// Calculate how similar the post contents are (is?).
+			similar_text( $duplicate_post['post_content'], $post_args['post_content'], $similarity );
 
-            if ( $similarity < $content_threshold ) {
-                $duplicate_post = false;
-            }
-        }
+			if ( $similarity < $content_threshold ) {
+				$duplicate_post = false;
+			}
+		}
 
 		return $duplicate_post;
 	}
@@ -848,46 +859,46 @@ class API extends \WP_REST_Controller {
 
 	}
 
-    /**
-     * Returns the IDs of synced objects of the given post type.
-     *
-     * @since 0.6.0
-     *
-     * @param WP_REST_Request $request The REST request.
-     */
-    public function get_sync_progress( $request ) {
-        try {
-            $post_type = $request->get_param( 'post_type' );
-            $sql = <<<SQL
+	/**
+	 * Returns the IDs of synced objects of the given post type.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request The REST request.
+	 */
+	public function get_sync_progress( $request ) {
+		try {
+			$post_type = $request->get_param( 'post_type' );
+			$sql = <<<SQL
 SELECT DISTINCT
-    pm.meta_value
+	pm.meta_value
 FROM
-    {$GLOBALS['wpdb']->postmeta} pm
+	{$GLOBALS['wpdb']->postmeta} pm
 WHERE
-    pm.meta_key = 'press_sync_post_id'
+	pm.meta_key = 'press_sync_post_id'
 AND
-    pm.post_id IN(
-        SELECT ID FROM
-            {$GLOBALS['wpdb']->posts} p
-        WHERE
-            p.post_status NOT IN( 'auto-draft', 'trash' )
-        AND
-            p.post_type = 'post'
-    )
+	pm.post_id IN(
+		SELECT ID FROM
+			{$GLOBALS['wpdb']->posts} p
+		WHERE
+			p.post_status NOT IN( 'auto-draft', 'trash' )
+		AND
+			p.post_type = 'post'
+	)
 SQL;
 
-            $query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );
-            $synced = $GLOBALS['wpdb']->get_col( $query );
+			$query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );
+			$synced = $GLOBALS['wpdb']->get_col( $query );
 
-            wp_send_json_success( array(
-                'synced' => $synced,
-            ) );
-        } catch ( \Exception $e ) {
-            wp_send_json_error();
-        }
-    }
+			wp_send_json_success( array(
+				'synced' => $synced,
+			) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error();
+		}
+	}
 
-    private function maybe_upload_remote_attachment( $attachment_args ) {
+	private function maybe_upload_remote_attachment( $attachment_args ) {
 		$attachment_url       = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
 		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : $attachment_args['post_date'];
 		$attachment_title     = isset( $attachment_args['post_title'] ) ? $attachment_args['post_title'] : '';
@@ -898,92 +909,92 @@ SQL;
 			return array( 'ID' => $attachment_id );
 		}
 
-        $attachment_metadata = $this->get_attachment_metadata_from_request( $attachment_args );
-        $temp_file           = false;
+		$attachment_metadata = $this->get_attachment_metadata_from_request( $attachment_args );
+		$temp_file           = false;
 
-        require_once( ABSPATH . '/wp-admin/includes/image.php' );
-        require_once( ABSPATH . '/wp-admin/includes/file.php' );
-        require_once( ABSPATH . '/wp-admin/includes/media.php' );
+		require_once( ABSPATH . '/wp-admin/includes/image.php' );
+		require_once( ABSPATH . '/wp-admin/includes/file.php' );
+		require_once( ABSPATH . '/wp-admin/includes/media.php' );
 
-        // Download the url.
-        $temp_file = download_url( $attachment_url, 5000 );
+		// Download the url.
+		$temp_file = download_url( $attachment_url, 5000 );
 
-        // Move the file to the proper uploads folder.
-        if ( is_wp_error( $temp_file ) ) {
-            // @TODO log it!
-            throw new \Exception( 'Something went wrong when downloading the attachment temp file: ' . $temp_file->get_error_message() );
-        }
+		// Move the file to the proper uploads folder.
+		if ( is_wp_error( $temp_file ) ) {
+			// @TODO log it!
+			throw new \Exception( 'Something went wrong when downloading the attachment temp file: ' . $temp_file->get_error_message() );
+		}
 
-        // Array based on $_FILE as seen in PHP file uploads.
-        $file = array(
-            'name'     => basename( $attachment_url ),
-            'type'     => 'image/png',
-            'tmp_name' => $temp_file,
-            'error'    => 0,
-            'size'     => filesize( $temp_file ),
-        );
+		// Array based on $_FILE as seen in PHP file uploads.
+		$file = array(
+			'name'     => basename( $attachment_url ),
+			'type'     => 'image/png',
+			'tmp_name' => $temp_file,
+			'error'    => 0,
+			'size'     => filesize( $temp_file ),
+		);
 
-        $overrides = array( 'test_form' => false, 'test_size' => true, 'action' => 'custom' );
+		$overrides = array( 'test_form' => false, 'test_size' => true, 'action' => 'custom' );
 
-        if ( false !== $temp_file ) {
-            // Move the temporary file into the uploads directory.
-            $results = wp_handle_upload( $file, $overrides, $attachment_post_date );
+		if ( false !== $temp_file ) {
+			// Move the temporary file into the uploads directory.
+			$results = wp_handle_upload( $file, $overrides, $attachment_post_date );
 
-            // Delete the temporary file.
-            @unlink( $temp_file );
-        }
+			// Delete the temporary file.
+			@unlink( $temp_file );
+		}
 
-        // Upload the file into WP Media Library.
-        if ( $results['file'] ) {
-            $filename  = $results['file']; // Full path to the file.
-            $local_url = $results['url'];  // URL to the file in the uploads dir.
-            $type      = $results['type']; // MIME type of the file.
-        }
+		// Upload the file into WP Media Library.
+		if ( $results['file'] ) {
+			$filename  = $results['file']; // Full path to the file.
+			$local_url = $results['url'];  // URL to the file in the uploads dir.
+			$type      = $results['type']; // MIME type of the file.
+		}
 
-        // Prepare an array of post data for the attachment.
-        $attachment = array(
-            'guid'           => $local_url,
-            'post_mime_type' => $type,
-            'post_title'     => $attachment_title ?: preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
-            'post_content'   => '',
-            'post_status'    => 'inherit',
-            'filename'       => $filename,
-        );
+		// Prepare an array of post data for the attachment.
+		$attachment = array(
+			'guid'           => $local_url,
+			'post_mime_type' => $type,
+			'post_title'     => $attachment_title ?: preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+			'filename'       => $filename,
+		);
 
-        if ( strlen( $attachment_name ) ) {
-            $attachment['post_name'] = $attachment_name;
-        }
+		if ( strlen( $attachment_name ) ) {
+			$attachment['post_name'] = $attachment_name;
+		}
 
-        return $attachment;
-    }
+		return $attachment;
+	}
 
-    /**
-     * Bulk updates meta data from an array.
-     *
-     * @since 0.6.0
-     *
-     * @param int   $post_id   The ID of the post you want to update meta on.
-     * @param array $meta_data An array with keys and values also contained in an array ala get_post_meta( $ID ).
-     */
-    private function update_post_meta_array( $post_id, $meta_data = array() ) {
-        foreach ( $meta_data as $field => $values ) {
-            if ( is_array( $values ) ) {
-                update_post_meta( $post_id, $field, current( $values ) );
-                continue;
+	/**
+	 * Bulk updates meta data from an array.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param int   $post_id   The ID of the post you want to update meta on.
+	 * @param array $meta_data An array with keys and values also contained in an array ala get_post_meta( $ID ).
+	 */
+	private function update_post_meta_array( $post_id, $meta_data = array() ) {
+		foreach ( $meta_data as $field => $values ) {
+			if ( is_array( $values ) ) {
+				update_post_meta( $post_id, $field, current( $values ) );
+				continue;
 
-                // Handle $values as an array.
-                if ( 1 === count( $values ) ) {
-                    update_post_meta( $post_id, $field, current( $values ) );
-                } else {
-                    // Also handle multiple keys by removing and re-adding.
-                    delete_post_meta( $post_id, $field );
-                    foreach ( $values as $value ) {
-                        add_post_meta( $post_id, $field, $value );
-                    }
-                }
-            } else {
-                update_post_meta( $post_id, $field, $values );
-            }
-        }
-    }
+				// Handle $values as an array.
+				if ( 1 === count( $values ) ) {
+					update_post_meta( $post_id, $field, maybe_unserialize( current( $values ) ) );
+				} else {
+					// Also handle multiple keys by removing and re-adding.
+					delete_post_meta( $post_id, $field );
+					foreach ( $values as $value ) {
+						add_post_meta( $post_id, $field, maybe_unserialize( $value ) );
+					}
+				}
+			} else {
+				update_post_meta( $post_id, $field, maybe_unserialize( $values ) );
+			}
+		}
+	}
 }

@@ -113,6 +113,7 @@ class Dashboard {
 		register_setting( 'press-sync-export', 'ps_only_sync_missing' );
 		register_setting( 'press-sync-export', 'ps_testing_post' );
 		register_setting( 'press-sync-export', 'ps_skip_assets' );
+		register_setting( 'press-sync-export', 'ps_preserve_ids' );
 
 		// Import page.
 		register_setting( 'press-sync-import', 'ps_content_threshold' );
@@ -131,11 +132,11 @@ class Dashboard {
 			return;
 		}
 
-		?>
+?>
 		<div class="update-nag notice is-dismissable">
 			<p><?php _e( '<strong>PressSync:</strong> You must define your PressSync key before you can recieve updates from another WordPress site. <a href="tools.php?page=press-sync&tab=settings">Set it now</a>', 'press-sync' ); ?></p>
 		</div>
-		<?php
+<?php
 	}
 
 	/**
@@ -143,7 +144,7 @@ class Dashboard {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return JSON 
+	 * @return JSON
 	 */
 	public function get_objects_to_sync_count_via_ajax() {
 
