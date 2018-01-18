@@ -219,6 +219,10 @@ class Press_Sync {
 			$objects = $this->get_options_to_sync( $next_page );
 			break;
 
+		case 'taxonomy_term':
+			$objects = $this->get_taxonomy_term_to_sync( $next_page );
+			break;
+
 		default:
 			$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
 			break;
@@ -400,6 +404,10 @@ class Press_Sync {
 
 		if ( 'option' === $objects_to_sync ) {
 			return $this->count_options_to_sync();
+		}
+
+		if ( 'taxonomy_term' === $objects_to_sync ) {
+			return $this->count_taxonomy_term_to_sync();
 		}
 
 		global $wpdb;
@@ -1076,12 +1084,13 @@ class Press_Sync {
 	public function objects_to_sync( $exclude = array() ) {
 
 		$objects = array(
-			'all'        => __( 'All', 'press-sync' ),
-			'attachment' => __( 'Media', 'press-sync' ),
-			'page'       => __( 'Pages', 'press-sync' ),
-			'post'       => __( 'Posts', 'press-sync' ),
-			'user'       => __( 'Users', 'press-sync' ),
-			'option'     => __( 'Options', 'press-sync' ),
+			'all'           => __( 'All', 'press-sync' ),
+			'taxonomy_term' => __( 'Taxonomies &amp; Terms', 'press-sync' ),
+			'attachment'    => __( 'Media', 'press-sync' ),
+			'page'          => __( 'Pages', 'press-sync' ),
+			'post'          => __( 'Posts', 'press-sync' ),
+			'user'          => __( 'Users', 'press-sync' ),
+			'option'        => __( 'Options', 'press-sync' ),
 		);
 
 		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
@@ -1267,9 +1276,7 @@ class Press_Sync {
 	 * @return string $wp_object
 	 */
 	public function get_sync_function_name( $objects_to_sync = '' ) {
-
-		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option' ), true ) ? $objects_to_sync : 'post';
-
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
 		return "prepare_{$wp_object}_args_to_sync";
 	}
 
@@ -1375,5 +1382,63 @@ class Press_Sync {
 		}
 
 		return $object_args;
+	}
+
+	/**
+	 * Counts the number of taxonomies to sync.
+	 *
+	 * @since NEXT
+	 * @return int
+	 */
+	public function count_taxonomy_term_to_sync() {
+		$sql = <<<SQL
+SELECT DISTINCT
+	taxonomy, term_id
+FROM
+	{$GLOBALS['wpdb']->term_taxonomy}
+SQL;
+
+		$res = $GLOBALS['wpdb']->get_results( $sql );
+		return count( $res );
+	}
+
+	/**
+	 * Gets the next set of taxonomies/terms to sync.
+	 *
+	 * @since NEXT
+	 * @param  int   $next_page The page of results to get.
+	 * @return array
+	 */
+	public function get_taxonomy_term_to_sync( $next_page ) {
+		$offset = ( $next_page * 5 ) - 5;
+
+		$sql = <<<SQL
+SELECT DISTINCT
+	tt.term_id,
+	tt.taxonomy,
+	tt.description,
+	tt.parent,
+	t.*
+FROM
+	{$GLOBALS['wpdb']->term_taxonomy} tt
+JOIN {$GLOBALS['wpdb']->terms} t ON ( t.term_id = tt.term_id )
+ORDER BY t.term_id ASC
+LIMIT {$offset}, 5
+SQL;
+
+		return $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
+	}
+
+	/**
+	 * Prepares the taxonomy term data to go across the API.
+	 *
+	 * @since NEXT
+	 * @param  array $taxonomy_term The tax term to prepare.
+	 * @return array
+	 */
+	public function prepare_taxonomy_term_args_to_sync( $taxonomy_term ) {
+		$taxonomy_term['meta_input'] = get_term_meta( $taxonomy_term['term_id'] );
+		$taxonomy_term['meta_input']['press_sync_term_id'] = $taxonomy_term['term_id'];
+		return $taxonomy_term;
 	}
 }
