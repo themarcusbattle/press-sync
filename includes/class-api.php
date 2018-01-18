@@ -208,7 +208,7 @@ class API extends \WP_REST_Controller {
 
 		$responses = array();
 
-		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'post', 'page' ), true ) ? $objects_to_sync : 'post';
+		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'post', 'page', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
@@ -363,10 +363,16 @@ class API extends \WP_REST_Controller {
 	 * @return int
 	 */
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
+		$attachment_id = false;
+		$import_id     = false;
 
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
+		}
+
+		if ( isset( $attachment_args['ID'] ) ) {
+			$import_id = $attachment_args['ID'];
 		}
 
 		try {
@@ -403,6 +409,10 @@ class API extends \WP_REST_Controller {
 				}
 
 				$this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
+			}
+
+			if ( $attachment_id && $import_id ) {
+				update_post_meta( $attachment_id, 'press_sync_post_id', $import_id );
 			}
 		}
 		catch( \Exception $e ) {
@@ -1002,5 +1012,55 @@ SQL;
 				update_post_meta( $post_id, $field, maybe_unserialize( $values ) );
 			}
 		}
+	}
+
+	/**
+	 * Sync a taxonomy term to the remote site.
+	 *
+	 * @since NEXT
+	 * @param array $object_args The term taxonomy args.
+	 * @return string
+	 */
+	public function sync_taxonomy_term( $object_args ) {
+		try {
+			if ( ! taxonomy_exists( $object_args['taxonomy'] ) ) {
+				throw new \Exception( sprintf( 'The taxonomy %s does not exist, cannot insert terms.', $object_args['taxonomy'] ) );
+			}
+
+			$term_ids = term_exists( $object_args['name'], $object_args['taxonomy'] );
+
+			if ( ! is_array( $term_ids ) ) {
+				$term_ids = wp_insert_term( $object_args['name'], $object_args['taxonomy'], array(
+					'slug' => $object_args['slug'],
+				) );
+
+				if ( is_wp_error( $term_ids ) ) {
+					throw new \Exception( sprintf(
+						'There was an issue inserting term "%s" into taxonomy "%s": %s',
+						$object_args['name'],
+						$object_args['taxonomy'],
+						$term_ids->get_error_message()
+					) );
+				}
+			}
+
+			if ( ! empty( $object_args['meta_input'] ) ) {
+				foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
+					$meta_value = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
+					update_term_meta( $term_ids['term_id'], $meta_key, $meta_value );
+				}
+			}
+		} catch ( \Exception $e ) {
+			trigger_error( $e->getMessage() );
+			return array(
+				'debug' => $e->getMessage(),
+			);
+		}
+
+		return array(
+			'debug' => array(
+				'message' => __( 'The taxonomy term was succesfully added.', 'press-sync' ),
+			),
+		);
 	}
 }
