@@ -247,7 +247,7 @@ class Press_Sync {
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
 		// @TODO let's filter the where clause in general.
-		$where_clause .= $this->get_synced_post_clause( $objects_to_sync );
+		$where_clause .= $this->get_synced_object_clause( $objects_to_sync );
 
 		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
 			$id_where_clause = ' AND ID = %d ';
@@ -404,7 +404,7 @@ class Press_Sync {
 		global $wpdb;
 
 		$where_clause = '';
-		$where_clause = $this->get_synced_post_clause( $objects_to_sync );
+		$where_clause = $this->get_synced_object_clause( $objects_to_sync );
 
 		// If it's just one post return only 1.
 		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
@@ -1152,7 +1152,7 @@ class Press_Sync {
 	 *
 	 * @return string
 	 */
-	public function get_synced_post_clause( $objects_to_sync ) {
+	public function get_synced_object_clause( $objects_to_sync ) {
 		$synced_posts = $this->get_synced_object_ids( $objects_to_sync );
 
 		if ( ! get_option( 'ps_only_sync_missing' ) || empty( $synced_posts ) ) {
