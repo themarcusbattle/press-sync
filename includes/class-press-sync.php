@@ -71,6 +71,7 @@ class Press_Sync {
 	public function hooks() {
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
+		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 	}
 
 	/**
@@ -210,17 +211,17 @@ class Press_Sync {
 
 		switch ( $objects_to_sync ) {
 
-			case 'user':
-				$objects = $this->get_users_to_sync( $next_page );
-				break;
+		case 'user':
+			$objects = $this->get_users_to_sync( $next_page );
+			break;
 
-			case 'option':
-				$objects = $this->get_options_to_sync( $next_page );
-				break;
+		case 'option':
+			$objects = $this->get_options_to_sync( $next_page );
+			break;
 
-			default:
-				$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
-				break;
+		default:
+			$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
+			break;
 		}
 
 		return $objects;
@@ -501,7 +502,15 @@ class Press_Sync {
 			$object_args['p2p_connections'] = $this->get_p2p_connections( $object_args['ID'] );
 		}
 
-		unset( $object_args['ID'] );
+		/**
+		 * Runs after a post's arguments are prepared for syncing.
+		 *
+		 * @since NEXT
+		 *
+		 * @param  array $object_args The arguments after preparation.
+		 * @return array
+		 */
+		$object_args = apply_filters( 'press_sync_after_prepare_post_args_to_sync', $object_args );
 
 		return $object_args;
 
@@ -565,10 +574,12 @@ class Press_Sync {
 		$media = get_post( $thumbnail_id, ARRAY_A );
 		$media['meta_input'] = get_post_meta( $thumbnail_id );
 
-		// Filter out wp built-in meta.
-		foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
-			if ( 0 === strpos( $meta_key, '_wp_' ) ) {
-				unset( $media['meta_input'][$meta_key] );
+		// Maybe filter out wp built-in meta.
+		if ( ! get_option( 'ps_skip_assets' ) ) {
+			foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
+				if ( 0 === strpos( $meta_key, '_wp_' ) ) {
+					unset( $media['meta_input'][$meta_key] );
+				}
 			}
 		}
 
@@ -681,7 +692,28 @@ class Press_Sync {
 			'post_title'     => $object_args['post_title'],
 			'post_name'      => $object_args['post_name'],
 			'attachment_url' => $attachment_url,
+			'post_type'      => $object_args['post_type'],
+			'meta_input' => array(
+				'press_sync_post_id' => $object_args['ID'],
+			),
+			'post_author' => $object_args['post_author'],
+			'post_parent' => $object_args['post_parent'],
 		);
+
+		$meta = get_post_meta( $object_args['ID'] );
+
+		foreach ( $meta as $key => $values ) {
+			$args['meta_input'][ $key ] = $values[0];
+		}
+
+		if ( get_option( 'ps_skip_assets' ) ) {
+			$args['guid']           = $object_args['guid'];
+			$args['post_mime_type'] = $object_args['post_mime_type'];
+		}
+
+		if ( get_option( 'ps_preserve_ids' ) ) {
+			$args['import_id'] = $object_args['ID'];
+		}
 
 		return $args;
 	}
@@ -818,6 +850,7 @@ class Press_Sync {
 			'filename'  => $filename_parts[2],
 			'post_date' => $filename_parts[0] . '/' . $filename_parts[1],
 			'url'       => $attachment->guid,
+			'ID'        => $attachment->ID,
 		);
 
 		return $attachment_details;
@@ -988,6 +1021,7 @@ class Press_Sync {
 			'skip_assets'      => get_option( 'ps_skip_assets', false ),
 			'options'          => get_option( 'ps_options_to_sync' ),
 			'local_folder'     => '',
+			'preserve_ids'     => get_option( 'ps_preserve_ids', false ),
 		) );
 	}
 
@@ -1265,7 +1299,7 @@ class Press_Sync {
 
 		$page_offset = absint( get_option( 'ps_start_object_offset' ) );
 
-		if ( 0 < $page_offset && 1 === $next_page ) {
+		if ( 0 < $page_offset && 1 === absint( $next_page ) ) {
 
 			$page_offset = floor( $page_offset / 5 );
 			$next_page  += ( $page_offset - 1);
@@ -1315,5 +1349,24 @@ class Press_Sync {
 		}
 
 		return $response_body['data']['synced'];
+    }
+
+	/**
+	 * Removes post IDs if the option to preserve them isn't active.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  array $object_args The object's prepared arguments.
+	 * @return array
+	 */
+	public function maybe_remove_post_id( $object_args ) {
+		$object_args['import_id'] = $object_args['ID'];
+		unset( $object_args['ID'] );
+
+		if ( true !== (bool) get_option( 'ps_preserve_ids' ) ) {
+			unset( $object_args['import_id'] );
+		}
+
+		return $object_args;
 	}
 }
