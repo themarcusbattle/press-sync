@@ -1321,7 +1321,8 @@ class Press_Sync {
 	 * @return array
 	 */
 	public function get_synced_object_ids( $objects_to_sync ) {
-		$last_sync = get_option( "ps_synced_post_session_{$objects_to_sync}" );
+		$option_name = "ps_synced_post_session_{$objects_to_sync}";
+		$last_sync   = get_option( $option_name );
 
 		if ( is_array( $last_sync ) && ! empty( $last_sync ) ) {
 			return $last_sync;
@@ -1347,6 +1348,8 @@ class Press_Sync {
 		if ( empty( $response_body['data']['synced'] ) ) {
 			return array();
 		}
+
+		update_option( $option_name, $response_body['data']['synced'] );
 
 		return $response_body['data']['synced'];
     }
