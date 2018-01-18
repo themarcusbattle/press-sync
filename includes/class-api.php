@@ -363,10 +363,16 @@ class API extends \WP_REST_Controller {
 	 * @return int
 	 */
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
+		$attachment_id = false;
+		$import_id     = false;
 
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
+		}
+
+		if ( isset( $attachment_args['ID'] ) ) {
+			$import_id = $attachment_args['ID'];
 		}
 
 		try {
@@ -403,6 +409,10 @@ class API extends \WP_REST_Controller {
 				}
 
 				$this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
+			}
+
+			if ( $attachment_id && $import_id ) {
+				update_post_meta( $attachment_id, 'press_sync_post_id', $import_id );
 			}
 		}
 		catch( \Exception $e ) {
