@@ -315,10 +315,11 @@ class API extends \WP_REST_Controller {
 		}
 
 		// Insert/update the post.
-		$local_post_id = wp_insert_post( $post_args );
+		$local_post_id = wp_insert_post( $post_args, true );
 
 		// Bail if the insert didn't work.
 		if ( is_wp_error( $local_post_id ) ) {
+			trigger_error( sprintf( 'Error inserting post: ', $local_post_id->get_error_message() ) );
 			return array( 'debug' => $local_post_id );
 		}
 
@@ -827,7 +828,7 @@ class API extends \WP_REST_Controller {
 			// Calculate how similar the post contents are (is?).
 			similar_text( $duplicate_post['post_content'], $post_args['post_content'], $similarity );
 
-			if ( $similarity < $content_threshold ) {
+			if ( $similarity <= $content_threshold ) {
 				$duplicate_post = false;
 			}
 		}
@@ -859,17 +860,22 @@ class API extends \WP_REST_Controller {
 
 	}
 
-	/**
-	 * Returns the IDs of synced objects of the given post type.
-	 *
-	 * @since 0.6.0
-	 *
-	 * @param WP_REST_Request $request The REST request.
-	 */
-	public function get_sync_progress( $request ) {
-		try {
-			$post_type = $request->get_param( 'post_type' );
-			$sql = <<<SQL
+    /**
+     * Returns the IDs of synced objects of the given post type.
+     *
+     * @since 0.6.0
+     *
+     * @param WP_REST_Request $request The REST request.
+     */
+    public function get_sync_progress( $request ) {
+        try {
+            $post_type = $request->get_param( 'post_type' );
+
+            if ( ! post_type_exists( $post_type ) ) {
+                $post_type = 'post';
+            }
+
+            $sql = <<<SQL
 SELECT DISTINCT
 	pm.meta_value
 FROM
@@ -877,14 +883,14 @@ FROM
 WHERE
 	pm.meta_key = 'press_sync_post_id'
 AND
-	pm.post_id IN(
-		SELECT ID FROM
-			{$GLOBALS['wpdb']->posts} p
-		WHERE
-			p.post_status NOT IN( 'auto-draft', 'trash' )
-		AND
-			p.post_type = 'post'
-	)
+    pm.post_id IN(
+        SELECT ID FROM
+            {$GLOBALS['wpdb']->posts} p
+        WHERE
+            p.post_status NOT IN( 'auto-draft', 'trash' )
+        AND
+            p.post_type = %s
+    )
 SQL;
 
 			$query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );
