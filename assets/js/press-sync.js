@@ -25,7 +25,7 @@ window.PressSync = ( function( window, document, $ ) {
 				action: 'get_objects_to_sync_count',
 			}
 		}).done(function( response ) {
-			
+
 			app.updateProgressBar( response.data.objects_to_sync, 0, response.data.total_objects );
 
 			if ( 'all' == response.data.objects_to_sync ) {
@@ -33,7 +33,7 @@ window.PressSync = ( function( window, document, $ ) {
 			} else {
 				app.syncData( 1, response.data.objects_to_sync );
 			}
-			
+
 		});
 
 	}
@@ -62,20 +62,41 @@ window.PressSync = ( function( window, document, $ ) {
 		});
 	}
 
-	app.updateProgressBar = function( objects_to_sync, total_objects_processed, total_objects ) {
+	app.updateProgressBar = function( objects_to_sync, total_objects_processed, total_objects, request_time ) {
 
 		var progress_complete = ( total_objects_processed / total_objects ) * 100;
-		var percent_complete  = Math.ceil( progress_complete );
-		
+		var percent_complete  = Math.floor( progress_complete );
+
 		if ( percent_complete > 100 ) {
 			percent_complete = 100;
 		}
 
 		$('.progress-bar').css('width', progress_complete + '%' ).text( percent_complete + '%' );
-		$('.progress-stats').text( total_objects_processed + '/' + total_objects + ' ' + objects_to_sync + ' synced' );
+
+		var progress_string = total_objects_processed + '/' + total_objects + ' ' + objects_to_sync + ' synced';
+
+		if ( request_time ) {
+			// Estimate time remaining.
+			var remaining_time = ( ( ( total_objects - total_objects_processed ) / 5 ) * request_time ) / 60 / 60;
+				var time_left_suffix = 'hours';
+
+				if ( 1 > remaining_time ) {
+					remaining_time = remaining_time * 60;
+					time_left_suffix = 'minutes';
+				}
+
+				// Round to two decimal places, mostly.
+				remaining_time = Math.round( remaining_time * 100 ) / 100;
+
+				progress_string += ' (' + [ 'Estimated time remaining:', remaining_time, time_left_suffix ].join(' ') + ')';
+			}
+
+		$('.progress-stats').text( progress_string );
 	}
 
 	app.syncData = function( paged, objects_to_sync ) {
+
+		var start_time = new Date().getTime();
 
 		$.ajax({
 			method: "POST",
@@ -86,8 +107,9 @@ window.PressSync = ( function( window, document, $ ) {
 				objects_to_sync: objects_to_sync
 			}
 		}).done(function( response ) {
-
-			app.updateProgressBar( response.data.objects_to_sync, response.data.total_objects_processed, response.data.total_objects );
+			// Convert request time from milliseconds to seconds.
+			var request_time = ( new Date().getTime() - start_time ) / 1000;
+			app.updateProgressBar( response.data.objects_to_sync, response.data.total_objects_processed, response.data.total_objects, request_time );
 
 			if ( response.data.total_objects_processed >= response.data.total_objects ) {
 				$('.press-sync-button').show();
