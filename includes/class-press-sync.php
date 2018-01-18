@@ -412,7 +412,11 @@ class Press_Sync {
 			return 1;
 		}
 
-		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}", $objects_to_sync );
+		$query         = "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}";
+		$prepared_sql  = $wpdb->prepare( $query, $objects_to_sync );
+
+		trigger_error( sprintf( 'Queried for count of posts to sync using: %s', $prepared_sql ) );
+
 		$total_objects = $wpdb->get_var( $prepared_sql );
 
 		return $total_objects;
