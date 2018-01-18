@@ -517,7 +517,7 @@ class Press_Sync {
 		/**
 		 * Runs after a post's arguments are prepared for syncing.
 		 *
-		 * @since NEXT
+		 * @since 0.7.0
 		 *
 		 * @param  array $object_args The arguments after preparation.
 		 * @return array
@@ -1246,7 +1246,7 @@ class Press_Sync {
 	 *
 	 * @param  string $url      A URL other than the stored remote URL to use.
 	 * @param  string $endpoint The remote site endpoint.
-	 * @since NEXT
+	 * @since 0.7.0
 	 * @param  array  $args     (Optional) Array of query parameters.
 	 *
 	 * @return string
@@ -1326,7 +1326,7 @@ class Press_Sync {
 	 *
 	 * This gets reset whenever a sync is started on the first page, see Dashboard::sync_wp_data_via_ajax.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 *
 	 * @param  string $objects_to_sync The post type of the things to sync.
 	 * @return array
@@ -1368,7 +1368,7 @@ class Press_Sync {
 	/**
 	 * Removes post IDs if the option to preserve them isn't active.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 *
 	 * @param  array $object_args The object's prepared arguments.
 	 * @return array
@@ -1387,7 +1387,7 @@ class Press_Sync {
 	/**
 	 * Counts the number of taxonomies to sync.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 * @return int
 	 */
 	public function count_taxonomy_term_to_sync() {
@@ -1405,7 +1405,7 @@ SQL;
 	/**
 	 * Gets the next set of taxonomies/terms to sync.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 * @param  int   $next_page The page of results to get.
 	 * @return array
 	 */
@@ -1432,7 +1432,7 @@ SQL;
 	/**
 	 * Prepares the taxonomy term data to go across the API.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 * @param  array $taxonomy_term The tax term to prepare.
 	 * @return array
 	 */

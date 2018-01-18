@@ -24,6 +24,12 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.7.0
+
+- [AOTECH-6661] - Add Taxonomies and Terms as a Sync Object type.
+- [AOTECH-6662] - Add attachment media meta.
+- Better support for finding and syncing missing objects.
+
 ### v0.6.1
 
 - Update README for updated Dashboard and installation.

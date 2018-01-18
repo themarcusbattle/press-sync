@@ -1017,7 +1017,7 @@ SQL;
 	/**
 	 * Sync a taxonomy term to the remote site.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 * @param array $object_args The term taxonomy args.
 	 * @return string
 	 */
