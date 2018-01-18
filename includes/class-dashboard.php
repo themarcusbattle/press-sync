@@ -18,6 +18,22 @@ class Dashboard {
 	protected $plugin = null;
 
 	/**
+	 * Objects to sync from the request.
+	 *
+	 * @var string
+	 * @since NEXT
+	 */
+	private $objects_to_sync;
+
+	/**
+	 * Next page in request.
+	 *
+	 * @var int
+	 * @since NEXT
+	 */
+	private $next_page;
+
+	/**
 	 * The Constructor.
 	 *
 	 * @since 0.1.0
@@ -27,6 +43,7 @@ class Dashboard {
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;
 		$this->hooks();
+		$this->init();
 	}
 
 	/**
@@ -45,7 +62,24 @@ class Dashboard {
 		add_action( 'wp_ajax_get_objects_to_sync_count', array( $this, 'get_objects_to_sync_count_via_ajax' ) );
 		add_action( 'wp_ajax_sync_wp_data', array( $this, 'sync_wp_data_via_ajax' ) );
 		add_action( 'wp_ajax_get_order_to_sync_all', array( $this, 'get_order_to_sync_all_via_ajax' ) );
+	}
 
+	/**
+	 * Initialize the current request.
+	 *
+	 * @since NEXT
+	 */
+	public function init() {
+		$objects_to_sync = get_option( 'ps_objects_to_sync' );
+		$next_page       = 1;
+
+		if ( isset( $_REQUEST['objects_to_sync'] ) ) {
+			$this->objects_to_sync = filter_var( $_REQUEST['objects_to_sync'], FILTER_SANITIZE_STRING );
+		}
+
+		if ( isset( $_REQUEST['paged'] ) ) {
+			$this->next_page = filter_var( $_REQUEST['paged'], FILTER_VALIDATE_INT );
+		}
 	}
 
 	/**
@@ -178,14 +212,15 @@ class Dashboard {
 	 * @return JSON
 	 */
 	public function sync_wp_data_via_ajax() {
-
-		$objects_to_sync = isset( $_REQUEST['objects_to_sync'] ) ? $_REQUEST['objects_to_sync'] : get_option( 'ps_objects_to_sync' );
-		$next_page       = isset( $_REQUEST['paged'] ) ? $_REQUEST['paged'] : 1;
-
 		$settings = array(
-			'objects_to_sync' => $objects_to_sync,
+			'objects_to_sync' => $this->objects_to_sync,
 		);
 
-		wp_send_json_success( $this->plugin->sync_object( $objects_to_sync, $settings, $next_page, true ) );
+		// Generate a new session on the first page of syncing.
+		if ( 1 === absint( $this->next_page ) ) {
+			delete_option( "ps_synced_post_session_{$this->objects_to_sync}" );
+		}
+
+		wp_send_json_success( $this->plugin->sync_object( $this->objects_to_sync, $settings, $this->next_page, true ) );
 	}
 }
