@@ -21,7 +21,7 @@ class Dashboard {
 	 * Objects to sync from the request.
 	 *
 	 * @var string
-	 * @since NEXT
+	 * @since 0.7.0
 	 */
 	private $objects_to_sync;
 
@@ -29,7 +29,7 @@ class Dashboard {
 	 * Next page in request.
 	 *
 	 * @var int
-	 * @since NEXT
+	 * @since 0.7.0
 	 */
 	private $next_page;
 
@@ -67,7 +67,7 @@ class Dashboard {
 	/**
 	 * Initialize the current request.
 	 *
-	 * @since NEXT
+	 * @since 0.7.0
 	 */
 	public function init() {
 		$objects_to_sync = get_option( 'ps_objects_to_sync' );
