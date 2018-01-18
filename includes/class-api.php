@@ -315,10 +315,11 @@ class API extends \WP_REST_Controller {
 		}
 
 		// Insert/update the post.
-		$local_post_id = wp_insert_post( $post_args );
+		$local_post_id = wp_insert_post( $post_args, true );
 
 		// Bail if the insert didn't work.
 		if ( is_wp_error( $local_post_id ) ) {
+			trigger_error( sprintf( 'Error inserting post: ', $local_post_id->get_error_message() ) );
 			return array( 'debug' => $local_post_id );
 		}
 
@@ -362,10 +363,16 @@ class API extends \WP_REST_Controller {
 	 * @return int
 	 */
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
+		$attachment_id = false;
+		$import_id     = false;
 
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
+		}
+
+		if ( isset( $attachment_args['ID'] ) ) {
+			$import_id = $attachment_args['ID'];
 		}
 
 		try {
@@ -402,6 +409,10 @@ class API extends \WP_REST_Controller {
 				}
 
 				$this->update_post_meta_array( $attachment_id, $attachment_args['meta_input' ] );
+			}
+
+			if ( $attachment_id && $import_id ) {
+				update_post_meta( $attachment_id, 'press_sync_post_id', $import_id );
 			}
 		}
 		catch( \Exception $e ) {
@@ -827,7 +838,7 @@ class API extends \WP_REST_Controller {
 			// Calculate how similar the post contents are (is?).
 			similar_text( $duplicate_post['post_content'], $post_args['post_content'], $similarity );
 
-			if ( $similarity < $content_threshold ) {
+			if ( $similarity <= $content_threshold ) {
 				$duplicate_post = false;
 			}
 		}
@@ -859,17 +870,22 @@ class API extends \WP_REST_Controller {
 
 	}
 
-	/**
-	 * Returns the IDs of synced objects of the given post type.
-	 *
-	 * @since 0.6.0
-	 *
-	 * @param WP_REST_Request $request The REST request.
-	 */
-	public function get_sync_progress( $request ) {
-		try {
-			$post_type = $request->get_param( 'post_type' );
-			$sql = <<<SQL
+    /**
+     * Returns the IDs of synced objects of the given post type.
+     *
+     * @since 0.6.0
+     *
+     * @param WP_REST_Request $request The REST request.
+     */
+    public function get_sync_progress( $request ) {
+        try {
+            $post_type = $request->get_param( 'post_type' );
+
+            if ( ! post_type_exists( $post_type ) ) {
+                $post_type = 'post';
+            }
+
+            $sql = <<<SQL
 SELECT DISTINCT
 	pm.meta_value
 FROM
@@ -877,14 +893,14 @@ FROM
 WHERE
 	pm.meta_key = 'press_sync_post_id'
 AND
-	pm.post_id IN(
-		SELECT ID FROM
-			{$GLOBALS['wpdb']->posts} p
-		WHERE
-			p.post_status NOT IN( 'auto-draft', 'trash' )
-		AND
-			p.post_type = 'post'
-	)
+    pm.post_id IN(
+        SELECT ID FROM
+            {$GLOBALS['wpdb']->posts} p
+        WHERE
+            p.post_status NOT IN( 'auto-draft', 'trash' )
+        AND
+            p.post_type = %s
+    )
 SQL;
 
 			$query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );

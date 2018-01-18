@@ -248,9 +248,7 @@ class Press_Sync {
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
 		// @TODO let's filter the where clause in general.
-		if ( get_option( 'ps_only_sync_missing' ) ) {
-			$where_clause .= $this->get_missing_post_clause( $objects_to_sync );
-		}
+		$where_clause .= $this->get_synced_object_clause( $objects_to_sync );
 
 		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
 			$id_where_clause = ' AND ID = %d ';
@@ -407,17 +405,18 @@ class Press_Sync {
 		global $wpdb;
 
 		$where_clause = '';
-
-		if ( get_option( 'ps_only_sync_missing' ) ) {
-			$where_clause = $this->get_missing_post_clause( $objects_to_sync );
-		}
+		$where_clause = $this->get_synced_object_clause( $objects_to_sync );
 
 		// If it's just one post return only 1.
 		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
 			return 1;
 		}
 
-		$prepared_sql  = $wpdb->prepare( "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}", $objects_to_sync );
+		$query         = "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}";
+		$prepared_sql  = $wpdb->prepare( $query, $objects_to_sync );
+
+		trigger_error( sprintf( 'Queried for count of posts to sync using: %s', $prepared_sql ) );
+
 		$total_objects = $wpdb->get_var( $prepared_sql );
 
 		return $total_objects;
@@ -607,7 +606,7 @@ class Press_Sync {
 			break;
 		}
 
-		$media['meta_input']['press_sync_id'] = $thumbnail_id;
+		$media['meta_input']['press_sync_post_id'] = $thumbnail_id;
 
 		return $media;
 	}
@@ -1191,32 +1190,17 @@ class Press_Sync {
 	 *
 	 * @return string
 	 */
-	public function get_missing_post_clause( $objects_to_sync ) {
+	public function get_synced_object_clause( $objects_to_sync ) {
+		$synced_posts = $this->get_synced_object_ids( $objects_to_sync );
 
-		$url = $this->get_remote_url( '', 'progress' );
-
-		$remote_get_args = array(
-			'timeout' => 30,
-		);
-
-		$response = wp_remote_get( $url, $remote_get_args );
-		$response_code = wp_remote_retrieve_response_code( $response );
-
-		if ( 200 !== $response_code ) {
+		if ( ! get_option( 'ps_only_sync_missing' ) || empty( $synced_posts ) ) {
 			return '';
 		}
 
-		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( empty( $response_body['data']['synced'] ) ) {
-			return '';
-		}
-
-		$placeholders  = array_fill( 0, count( $response_body['data']['synced'] ), '%d' );
+		$placeholders  = array_fill( 0, count( $synced_posts ), '%d' );
 		$format_string = implode( ', ', $placeholders );
 		$prepared_sql  = " AND ID NOT IN ({$format_string}) ";
-		$args          = $response_body['data']['synced'];
-		$sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $args );
+		$sql           = $GLOBALS['wpdb']->prepare( $prepared_sql, $synced_posts );
 
 		return $sql;
 	}
@@ -1253,15 +1237,16 @@ class Press_Sync {
 	 *
 	 * @param  string $url      A URL other than the stored remote URL to use.
 	 * @param  string $endpoint The remote site endpoint.
+	 * @since NEXT
+	 * @param  array  $args     (Optional) Array of query parameters.
 	 *
 	 * @return string
 	 */
-	public function get_remote_url( $url = '', $endpoint = 'status' ) {
-
+	public function get_remote_url( $url = '', $endpoint = 'status', $args = array() ) {
 		$url        = $url ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
-		$query_args = array(
+		$query_args = wp_parse_args( $args, array(
 			'press_sync_key' => get_option( 'ps_remote_key' ),
-		);
+		) );
 
 		if ( $remote_args = get_option( 'ps_remote_query_args' ) ) {
 			$remote_args = ltrim( $remote_args, '?' );
@@ -1328,6 +1313,50 @@ class Press_Sync {
 
 		return $next_page;
 	}
+
+	/**
+	 * Get the synced object IDs from options or the remote site.
+	 *
+	 * This gets reset whenever a sync is started on the first page, see Dashboard::sync_wp_data_via_ajax.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  string $objects_to_sync The post type of the things to sync.
+	 * @return array
+	 */
+	public function get_synced_object_ids( $objects_to_sync ) {
+		$option_name = "ps_synced_post_session_{$objects_to_sync}";
+		$last_sync   = get_option( $option_name );
+
+		if ( is_array( $last_sync ) && ! empty( $last_sync ) ) {
+			return $last_sync;
+		}
+
+		$url = $this->get_remote_url( '', 'progress', array(
+			'post_type' => $objects_to_sync,
+		) );
+
+		$remote_get_args = array(
+			'timeout' => 30,
+		);
+
+		$response      = wp_remote_get( $url, $remote_get_args );
+		$response_code = wp_remote_retrieve_response_code( $response );
+
+		if ( 200 !== $response_code ) {
+			return array();
+		}
+
+		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( empty( $response_body['data']['synced'] ) ) {
+			return array();
+		}
+
+		update_option( $option_name, $response_body['data']['synced'] );
+
+		return $response_body['data']['synced'];
+    }
 
 	/**
 	 * Removes post IDs if the option to preserve them isn't active.
