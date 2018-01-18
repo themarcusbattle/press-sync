@@ -828,7 +828,7 @@ class API extends \WP_REST_Controller {
 			// Calculate how similar the post contents are (is?).
 			similar_text( $duplicate_post['post_content'], $post_args['post_content'], $similarity );
 
-			if ( $similarity < $content_threshold ) {
+			if ( $similarity <= $content_threshold ) {
 				$duplicate_post = false;
 			}
 		}
