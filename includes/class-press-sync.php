@@ -72,6 +72,8 @@ class Press_Sync {
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
+
+		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
 	}
 
 	/**
@@ -1034,6 +1036,7 @@ class Press_Sync {
 			'options'          => get_option( 'ps_options_to_sync' ),
 			'local_folder'     => '',
 			'preserve_ids'     => get_option( 'ps_preserve_ids', false ),
+			'fix_terms'        => get_option( 'ps_fix_terms', false ),
 		) );
 	}
 
@@ -1340,7 +1343,8 @@ class Press_Sync {
 		}
 
 		$url = $this->get_remote_url( '', 'progress', array(
-			'post_type' => $objects_to_sync,
+			'post_type'    => $objects_to_sync,
+            'preserve_ids' => (bool) get_option( 'ps_preserve_ids' ),
 		) );
 
 		$remote_get_args = array(
@@ -1395,8 +1399,28 @@ class Press_Sync {
 SELECT DISTINCT
 	taxonomy, term_id
 FROM
-	{$GLOBALS['wpdb']->term_taxonomy}
+	{$GLOBALS['wpdb']->term_taxonomy} tt
 SQL;
+
+		/**
+		 * Filter the SELECT statement for getting taxonomy terms to sync.
+		 *
+		 * @since NEXT
+		 * @param  string $sql The SQL SELECT being used to get taxonomy terms.
+		 * @return string
+		 */
+		$select = apply_filters( 'press_sync_get_taxonomy_term_select', $sql );
+
+		/**
+		 * Filter the WHERE clause when finding taxonomy terms to sync.
+		 *
+		 * @since NEXT
+		 * @param  string $where The WHERE clause being used to get taxonomy terms.
+		 * @return string
+		 */
+		$where  = apply_filters( 'press_sync_get_taxonomy_term_where', ' WHERE 1=1 ' );
+
+		$sql = "{$select} {$where}";
 
 		$res = $GLOBALS['wpdb']->get_results( $sql );
 		return count( $res );
@@ -1411,8 +1435,11 @@ SQL;
 	 */
 	public function get_taxonomy_term_to_sync( $next_page ) {
 		$offset = ( $next_page * 5 ) - 5;
+		$select = '';
+		$joins  = '';
+		$where  = ' WHERE 1=1 ';
 
-		$sql = <<<SQL
+		$select = <<<SQL
 SELECT DISTINCT
 	tt.term_id,
 	tt.taxonomy,
@@ -1421,7 +1448,43 @@ SELECT DISTINCT
 	t.*
 FROM
 	{$GLOBALS['wpdb']->term_taxonomy} tt
+SQL;
+
+		/**
+		 * Filter the SELECT statement for getting taxonomy terms to sync.
+		 *
+		 * @since NEXT
+		 * @param  string $select The SQL SELECT being used to get taxonomy terms.
+		 * @return string
+		 */
+		$select = apply_filters( 'press_sync_get_taxonomy_term_select', $select );
+
+		$joins = <<<SQL
 JOIN {$GLOBALS['wpdb']->terms} t ON ( t.term_id = tt.term_id )
+SQL;
+
+		/**
+		 * Filter the JOIN clause when finding taxonomy terms to sync.
+		 *
+		 * @since NEXT
+		 * @param  string $joins The JOIN clause being used to get taxonomy terms.
+		 * @return string
+		 */
+		$joins = apply_filters( 'press_sync_get_taxonomy_term_joins', $joins );
+
+		/**
+		 * Filter the WHERE clause when finding taxonomy terms to sync.
+		 *
+		 * @since NEXT
+		 * @param  string $where The WHERE clause being used to get taxonomy terms.
+		 * @return string
+		 */
+		$where = apply_filters( 'press_sync_get_taxonomy_term_where', $where );
+
+		$sql = <<<SQL
+{$select}
+{$joins}
+{$where}
 ORDER BY t.term_id ASC
 LIMIT {$offset}, 5
 SQL;
@@ -1440,5 +1503,31 @@ SQL;
 		$taxonomy_term['meta_input'] = get_term_meta( $taxonomy_term['term_id'] );
 		$taxonomy_term['meta_input']['press_sync_term_id'] = $taxonomy_term['term_id'];
 		return $taxonomy_term;
+	}
+
+	/**
+	 * Get terms for a specific post when we're using a test post ID.
+	 *
+	 * @since NEXT
+	 * @param  string $where The WHERE clause being filtered.
+	 * @return string
+	 */
+	public function maybe_get_terms_for_post( $where ) {
+		if ( ! get_option( 'ps_testing_post' ) ) {
+			return $where;
+		}
+
+		$where .= <<<SQL
+AND tt.term_taxonomy_id IN (
+	SELECT
+		term_taxonomy_id
+	FROM
+		{$GLOBALS['wpdb']->term_relationships}
+	WHERE
+		object_id = %d
+)
+SQL;
+		$where = $GLOBALS['wpdb']->prepare( $where, get_option( 'ps_testing_post' ) );
+		return $where;
 	}
 }
