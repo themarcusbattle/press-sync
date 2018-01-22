@@ -34,6 +34,24 @@ class Dashboard {
 	private $next_page;
 
 	/**
+	 * Static array of advanced export options.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	protected static $advanced_export_options = array(
+		'ps_options',
+		'ps_ignore_comments',
+		'ps_request_buffer_time',
+		'ps_start_object_offset',
+		'ps_only_sync_missing',
+		'ps_testing_post',
+		'ps_skip_assets',
+		'ps_preserve_ids',
+		'ps_fix_terms',
+	);
+
+	/**
 	 * The Constructor.
 	 *
 	 * @since 0.1.0
@@ -223,5 +241,52 @@ class Dashboard {
 		}
 
 		wp_send_json_success( $this->plugin->sync_object( $this->objects_to_sync, $settings, $this->next_page, true ) );
+	}
+
+	/**
+	 * Show currently set advanced options.
+	 *
+	 * @since NEXT
+	 * @return string
+	 */
+	public static function show_advanced_options() {
+		if ( ! self::has_advanced_options() ) {
+			return '';
+		}
+
+		$html = <<<HTML
+<td rowspan="10000" style="background: #eee; vertical-align: top; width: 200px;">
+	<h3 style="margin-top: 0">Advanced Options</h3>
+	<ul>
+HTML;
+
+		foreach ( self::$advanced_export_options as $option ) {
+			$value = get_option( $option );
+
+			if ( empty( $value ) ) {
+				continue;
+			}
+
+			$html .= "<li><strong>{$option}</strong> {$value}";
+		}
+
+		$html .= '</ul></td>';
+		return $html;
+	}
+
+	/**
+	 * Check to see if there are advanced options set.
+	 *
+	 * @since NEXT
+	 * @return bool
+	 */
+	private static function has_advanced_options() {
+		$has_advanced_options = false;
+
+		foreach ( self::$advanced_export_options as $option ) {
+			$has_advanced_options |= ! empty( get_option( $option ) );
+		}
+
+		return $has_advanced_options;
 	}
 }

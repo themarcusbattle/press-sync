@@ -31,6 +31,7 @@
 						<option value="push" <?php selected( get_option( 'ps_sync_method' ), 'push' ); ?>>Push</option>
 					</select>
 				</td>
+                <?php echo \Press_Sync\Dashboard::show_advanced_options(); ?>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Objects to Sync</th>
