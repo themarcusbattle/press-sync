@@ -24,6 +24,14 @@ class API extends \WP_REST_Controller {
 	protected $prefix = 'press_sync_api_';
 
 	/**
+	 * Set true to only fix post terms.
+	 *
+	 * @var bool
+	 * @since 0.7.1
+	 */
+	private $fix_terms = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
@@ -174,6 +182,7 @@ class API extends \WP_REST_Controller {
 		$force_update       = $request->get_param( 'force_update' );
 		$this->skip_assets  = (bool) $request->get_param( 'skip_assets' );
 		$this->preserve_ids = (bool) $request->get_param( 'preserve_ids' );
+		$this->fix_terms    = (bool) $request->get_param( 'fix_terms' );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -239,6 +248,27 @@ class API extends \WP_REST_Controller {
 			return false;
 		}
 
+		// Check to see if the post exists.
+		$local_post = $this->get_synced_post( $post_args );
+
+		// Check to see a non-synced duplicate of the post exists.
+		if ( 'sync' === $duplicate_action && ! $local_post ) {
+			$local_post = $this->get_non_synced_duplicate( $post_args );
+		}
+
+		if ( $this->fix_terms ) {
+			if ( ! $local_post ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
+					),
+				);
+			}
+			return $this->fix_term_relationships( $local_post['ID'], $post_args );
+		}
+
+		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+
 		// Replace embedded media.
 		if ( isset( $post_args['embedded_media'] ) ) {
 
@@ -269,16 +299,6 @@ class API extends \WP_REST_Controller {
 
 			$post_args['post_parent'] = ( $parent_post ) ? $parent_post['ID'] : 0;
 		}
-
-		// Check to see if the post exists.
-		$local_post = $this->get_synced_post( $post_args );
-
-		// Check to see a non-synced duplicate of the post exists.
-		if ( 'sync' === $duplicate_action && ! $local_post ) {
-			$local_post = $this->get_non_synced_duplicate( $post_args );
-		}
-
-		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
 
 		// Keep the ID because we found a regular ol' duplicate.
 		if ( $this->preserve_ids && ! $local_post && ! empty( $post_args['ID'] ) ) {
@@ -330,13 +350,7 @@ class API extends \WP_REST_Controller {
 		$comments = isset( $post_args['comments'] ) ? $post_args['comments'] : array();
 		$this->attach_comments( $local_post_id, $comments );
 
-		// Set taxonomies for custom post type.
-		if ( isset( $post_args['tax_input'] ) ) {
-
-			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
-				wp_set_object_terms( $local_post_id, $terms, $taxonomy, false );
-			}
-		}
+		$this->attach_terms( $local_post_id, $post_args );
 
 		// Run any secondary commands.
 		do_action( 'press_sync_sync_post', $local_post_id, $post_args );
@@ -1074,6 +1088,40 @@ SQL;
 		return array(
 			'debug' => array(
 				'message' => __( 'The taxonomy term was succesfully added.', 'press-sync' ),
+			),
+		);
+	}
+
+	/**
+	 * Attach a post's terms.
+	 *
+	 * @since 0.7.1
+	 * @param int   $post_id   The Id of the post to attach terms to.
+	 * @param array $post_args The post arguments.
+	 */
+	private function attach_terms( $post_id, $post_args ) {
+		// Set taxonomies for custom post type.
+		if ( isset( $post_args['tax_input'] ) ) {
+
+			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
+				wp_set_object_terms( $post_id, $terms, $taxonomy, false );
+			}
+		}
+	}
+
+	/**
+	 * Fix a post's relationships.
+	 *
+	 * @since 0.7.1
+	 * @param  int   $post_id   The ID of the post to fix relationships for.
+	 * @param  array $post_args The arguments for the incoming post.
+	 * @return array
+	 */
+	private function fix_term_relationships( $post_id, $post_args ) {
+		$this->attach_terms( $post_id, $post_args );
+		return array(
+			'debug' => array(
+				'message' => __( 'Fixed term relationships.', 'press-sync' ),
 			),
 		);
 	}
