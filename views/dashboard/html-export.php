@@ -30,7 +30,14 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
                     <span>Enable this option to maintain post IDs. <strong>N.B.:</strong> this can cause issues if you're syncing
                     to a site that has content that was not synced with Press Sync due to ID collisions, use with care.</span>
                 </td>
-            </tr>
+			</tr>
+			<tr valign="top">
+				<th scope="row">Find and Fix Term Relationships</th>
+				<td>
+				<input type="checkbox" name="ps_fix_terms" <?php checked( get_option( 'ps_fix_terms' ) ); ?> value="1" />
+					<span>This will <strong>only</strong> attempt to find and fix term/taxonomy relationships.</span>
+				</td>
+			</tr>
 			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
