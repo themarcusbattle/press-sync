@@ -24,6 +24,10 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.7.1
+
+- [AOTECH-6676] - Add ability to fix broken relationships.
+
 ### v0.7.0
 
 - [AOTECH-6661] - Add Taxonomies and Terms as a Sync Object type.
