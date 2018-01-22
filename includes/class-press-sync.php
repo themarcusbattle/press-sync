@@ -1343,7 +1343,8 @@ class Press_Sync {
 		}
 
 		$url = $this->get_remote_url( '', 'progress', array(
-			'post_type' => $objects_to_sync,
+			'post_type'    => $objects_to_sync,
+            'preserve_ids' => (bool) get_option( 'ps_preserve_ids' ),
 		) );
 
 		$remote_get_args = array(

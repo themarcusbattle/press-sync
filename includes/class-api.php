@@ -72,7 +72,7 @@ class API extends \WP_REST_Controller {
 			'methods'             => array( 'GET' ),
 			'callback'            => array( $this, 'get_sync_progress' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
-			'args'                => array( 'post_type', 'press_sync_key' ),
+			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
 		) );
 
 		/*
@@ -885,6 +885,19 @@ class API extends \WP_REST_Controller {
                 $post_type = 'post';
             }
 
+            if ( (bool) $request->get_param( 'preserve_ids' ) ) {
+                $sql = <<<SQL
+SELECT DISTINCT
+    ID
+FROM
+    {$GLOBALS['wpdb']->posts} p
+WHERE
+    p.post_status NOT IN ( 'auto-draft', 'trash' )
+AND
+    p.post_type = %s
+SQL;
+            } else {
+
             $sql = <<<SQL
 SELECT DISTINCT
 	pm.meta_value
@@ -902,6 +915,7 @@ AND
             p.post_type = %s
     )
 SQL;
+            }
 
 			$query  = $GLOBALS['wpdb']->prepare( $sql, $post_type );
 			$synced = $GLOBALS['wpdb']->get_col( $query );
