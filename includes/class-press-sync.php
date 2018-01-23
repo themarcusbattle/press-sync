@@ -999,9 +999,8 @@ class Press_Sync {
 	 * @return array $order_to_sync_all
 	 */
 	public function order_to_sync_all( $order_to_sync_all = array() ) {
-
 		// An array of all of the core WP objects in the desired order to sync.
-		$order_to_sync_all = array( 'user', 'option', 'post', 'page' );
+		$order_to_sync_all = array( 'user', 'taxonomy_term', 'option', 'post', 'page', 'media' );
 
 		// Get any CPTs.
 		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
