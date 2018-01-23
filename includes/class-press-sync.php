@@ -1405,7 +1405,7 @@ SQL;
 		/**
 		 * Filter the SELECT statement for getting taxonomy terms to sync.
 		 *
-		 * @since NEXT
+		 * @since 0.7.1
 		 * @param  string $sql The SQL SELECT being used to get taxonomy terms.
 		 * @return string
 		 */
@@ -1414,7 +1414,7 @@ SQL;
 		/**
 		 * Filter the WHERE clause when finding taxonomy terms to sync.
 		 *
-		 * @since NEXT
+		 * @since 0.7.1
 		 * @param  string $where The WHERE clause being used to get taxonomy terms.
 		 * @return string
 		 */
@@ -1453,7 +1453,7 @@ SQL;
 		/**
 		 * Filter the SELECT statement for getting taxonomy terms to sync.
 		 *
-		 * @since NEXT
+		 * @since 0.7.1
 		 * @param  string $select The SQL SELECT being used to get taxonomy terms.
 		 * @return string
 		 */
@@ -1466,7 +1466,7 @@ SQL;
 		/**
 		 * Filter the JOIN clause when finding taxonomy terms to sync.
 		 *
-		 * @since NEXT
+		 * @since 0.7.1
 		 * @param  string $joins The JOIN clause being used to get taxonomy terms.
 		 * @return string
 		 */
@@ -1475,7 +1475,7 @@ SQL;
 		/**
 		 * Filter the WHERE clause when finding taxonomy terms to sync.
 		 *
-		 * @since NEXT
+		 * @since 0.7.1
 		 * @param  string $where The WHERE clause being used to get taxonomy terms.
 		 * @return string
 		 */
@@ -1508,7 +1508,7 @@ SQL;
 	/**
 	 * Get terms for a specific post when we're using a test post ID.
 	 *
-	 * @since NEXT
+	 * @since 0.7.1
 	 * @param  string $where The WHERE clause being filtered.
 	 * @return string
 	 */
