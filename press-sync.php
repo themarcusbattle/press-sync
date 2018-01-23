@@ -9,7 +9,7 @@
  * @wordpress-plugin
  * Plugin Name: Press Sync
  * Description: The easiest way to synchronize posts, media and users between two WordPress sites
- * Version: 0.7.1
+ * Version: 0.7.2.2
  * License: GPL
  * Author: Marcus Battle, WebDevStudios, Viacom
  * Author URI: http://webdevstudios.com/

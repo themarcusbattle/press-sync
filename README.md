@@ -24,6 +24,9 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.7.2
+- [AOTECH-6676] - Simplifies ID lookup when "Preserve IDs" is selected under Advanced Export.
+
 ### v0.7.1
 
 - [AOTECH-6676] - Add ability to fix broken relationships.
