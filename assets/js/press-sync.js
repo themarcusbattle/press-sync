@@ -7,14 +7,11 @@ window.PressSync = ( function( window, document, $ ) {
 	};
 
 	app.pressSyncButton = function( click_event ) {
-
 		app.loadProgressBar();
 		return;
-
 	}
 
 	app.loadProgressBar = function() {
-
 		$('.press-sync-button').hide();
 		$('.progress-bar-wrapper,.progress-stats').fadeIn();
 
@@ -25,7 +22,6 @@ window.PressSync = ( function( window, document, $ ) {
 				action: 'get_objects_to_sync_count',
 			}
 		}).done(function( response ) {
-
 			app.updateProgressBar( response.data.objects_to_sync, 0, response.data.total_objects );
 
 			if ( 'all' == response.data.objects_to_sync ) {
@@ -33,13 +29,10 @@ window.PressSync = ( function( window, document, $ ) {
 			} else {
 				app.syncData( 1, response.data.objects_to_sync );
 			}
-
 		});
-
 	}
 
 	app.syncAll = function() {
-
 		$.ajax({
 			method: "POST",
 			url: press_sync.ajax_url,
@@ -47,7 +40,6 @@ window.PressSync = ( function( window, document, $ ) {
 				action: 'get_order_to_sync_all',
 			}
 		}).done(function( response ) {
-
 			if ( ! response.success ) {
 				alert( 'There was a connection error. We could not determine the order to sync all objects.' );
 				return;
@@ -63,7 +55,6 @@ window.PressSync = ( function( window, document, $ ) {
 	}
 
 	app.updateProgressBar = function( objects_to_sync, total_objects_processed, total_objects, request_time ) {
-
 		var progress_complete = ( total_objects_processed / total_objects ) * 100;
 		var percent_complete  = Math.floor( progress_complete );
 
