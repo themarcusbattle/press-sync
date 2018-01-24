@@ -217,7 +217,7 @@ class API extends \WP_REST_Controller {
 
 		$responses = array();
 
-		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'post', 'page', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
+		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";

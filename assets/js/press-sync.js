@@ -117,7 +117,7 @@ window.PressSync = ( function( window, document, $ ) {
 
 			if ( response.data.total_objects_processed >= response.data.total_objects ) {
 				// Start the next batch at page 1.
-				if ( next_args.order_to_sync_all && next_args.order_to_sync_all.length ) {
+				if ( next_args && next_args.order_to_sync_all && next_args.order_to_sync_all.length ) {
 					return app.syncData( 1, null, next_args );
 				}
 
