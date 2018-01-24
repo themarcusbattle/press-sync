@@ -24,6 +24,9 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.7.3
+- [AOTECH-6678] - Fixes sycning "All" so that the browser doesn't lock.
+
 ### v0.7.2
 - [AOTECH-6676] - Simplifies ID lookup when "Preserve IDs" is selected under Advanced Export.
 
