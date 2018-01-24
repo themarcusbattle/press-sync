@@ -26,6 +26,8 @@ For support, email marcus@marcusbattle.com
 
 ### v0.7.3
 - [AOTECH-6678] - Fixes sycning "All" so that the browser doesn't lock.
+- [AOTECH-6691] - Pages weren't syncing due to incorrect handler being used.
+- [AOTECH-6691] - Addressed minor JS bug in single-type migrations.
 
 ### v0.7.2
 - [AOTECH-6676] - Simplifies ID lookup when "Preserve IDs" is selected under Advanced Export.
