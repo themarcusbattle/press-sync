@@ -9,6 +9,7 @@ namespace Press_Sync;
 		<!-- <a href="?page=press-sync&amp;tab=post-sync" class="nav-tab post-sync" data-div-name="post-sync-tab">Post Sync</a> -->
 		<a href="?page=press-sync&amp;tab=bulk-sync" class="nav-tab bulk-sync <?php echo active_tab( 'bulk-sync' ); ?>" data-div-name="bulk-sync-tab">Bulk Sync</a>
 		<a href="?page=press-sync&amp;tab=credentials" class="nav-tab credentials <?php echo active_tab( 'credentials' ); ?>" data-div-name="credentials-tab">Credentials</a>
+		<a href="?page=press-sync&amp;tab=validation" class="nav-tab validation <?php echo active_tab( 'validation' ); ?>" data-div-name="validation-tab">Validation</a>
 		<a href="?page=press-sync&amp;tab=help" class="nav-tab help <?php echo active_tab( 'help' ); ?>" data-div-name="help-tab">Help</a>
         <?php if ( apply_filters( 'press_sync_show_advanced_options', false ) ) : ?>
             <a href="?page=press-sync&amp;tab=export" class="nav-tab export <?php echo active_tab( 'export' ); ?> " data-div-name="export-tab">Advanced Export</a>
