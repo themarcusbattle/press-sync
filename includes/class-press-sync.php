@@ -69,11 +69,14 @@ class Press_Sync {
 	 * @since 0.1.0
 	 */
 	public function hooks() {
+		add_action( 'admin_enqueue_scripts', array( $this, 'load_assets' ) );
+
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
+
 	}
 
 	/**
@@ -83,9 +86,19 @@ class Press_Sync {
 	 */
 	public function plugin_classes() {
 		$this->dashboard = new Dashboard( $this );
+		$this->sync      = new Post_Sync( $this );
 		$this->api       = new API( $this );
 		$this->cli       = new CLI( $this );
 		$this->progress  = new Progress( $this );
+	}
+
+	/**
+	 * Load the project js and css.
+	 *
+	 * @since 0.7.3.1
+	 */
+	public function load_assets() {
+		wp_enqueue_style( 'press-sync', plugins_url( 'assets/css/press-sync.css', dirname( __FILE__ ) ) );
 	}
 
 	/**
