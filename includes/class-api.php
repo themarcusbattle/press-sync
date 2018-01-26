@@ -120,18 +120,18 @@ class API extends \WP_REST_Controller {
 	 */
 	public function get_post_sync_status_via_api( $request ) {
 
-		$press_sync_post_id = $request->get_param( 'id' );
+		$post_id = $request->get_param( 'id' );
 
-		if ( ! $press_sync_post_id ) {
+		if ( ! $post_id ) {
 			wp_send_json_error();
 		}
 
 		// Look for the post on the site.
-		$post = $this->get_post_by_orig_id( $press_sync_post_id );
+		$post = get_post( $post_id );
 
 		if ( ! $post ) {
 			return array(
-				'remote_post_id' => $post->ID,
+				'remote_post_id' => $post_id,
 				'status'         => 'not synced',
 			);
 		}
