@@ -1161,16 +1161,16 @@ SQL;
 	 * @param string $taxonomy The taxonomy to attach the term to.
 	 */
 	private function create_term( $term, $taxonomy ) {
-		$term_res = wp_insert_term( $term['name'], $taxonomy, array(
+		$term_result = wp_insert_term( $term['name'], $taxonomy, array(
 			'slug'        => $term['slug'],
 			'description' => $term['description'],
 		) );
 
-		if ( is_wp_error( $term_res ) ) {
-			trigger_error( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_res->get_error_message() ) );
+		if ( is_wp_error( $term_result ) ) {
+			trigger_error( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_result->get_error_message() ) );
 		}
 
-		return $term_res['term_id'];
+		return $term_result['term_id'];
 	}
 
 	/**
