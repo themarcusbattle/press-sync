@@ -1106,8 +1106,8 @@ SQL;
 	private function attach_terms( $post_id, $post_args ) {
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
-
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
+				$this->maybe_create_new_terms( $taxonomy, $terms );
 				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
 		}
@@ -1128,5 +1128,46 @@ SQL;
 				'message' => __( 'Fixed term relationships.', 'press-sync' ),
 			),
 		);
+	}
+
+	/**
+	 * Maybe create terms that don't exist.
+	 *
+	 * While wp_set_object_terms does create terms that don't exist, we can't also insert
+	 * meta data such as slug and description, or termmeta.
+	 *
+	 * @since NEXT
+	 *
+	 * @param string $taxonomy The taxonomy to insert the term to.
+	 * @param array  $terms    Array of term data.
+	 */
+	private function maybe_create_new_terms( $taxonomy, $terms ) {
+		foreach ( $terms as $term ) {
+			if ( term_exists( $term['slug'], $taxonomy ) ) {
+				continue;
+			}
+
+			$this->create_term( $term, $taxonomy );
+		}
+	}
+
+	/**
+	 * Create a term.
+	 *
+	 * @since NEXT
+	 *
+	 * @param array  $term     The term info to insert.
+	 * @param string $taxonomy The taxonomy to attach the term to.
+	 */
+	private function create_term( $term, $taxonomy ) {
+		echo '<pre>', print_r($term, true); die;
+		$term_res = wp_insert_term( $term['name'], $taxonomy, array(
+			'slug'        => $term['slug'],
+			'description' => $term['description'],
+		) );
+
+		if ( is_wp_error( $term_res ) ) {
+			trigger_error( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_res->get_error_message() ) );
+		}
 	}
 }
