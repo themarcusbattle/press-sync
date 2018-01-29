@@ -1140,7 +1140,6 @@ SQL;
 	}
 
 	/**
-<<<<<<< HEAD
 	 * Make a key multisite-specific by injecting the current blog ID.
 	 *
 	 * @since NEXT
