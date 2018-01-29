@@ -1559,6 +1559,6 @@ SQL;
 			return '';
 		}
 
-		return " AND post_modified >= '{$this->delta_date}' ";
+		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->delta_date );
 	}
 }

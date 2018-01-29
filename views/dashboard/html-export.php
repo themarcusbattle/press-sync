@@ -42,6 +42,7 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 				<th scope="row">Sync Post Since Date</th>
 				<td>
 					<input type="input" name="ps_delta_date" value="<?php echo esc_attr( get_option( 'ps_delta_date' ) ); ?>" />
+					<span>Only posts modified after this date (EST) will be synced.</span>
 				</td>
 			</tr>
 			<tr valign="top">
