@@ -24,6 +24,11 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.8.0
+- [AOTECH-6700] - Preserve proper taxonomy terms and meta when syncing posts.
+- [AOTECH-6704] - Fixes author lookups for multisite migrations.
+- [AOTECH-6705] - Adds the ability to migrate posts only after a certain date.
+
 ### v0.7.3
 - [AOTECH-6678] - Fixes sycning "All" so that the browser doesn't lock.
 - [AOTECH-6691] - Pages weren't syncing due to incorrect handler being used.

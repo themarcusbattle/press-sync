@@ -42,7 +42,7 @@ class Press_Sync {
 	 * Sync posts modified after this date.
 	 *
 	 * @var string
-	 * @since NEXT
+	 * @since 0.8.0
 	 */
 	private $delta_date = false;
 
@@ -1549,7 +1549,7 @@ SQL;
 	/**
 	 * Get the posts delta between a given date and now.
 	 *
-	 * @since NEXT
+	 * @since 0.8.0
 	 * @param string $objects_to_sync The object type to sync.
 	 *
 	 * @return string

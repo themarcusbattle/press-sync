@@ -656,7 +656,7 @@ class API extends \WP_REST_Controller {
 			/**
 			 * Filter for when we don't have a post author ID.
 			 *
-			 * @since NEXT
+			 * @since 0.8.0
 			 *
 			 * @param  int $user_id The ID to use when we don't get an author.
 			 * @return int
@@ -1142,7 +1142,7 @@ SQL;
 	/**
 	 * Make a key multisite-specific by injecting the current blog ID.
 	 *
-	 * @since NEXT
+	 * @since 0.8.0
 	 * @param  string  $key The meta key to make blog-specific.
 	 * @return string.
 	 */
@@ -1170,7 +1170,7 @@ SQL;
 	 * While wp_set_object_terms does create terms that don't exist, we can't also insert
 	 * meta data such as slug and description, or termmeta.
 	 *
-	 * @since NEXT
+	 * @since 0.8.0
 	 *
 	 * @param string $taxonomy The taxonomy to insert the term to.
 	 * @param array  $terms    Array of term data.
@@ -1192,7 +1192,7 @@ SQL;
 	/**
 	 * Create a term.
 	 *
-	 * @since NEXT
+	 * @since 0.8.0
 	 *
 	 * @param array  $term     The term info to insert.
 	 * @param string $taxonomy The taxonomy to attach the term to.
@@ -1213,7 +1213,7 @@ SQL;
 	/**
 	 * Update term meta for a term.
 	 *
-	 * @since NEXT
+	 * @since 0.8.0
 	 * @param int   $term_id   The ID of the term to add meta to.
 	 * @param array $term_meta The meta for the term.
 	 */
