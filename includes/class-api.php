@@ -322,15 +322,18 @@ class API extends \WP_REST_Controller {
 		}
 
 		// Add categories.
-		if ( isset( $post_args['tax_input']['category'] ) && $post_args['tax_input']['category'] ) {
+		if ( ! empty( $post_args['tax_input']['category'] ) ) {
 
 			require_once( ABSPATH . '/wp-admin/includes/taxonomy.php' );
 
 			foreach ( $post_args['tax_input']['category'] as $category ) {
 				wp_insert_category( array(
-					'cat_name' => $category,
+					'cat_name'             => $category['name'],
+					'category_description' => strlen( $category['description'] ) ? $category['description'] : '',
+					'category_nicename'    => $category['slug'],
 				) );
-				$post_args['post_category'][] = $category;
+
+				$post_args['post_category'][] = $category['slug'];
 			}
 		}
 
@@ -1104,7 +1107,7 @@ SQL;
 		if ( isset( $post_args['tax_input'] ) ) {
 
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
-				wp_set_object_terms( $post_id, $terms, $taxonomy, false );
+				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
 		}
 	}
