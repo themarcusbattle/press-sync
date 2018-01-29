@@ -645,6 +645,12 @@ class API extends \WP_REST_Controller {
 	 * @return integer $user_id
 	 */
 	public function get_press_sync_author_id( $user_id ) {
+		static $usermeta_prefix = 'press_sync_';
+
+		if ( is_multisite() ) {
+			$blog_id         = get_current_blog_id();
+			$usermeta_prefix = "press_sync_{$blog_id}_"; // Prefix looks like "press_sync_3_".
+		}
 
 		if ( ! $user_id ) {
 			return 1;
@@ -652,7 +658,7 @@ class API extends \WP_REST_Controller {
 
 		global $wpdb;
 
-		$sql = "SELECT user_id AS ID FROM $wpdb->usermeta WHERE meta_key = 'press_sync_user_id' AND meta_value = %d";
+		$sql = "SELECT user_id AS ID FROM {$wpdb->usermeta} WHERE meta_key = '{$usermeta_prefix}user_id' AND meta_value = %d";
 		$prepared_sql = $wpdb->prepare( $sql, $user_id );
 
 		$press_sync_user_id = $wpdb->get_var( $prepared_sql );

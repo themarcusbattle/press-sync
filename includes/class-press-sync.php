@@ -297,6 +297,12 @@ class Press_Sync {
 	 * @return WP_Users
 	 */
 	public function get_users_to_sync( $next_page = 1 ) {
+		static $usermeta_prefix = 'press_sync_';
+
+		if ( is_multisite() ) {
+			$blog_id         = get_current_blog_id();
+			$usermeta_prefix = "press_sync_{$blog_id}_";
+		}
 
 		$query_args = array(
 			'number' => 5,
@@ -324,8 +330,8 @@ class Press_Sync {
 					$user['meta_input'][ $key ] = $value[0];
 				}
 
-				$user['meta_input']['press_sync_user_id'] = $user['ID'];
-				$user['meta_input']['press_sync_source']  = home_url();
+				$user['meta_input']["{$usermeta_prefix}user_id"] = $user['ID'];
+				$user['meta_input']["{$usermeta_prefix}source"]  = home_url();
 				$user['role'] = $role;
 
 				unset( $user['ID'] );
