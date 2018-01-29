@@ -39,6 +39,12 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row">Sync Post Since Date</th>
+				<td>
+					<input type="input" name="ps_delta_date" value="<?php echo esc_attr( get_option( 'ps_delta_date' ) ); ?>" />
+				</td>
+			</tr>
+			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
 				</td>
@@ -68,4 +74,8 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 		<?php submit_button(); ?>
 	</form>
 </div>
-
+<script>
+jQuery(document).ready(function(){
+    jQuery('input[name="ps_delta_date"]').datepicker();
+});
+</script>
