@@ -1062,7 +1062,8 @@ SQL;
 
 			if ( ! is_array( $term_ids ) ) {
 				$term_ids = wp_insert_term( $object_args['name'], $object_args['taxonomy'], array(
-					'slug' => $object_args['slug'],
+					'slug'        => $object_args['slug'],
+					'description' => $object_args['description'],
 				) );
 
 				if ( is_wp_error( $term_ids ) ) {
