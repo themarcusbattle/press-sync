@@ -1077,10 +1077,7 @@ SQL;
 			}
 
 			if ( ! empty( $object_args['meta_input'] ) ) {
-				foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
-					$meta_value = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
-					update_term_meta( $term_ids['term_id'], $meta_key, $meta_value );
-				}
+				$this->maybe_update_term_meta( $term_ids['term_id'], $object_args['meta_input'] );
 			}
 		} catch ( \Exception $e ) {
 			trigger_error( $e->getMessage() );
@@ -1147,7 +1144,11 @@ SQL;
 				continue;
 			}
 
-			$this->create_term( $term, $taxonomy );
+			$term_id = $this->create_term( $term, $taxonomy );
+
+			if ( ! empty( $term['meta_input'] ) ) {
+				$this->maybe_update_term_meta( $term_id, $term['meta_input'] );
+			}
 		}
 	}
 
@@ -1160,7 +1161,6 @@ SQL;
 	 * @param string $taxonomy The taxonomy to attach the term to.
 	 */
 	private function create_term( $term, $taxonomy ) {
-		echo '<pre>', print_r($term, true); die;
 		$term_res = wp_insert_term( $term['name'], $taxonomy, array(
 			'slug'        => $term['slug'],
 			'description' => $term['description'],
@@ -1168,6 +1168,30 @@ SQL;
 
 		if ( is_wp_error( $term_res ) ) {
 			trigger_error( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_res->get_error_message() ) );
+		}
+
+		return $term_res['term_id'];
+	}
+
+	/**
+	 * Update term meta for a term.
+	 *
+	 * @since NEXT
+	 * @param int   $term_id   The ID of the term to add meta to.
+	 * @param array $term_meta The meta for the term.
+	 */
+	private function maybe_update_term_meta( $term_id, $term_meta ) {
+		foreach ( $term_meta as $meta_key => $meta_value ) {
+			$meta_value  = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
+			$meta_result = update_term_meta( $term_id, $meta_key, $meta_value );
+
+			if ( is_wp_error( $meta_result ) ) {
+				trigger_error( sprintf( __( 'Error updating term meta, ambiguous term ID: %s', 'press-sync' ), $meta_result->get_error_message() ) );
+			}
+
+			if ( false === $meta_result ) {
+				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
+			}
 		}
 	}
 }
