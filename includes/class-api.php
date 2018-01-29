@@ -653,7 +653,15 @@ class API extends \WP_REST_Controller {
 		}
 
 		if ( ! $user_id ) {
-			return 1;
+			/**
+			 * Filter for when we don't have a post author ID.
+			 *
+			 * @since NEXT
+			 *
+			 * @param  int $user_id The ID to use when we don't get an author.
+			 * @return int
+			 */
+			return apply_filters( 'press_sync_unknown_author', 1 );
 		}
 
 		global $wpdb;
