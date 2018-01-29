@@ -141,7 +141,6 @@ class Dashboard {
 		// @TODO update option names and locations below this line.
 		// Export page.
 		register_setting( 'press-sync-export', 'ps_options' );
-		register_setting( 'press-sync-export', 'ps_ignore_comments' );
 		register_setting( 'press-sync-export', 'ps_request_buffer_time' );
 		register_setting( 'press-sync-export', 'ps_start_object_offset' );
 		register_setting( 'press-sync-export', 'ps_only_sync_missing' );

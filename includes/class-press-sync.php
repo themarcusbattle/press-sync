@@ -376,8 +376,14 @@ class Press_Sync {
 	public function get_relationships( $object_id, $taxonomies ) {
 
 		foreach ( $taxonomies as $key => $taxonomy ) {
-			$taxonomies[ $taxonomy ] = wp_get_object_terms( $object_id, $taxonomy, array( 'fields' => 'names' ) );
+			$taxonomies[ $taxonomy ] = get_the_terms( $object_id, $taxonomy ) ?: array();
 			unset( $taxonomies[ $key ] );
+
+			// Need to get term meta as well.
+			foreach ( $taxonomies[ $taxonomy ] as $term ) {
+				$term->meta_input = get_term_meta( $term->term_id ) ?: array();
+				$term->meta_input['press_sync_term_id'] = $term->term_id;
+			}
 		}
 
 		return $taxonomies;
