@@ -471,6 +471,10 @@ class API extends \WP_REST_Controller {
 
 		// Update the meta.
 		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
+			if ( 0 === strpos( $usermeta_key, 'press_sync_' ) ) {
+				$usermeta_key = $this->maybe_make_multisite_key( $usermeta_key );
+			}
+
 			update_user_meta( $user_id, $usermeta_key, $usermeta_value );
 		}
 
@@ -645,13 +649,6 @@ class API extends \WP_REST_Controller {
 	 * @return integer $user_id
 	 */
 	public function get_press_sync_author_id( $user_id ) {
-		static $usermeta_prefix = 'press_sync_';
-
-		if ( is_multisite() ) {
-			$blog_id         = get_current_blog_id();
-			$usermeta_prefix = "press_sync_{$blog_id}_"; // Prefix looks like "press_sync_3_".
-		}
-
 		if ( ! $user_id ) {
 			/**
 			 * Filter for when we don't have a post author ID.
@@ -666,7 +663,8 @@ class API extends \WP_REST_Controller {
 
 		global $wpdb;
 
-		$sql = "SELECT user_id AS ID FROM {$wpdb->usermeta} WHERE meta_key = '{$usermeta_prefix}user_id' AND meta_value = %d";
+		$usermeta_key = $this->maybe_make_multisite_key( 'press_sync_user_id' );
+		$sql          = "SELECT user_id AS ID FROM {$wpdb->usermeta} WHERE meta_key = '{$usermeta_key}' AND meta_value = %d";
 		$prepared_sql = $wpdb->prepare( $sql, $user_id );
 
 		$press_sync_user_id = $wpdb->get_var( $prepared_sql );
@@ -1138,5 +1136,30 @@ SQL;
 				'message' => __( 'Fixed term relationships.', 'press-sync' ),
 			),
 		);
+	}
+
+	/**
+	 * Make a key multisite-specific by injecting the current blog ID.
+	 *
+	 * @since NEXT
+	 * @param  string  $key The meta key to make blog-specific.
+	 * @return string.
+	 */
+	private function maybe_make_multisite_key( $key ) {
+		// Only on multisite.
+		if ( ! is_multisite() ) {
+			return $key;
+		}
+
+		static $multisite_key_regex = '/^press_sync_\d+_/';
+		preg_match( $multisite_key_regex, $key, $matches );
+
+		// It's already a multisite key, don't doubledown.
+		if ( ! empty( $matches ) ) {
+			return $key;
+		}
+
+		$blog_id = get_current_blog_id();
+		return strtr( $key, array( 'press_sync_' => "press_sync_{$blog_id}_" ) );
 	}
 }
