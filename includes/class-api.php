@@ -329,7 +329,7 @@ class API extends \WP_REST_Controller {
 			foreach ( $post_args['tax_input']['category'] as $category ) {
 				wp_insert_category( array(
 					'cat_name'             => $category['name'],
-					'category_description' => strlen( $category['description'] ) ? $category['description'] : '',
+					'category_description' => $category['description'],
 					'category_nicename'    => $category['slug'],
 				) );
 
