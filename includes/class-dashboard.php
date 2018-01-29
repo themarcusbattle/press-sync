@@ -148,6 +148,7 @@ class Dashboard {
 		register_setting( 'press-sync-export', 'ps_skip_assets' );
 		register_setting( 'press-sync-export', 'ps_preserve_ids' );
 		register_setting( 'press-sync-export', 'ps_fix_terms' );
+		register_setting( 'press-sync-export', 'ps_delta_date' );
 
 		// Import page.
 		register_setting( 'press-sync-import', 'ps_content_threshold' );
