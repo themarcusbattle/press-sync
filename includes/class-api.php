@@ -1239,7 +1239,7 @@ SQL;
 		}
 	}
 
-	public function get_relationships( $taxonomy = null, $term = null ) {
+	public function get_relationships( $taxonomy = null, $term = null, $as_array = false ) {
 		$sql = <<<SQL
 SELECT
 	tt.taxonomy,
@@ -1253,10 +1253,19 @@ SQL;
 
 		if ( $taxonomy && $term ) {
 			$sql .= ' WHERE tt.taxonomy = %s AND t.slug = %s';
-			$sql = $wpdb->prepare( $sql, $taxonomy, $term );
+			$sql = $GLOBALS['wpdb']->prepare( $sql, $taxonomy, $term );
 		}
 
 		$res = $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
+
+		if ( $as_array ) {
+			return $res;
+		}
+
 		wp_send_json_success( $res );
+	}
+
+	public function sync_relationships( $object ) {
+		echo '<pre>', print_r($object, true); die;
 	}
 }
