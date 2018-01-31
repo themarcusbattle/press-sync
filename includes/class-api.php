@@ -83,6 +83,13 @@ class API extends \WP_REST_Controller {
 			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
 		) );
 
+        register_rest_route( 'press-sync/v1', '/relationships/', array(
+            'methods'             => array( 'GET' ),
+            'callback'            => array( $this, 'get_relationships' ),
+            'permission_callback' => array( $this, 'validate_sync_key' ),
+            'args'                => array( 'press_sync_key' ),
+        ) );
+
 		/*
 		@todo Complete the individual post syncing.
 		register_rest_route( 'press-sync/v1', '/sync/(?P<id>\d+)', array(
@@ -1230,5 +1237,26 @@ SQL;
 				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
 			}
 		}
+	}
+
+	public function get_relationships( $taxonomy = null, $term = null ) {
+		$sql = <<<SQL
+SELECT
+	tt.taxonomy,
+	t.slug,
+	tt.count
+FROM
+	{$GLOBALS['wpdb']->term_taxonomy} tt
+JOIN
+	{$GLOBALS['wpdb']->terms} t ON( t.term_id = tt.term_id )
+SQL;
+
+		if ( $taxonomy && $term ) {
+			$sql .= ' WHERE tt.taxonomy = %s AND t.slug = %s';
+			$sql = $wpdb->prepare( $sql, $taxonomy, $term );
+		}
+
+		$res = $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
+		wp_send_json_success( $res );
 	}
 }
