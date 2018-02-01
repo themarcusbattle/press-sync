@@ -39,6 +39,14 @@ class Press_Sync {
 	public $remote_domain = null;
 
 	/**
+	 * Sync posts modified after this date.
+	 *
+	 * @var string
+	 * @since 0.8.0
+	 */
+	private $delta_date = false;
+
+	/**
 	 * Initialize the class instance.
 	 *
 	 * @since 0.4.5
@@ -46,6 +54,7 @@ class Press_Sync {
 	public function __construct() {
 		// Initialize plugin classes.
 		$this->plugin_classes();
+		$this->delta_date = date( 'Y-m-d 00:00:00', strtotime( get_option( 'ps_delta_date' ) ) ) ?: false;
 	}
 
 	/**
@@ -255,6 +264,7 @@ class Press_Sync {
 
 		// @TODO let's filter the where clause in general.
 		$where_clause .= $this->get_synced_object_clause( $objects_to_sync );
+		$where_clause .= $this->get_posts_delta( $objects_to_sync );
 
 		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
 			$id_where_clause = ' AND ID = %d ';
@@ -297,7 +307,6 @@ class Press_Sync {
 	 * @return WP_Users
 	 */
 	public function get_users_to_sync( $next_page = 1 ) {
-
 		$query_args = array(
 			'number' => 5,
 			'offset' => ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0,
@@ -377,8 +386,14 @@ class Press_Sync {
 	public function get_relationships( $object_id, $taxonomies ) {
 
 		foreach ( $taxonomies as $key => $taxonomy ) {
-			$taxonomies[ $taxonomy ] = wp_get_object_terms( $object_id, $taxonomy, array( 'fields' => 'names' ) );
+			$taxonomies[ $taxonomy ] = get_the_terms( $object_id, $taxonomy ) ?: array();
 			unset( $taxonomies[ $key ] );
+
+			// Need to get term meta as well.
+			foreach ( $taxonomies[ $taxonomy ] as $term ) {
+				$term->meta_input = get_term_meta( $term->term_id ) ?: array();
+				$term->meta_input['press_sync_term_id'] = $term->term_id;
+			}
 		}
 
 		return $taxonomies;
@@ -414,8 +429,9 @@ class Press_Sync {
 
 		global $wpdb;
 
-		$where_clause = '';
-		$where_clause = $this->get_synced_object_clause( $objects_to_sync );
+		$where_clause  = '';
+		$where_clause  = $this->get_synced_object_clause( $objects_to_sync );
+		$where_clause .= $this->get_posts_delta( $objects_to_sync );
 
 		// If it's just one post return only 1.
 		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
@@ -1528,5 +1544,26 @@ AND tt.term_taxonomy_id IN (
 SQL;
 		$where = $GLOBALS['wpdb']->prepare( $where, get_option( 'ps_testing_post' ) );
 		return $where;
+	}
+
+	/**
+	 * Get the posts delta between a given date and now.
+	 *
+	 * @since 0.8.0
+	 * @param string $objects_to_sync The object type to sync.
+	 *
+	 * @return string
+	 */
+	protected function get_posts_delta( $objects_to_sync ) {
+		if ( ! $this->delta_date ) {
+			return '';
+		}
+
+		// Currently only supported for posts.
+		if ( 'post' !== $objects_to_sync ) {
+			return '';
+		}
+
+		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->delta_date );
 	}
 }

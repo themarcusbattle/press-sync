@@ -322,15 +322,18 @@ class API extends \WP_REST_Controller {
 		}
 
 		// Add categories.
-		if ( isset( $post_args['tax_input']['category'] ) && $post_args['tax_input']['category'] ) {
+		if ( ! empty( $post_args['tax_input']['category'] ) ) {
 
 			require_once( ABSPATH . '/wp-admin/includes/taxonomy.php' );
 
 			foreach ( $post_args['tax_input']['category'] as $category ) {
 				wp_insert_category( array(
-					'cat_name' => $category,
+					'cat_name'             => $category['name'],
+					'category_description' => $category['description'],
+					'category_nicename'    => $category['slug'],
 				) );
-				$post_args['post_category'][] = $category;
+
+				$post_args['post_category'][] = $category['slug'];
 			}
 		}
 
@@ -471,6 +474,10 @@ class API extends \WP_REST_Controller {
 
 		// Update the meta.
 		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
+			if ( 0 === strpos( $usermeta_key, 'press_sync_' ) ) {
+				$usermeta_key = $this->maybe_make_multisite_key( $usermeta_key );
+			}
+
 			update_user_meta( $user_id, $usermeta_key, $usermeta_value );
 		}
 
@@ -645,14 +652,22 @@ class API extends \WP_REST_Controller {
 	 * @return integer $user_id
 	 */
 	public function get_press_sync_author_id( $user_id ) {
-
 		if ( ! $user_id ) {
-			return 1;
+			/**
+			 * Filter for when we don't have a post author ID.
+			 *
+			 * @since 0.8.0
+			 *
+			 * @param  int $user_id The ID to use when we don't get an author.
+			 * @return int
+			 */
+			return apply_filters( 'press_sync_unknown_author', 1 );
 		}
 
 		global $wpdb;
 
-		$sql = "SELECT user_id AS ID FROM $wpdb->usermeta WHERE meta_key = 'press_sync_user_id' AND meta_value = %d";
+		$usermeta_key = $this->maybe_make_multisite_key( 'press_sync_user_id' );
+		$sql          = "SELECT user_id AS ID FROM {$wpdb->usermeta} WHERE meta_key = '{$usermeta_key}' AND meta_value = %d";
 		$prepared_sql = $wpdb->prepare( $sql, $user_id );
 
 		$press_sync_user_id = $wpdb->get_var( $prepared_sql );
@@ -1059,7 +1074,8 @@ SQL;
 
 			if ( ! is_array( $term_ids ) ) {
 				$term_ids = wp_insert_term( $object_args['name'], $object_args['taxonomy'], array(
-					'slug' => $object_args['slug'],
+					'slug'        => $object_args['slug'],
+					'description' => $object_args['description'],
 				) );
 
 				if ( is_wp_error( $term_ids ) ) {
@@ -1073,10 +1089,7 @@ SQL;
 			}
 
 			if ( ! empty( $object_args['meta_input'] ) ) {
-				foreach ( $object_args['meta_input'] as $meta_key => $meta_value ) {
-					$meta_value = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
-					update_term_meta( $term_ids['term_id'], $meta_key, $meta_value );
-				}
+				$this->maybe_update_term_meta( $term_ids['term_id'], $object_args['meta_input'] );
 			}
 		} catch ( \Exception $e ) {
 			trigger_error( $e->getMessage() );
@@ -1102,9 +1115,9 @@ SQL;
 	private function attach_terms( $post_id, $post_args ) {
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
-
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
-				wp_set_object_terms( $post_id, $terms, $taxonomy, false );
+				$this->maybe_create_new_terms( $taxonomy, $terms );
+				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
 		}
 	}
@@ -1124,5 +1137,98 @@ SQL;
 				'message' => __( 'Fixed term relationships.', 'press-sync' ),
 			),
 		);
+	}
+
+	/**
+	 * Make a key multisite-specific by injecting the current blog ID.
+	 *
+	 * @since 0.8.0
+	 * @param  string  $key The meta key to make blog-specific.
+	 * @return string.
+	 */
+	private function maybe_make_multisite_key( $key ) {
+		// Only on multisite.
+		if ( ! is_multisite() ) {
+			return $key;
+		}
+
+		static $multisite_key_regex = '/^press_sync_\d+_/';
+		preg_match( $multisite_key_regex, $key, $matches );
+
+		// It's already a multisite key, don't doubledown.
+		if ( ! empty( $matches ) ) {
+			return $key;
+		}
+
+		$blog_id = get_current_blog_id();
+		return strtr( $key, array( 'press_sync_' => "press_sync_{$blog_id}_" ) );
+	}
+
+	/**
+	 * Maybe create terms that don't exist.
+	 *
+	 * While wp_set_object_terms does create terms that don't exist, we can't also insert
+	 * meta data such as slug and description, or termmeta.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $taxonomy The taxonomy to insert the term to.
+	 * @param array  $terms    Array of term data.
+	 */
+	private function maybe_create_new_terms( $taxonomy, $terms ) {
+		foreach ( $terms as $term ) {
+			if ( term_exists( $term['slug'], $taxonomy ) ) {
+				continue;
+			}
+
+			$term_id = $this->create_term( $term, $taxonomy );
+
+			if ( ! empty( $term['meta_input'] ) ) {
+				$this->maybe_update_term_meta( $term_id, $term['meta_input'] );
+			}
+		}
+	}
+
+	/**
+	 * Create a term.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param array  $term     The term info to insert.
+	 * @param string $taxonomy The taxonomy to attach the term to.
+	 */
+	private function create_term( $term, $taxonomy ) {
+		$term_result = wp_insert_term( $term['name'], $taxonomy, array(
+			'slug'        => $term['slug'],
+			'description' => $term['description'],
+		) );
+
+		if ( is_wp_error( $term_result ) ) {
+			trigger_error( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_result->get_error_message() ) );
+		}
+
+		return $term_result['term_id'];
+	}
+
+	/**
+	 * Update term meta for a term.
+	 *
+	 * @since 0.8.0
+	 * @param int   $term_id   The ID of the term to add meta to.
+	 * @param array $term_meta The meta for the term.
+	 */
+	private function maybe_update_term_meta( $term_id, $term_meta ) {
+		foreach ( $term_meta as $meta_key => $meta_value ) {
+			$meta_value  = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
+			$meta_result = update_term_meta( $term_id, $meta_key, $meta_value );
+
+			if ( is_wp_error( $meta_result ) ) {
+				trigger_error( sprintf( __( 'Error updating term meta, ambiguous term ID: %s', 'press-sync' ), $meta_result->get_error_message() ) );
+			}
+
+			if ( false === $meta_result ) {
+				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
+			}
+		}
 	}
 }
