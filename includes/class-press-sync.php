@@ -234,6 +234,10 @@ class Press_Sync {
 			$objects = $this->get_taxonomy_term_to_sync( $next_page );
 			break;
 
+		case 'relationships':
+			$objects = $this->get_relationships_to_sync( $next_page );
+			break;
+
 		default:
 			$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
 			break;
@@ -425,6 +429,10 @@ class Press_Sync {
 
 		if ( 'taxonomy_term' === $objects_to_sync ) {
 			return $this->count_taxonomy_term_to_sync();
+		}
+
+		if ( 'relationships' === $objects_to_sync ) {
+			return $this->count_relationships_to_sync();
 		}
 
 		global $wpdb;
@@ -983,6 +991,18 @@ class Press_Sync {
 		// Prepare each object to be sent to the remote site.
 		$objects_args = $this->prepare_objects_to_sync( $objects, $settings );
 
+		if ( empty( $objects_args['objects'] ) ) {
+			return array(
+				'objects_to_sync'         => $content_type,
+				'total_objects'           => $total_objects,
+				'total_objects_processed' => ( $next_page * 5 ) - ( 5 - count( $objects ) ),
+				'next_page'               => $next_page + 1,
+				'log'                     => array(
+					'Nothing to sync...',
+				),
+			);
+		}
+
 		// Slow down the sync.
 		$this->slow_down_sync();
 
@@ -1075,7 +1095,13 @@ class Press_Sync {
 		}
 
 		foreach ( $objects as $key => $object ) {
-			$settings['objects'][ $key ] = $this->$sync_function( $object );
+			$object = $this->$sync_function( $object );
+
+			if ( ! $object ) {
+				continue;
+			}
+
+			$settings['objects'][ $key ] = $object;
 		}
 
 		return $settings;
@@ -1104,6 +1130,7 @@ class Press_Sync {
 		$objects = array(
 			'all'           => __( 'All', 'press-sync' ),
 			'taxonomy_term' => __( 'Taxonomies &amp; Terms', 'press-sync' ),
+			'relationships' => __( 'Term Relationships', 'press-sync' ),
 			'attachment'    => __( 'Media', 'press-sync' ),
 			'page'          => __( 'Pages', 'press-sync' ),
 			'post'          => __( 'Posts', 'press-sync' ),
@@ -1294,7 +1321,7 @@ class Press_Sync {
 	 * @return string $wp_object
 	 */
 	public function get_sync_function_name( $objects_to_sync = '' ) {
-		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term', 'relationships' ), true ) ? $objects_to_sync : 'post';
 		return "prepare_{$wp_object}_args_to_sync";
 	}
 
@@ -1565,5 +1592,64 @@ SQL;
 		}
 
 		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->delta_date );
+	}
+
+	public function count_relationships_to_sync() {
+		// Reach out to remote site and get relationship counts.
+		$url = $this->get_remote_url( '', 'relationships' );
+
+		$response      = wp_remote_get( $url );
+		$response_code = wp_remote_retrieve_response_code( $response );
+
+		if ( 200 !== $response_code ) {
+			throw new \Exception( 'could not get term relationships from remote site!' );
+		}
+
+		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$relationships = $response_body['data'];
+		set_transient( 'ps_remote_relationships', $relationships, WEEK_IN_SECONDS );
+		return count( $relationships );
+	}
+
+	public function get_relationships_to_sync( $next_page ) {
+		$offset  = ( $next_page * 5 ) - 5;
+		$objects = get_transient( 'ps_remote_relationships' );
+
+		$objects = array_slice( $objects, $offset, 5 );
+		return $objects;
+	}
+
+	public function prepare_relationships_args_to_sync( $object ) {
+		$local_relationships = $this->api->get_relationships( $object['taxonomy'], $object['slug'], true );
+
+		if ( empty( $local_relationships ) ) {
+			return false;
+		}
+
+		$local_relationships = current( $local_relationships );
+
+		if ( absint( $local_relationships['count'] ) === absint( $object['count'] ) ) {
+			return false;
+		}
+
+		$sql = <<<SQL
+SELECT
+	tr.object_id
+FROM
+	{$GLOBALS['wpdb']->term_relationships} tr
+JOIN
+	{$GLOBALS['wpdb']->term_taxonomy} tt USING( term_taxonomy_id )
+JOIN
+	{$GLOBALS['wpdb']->terms} t USING( term_id )
+WHERE
+	tt.taxonomy = %s
+AND
+	t.slug = %s
+SQL;
+
+		$sql                     = $GLOBALS['wpdb']->prepare( $sql, $local_relationships['taxonomy'], $local_relationships['slug'] );
+		$object['relationships'] = implode( ',', $GLOBALS['wpdb']->get_col( $sql ) );
+
+		return $object;
 	}
 }
