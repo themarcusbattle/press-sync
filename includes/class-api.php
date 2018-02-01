@@ -224,7 +224,7 @@ class API extends \WP_REST_Controller {
 
 		$responses = array();
 
-		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
+		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term', 'relationships' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
@@ -1266,6 +1266,61 @@ SQL;
 	}
 
 	public function sync_relationships( $object ) {
-		echo '<pre>', print_r($object, true); die;
+		if ( ! $object['count'] ) {
+			return array();
+		}
+
+		$posts    = $this->find_orphan_post_ids( $object );
+		$response = array(
+			'errors' => array(),
+			'fixed'  => array(),
+		);
+
+		foreach ( $posts as $post_id ) {
+			$tt = wp_set_object_terms( $post_id, $object['slug'], $object['taxonomy'], true );
+
+			if ( is_wp_error( $tt ) ) {
+				$response['errors'][] = $tt->get_error_message();
+				continue;
+			}
+
+			$response['fixed'][] = $tt;
+		}
+
+		return array(
+			'debug' => $response,
+		);
+	}
+
+	// @TODO need to clean up for proper sanitization of input.
+	private function find_orphan_post_ids( $object ) {
+		$term_taxonomy = term_exists( $object['slug'], $object['taxonomy'] );
+
+		if ( ! $term_taxonomy ) {
+			return array();
+		}
+
+		if ( 1 === count( $term_taxonomy ) ) {
+			return array();
+		}
+
+		$tt_id = $term_taxonomy['term_taxonomy_id'];
+
+		$sql = <<<SQL
+SELECT
+	post_id
+FROM
+	{$GLOBALS['wpdb']->postmeta}
+WHERE
+	meta_key = 'press_sync_post_id'
+AND
+	meta_value IN( {$object['relationships']} )
+AND
+	meta_value NOT IN (
+		SELECT DISTINCT object_id FROM {$GLOBALS['wpdb']->term_relationships} WHERE term_taxonomy_id = {$tt_id}
+	)
+SQL;
+
+		return $GLOBALS['wpdb']->get_col( $sql );
 	}
 }
