@@ -152,6 +152,9 @@ class Dashboard {
 
 		// Import page.
 		register_setting( 'press-sync-import', 'ps_content_threshold' );
+
+		// Validation
+		register_setting( 'press-sync-validation', Validation::VALIDATION_OPTION );
 	}
 
 	/**
@@ -224,5 +227,33 @@ class Dashboard {
 		}
 
 		wp_send_json_success( $this->plugin->sync_object( $this->objects_to_sync, $settings, $this->next_page, true ) );
+	}
+
+	/**
+	 * Formats validation results for the Dashboard.
+	 *
+	 * @since NEXT
+	 * @param  array  $validation_results Array of results to format.
+	 * @return string
+	 */
+	public static function format_validation( array $validation_results ) {
+		$html = '';
+
+		foreach ( $validation_results as $heading => $results ) {
+			if ( empty( $results ) ) {
+				continue;
+			}
+
+			$html .= sprintf( '<h3>%s</h3>', ucwords( $heading ) );
+			$html .= '<table>';
+
+			foreach ( $results as $result_row ) {
+				$html .= sprintf( '<tr><td>%s</td></tr>', $result_row );
+			}
+
+			$html .= '</table>';
+		}
+
+		return $html;
 	}
 }
