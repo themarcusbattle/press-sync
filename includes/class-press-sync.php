@@ -1313,7 +1313,7 @@ class Press_Sync {
 		$option_name = "ps_synced_post_session_{$objects_to_sync}";
 		$last_sync   = get_option( $option_name );
 
-		if ( is_array( $last_sync ) && ! empty( $last_sync ) ) {
+		if ( ! empty( $last_sync ) && is_array( $last_sync ) ) {
 			return $last_sync;
 		}
 
