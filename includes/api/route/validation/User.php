@@ -8,26 +8,29 @@ use Press_Sync\api\route\AbstractRoute;
  * Class User
  *
  * @package Press_Sync\api\route\validation
+ * @since NEXT
  */
 class User extends AbstractRoute {
 	/**
 	 * User constructor.
+	 *
+	 * @since NEXT
 	 */
 	public function __construct() {
-		parent::__construct();
-		$this->namespace = 'press-sync/v1';
 		$this->rest_base = 'validation/user';
 	}
 
 	/**
-	 *
+	 * Register endpoint with WordPress.
 	 */
 	public function register_hooks() {
-		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
+
 
 	/**
 	 * Register routes for this API endpoint.
+	 * @since NEXT
 	 */
 	public function register_routes() {
 		$routes = array(

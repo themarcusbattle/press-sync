@@ -13,11 +13,11 @@ namespace Press_Sync\api\route;
  */
 abstract class AbstractRoute extends \WP_REST_Controller {
 	/**
-	 * AbstractRoute constructor.
+	 * Namespace for this route.
+	 *
+	 * @var string
 	 */
-	public function __construct() {
-		$this->namespace = 'press-sync/v1';
-	}
+	protected $namespace = 'press-sync/v1';
 
 	/**
 	 * Concrete classes should implement methods that hook into WordPress's rest_api_init event, at minimum.
