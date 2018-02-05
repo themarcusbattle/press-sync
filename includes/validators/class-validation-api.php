@@ -2,6 +2,8 @@
 
 namespace Press_Sync\validators;
 
+use Press_Sync\API;
+
 class Validation_API {
 
 	/**
@@ -10,7 +12,7 @@ class Validation_API {
 	 * @since NEXT
 	 * @var string
 	 */
-	protected $route = 'validators';
+	protected static $route = 'validators';
 
 	/**
 	 * The endpoint for the validator.
@@ -21,7 +23,7 @@ class Validation_API {
 	 * @since NEXT
 	 * @var string
 	 */
-	protected $endpoint;
+	protected static $endpoint;
 
 	/**
 	 * Gets a response based on the incoming API request.
@@ -45,4 +47,59 @@ class Validation_API {
 		}
 	}
 
+	/**
+	 * Registers API endpoints for the extending class.
+	 *
+	 * This registers an API endpoint at /namespace/route/endpoint/ based on the extending
+	 * class's properties. The class should implement a static public method called
+	 * get_api_response that can parse the request parameters and return the desired data.
+	 *
+	 * @since NEXT
+	 */
+	public static function register_api_endpoints() {
+		if ( empty( static::$endpoint ) ) {
+			trigger_error( __( 'Validation classes must define an endpoint.', 'press-sync' ), E_USER_ERROR );
+		}
+
+		$route    = static::$route;
+		$endpoint = static::$endpoint;
+
+		register_rest_route( \Press_Sync\API::NAMESPACE, "/{$route}/{$endpoint}", array(
+			'methods'             => array( 'GET' ),
+			'callback'            => static::class . '::get_api_response',
+			'permission_callback' => array( \Press_Sync\Press_Sync::init()->api, 'validate_sync_key' ),
+			'args'                => array(
+				'request' => array(
+					'required' => true,
+				),
+				'press_sync_key' => array(
+					'required' => true,
+				),
+			),
+		) );
+	}
+
+	/**
+	 * Get remote data from an API request.
+	 *
+	 * @since NEXT
+	 * @param  string $request The requested datapoint.
+	 * @return array
+	 */
+	public function get_remote_data( $request ) {
+		$route    = static::$route;
+		$endpoint = static::$endpoint;
+
+		$url = API::get_remote_url( '', "{$route}/{$endpoint}", array(
+			'request' => $request,
+		) );
+
+		$response = API::get_remote_response( $url );
+
+		if ( empty( $response['body']['success'] ) ) {
+			return array();
+		}
+
+		return $response['body']['data'];
+	}
 }
