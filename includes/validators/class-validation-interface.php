@@ -61,5 +61,5 @@ interface Validation_Interface {
 	/**
 	 * Register all routes for getting data for this type of object.
 	 */
-	public function register_rest_routes();
+	public static function register_api_endpoints();
 }

@@ -27,15 +27,25 @@ abstract class Validation_Utility {
 	}
 
 	public static function register_api_endpoints() {
-		if ( empty( self::$endpoint ) ) {
+		if ( empty( static::$endpoint ) ) {
 			trigger_error( __( 'Validation classes must define an endpoint.', 'press-sync' ), E_USER_ERROR );
 		}
 
-		register_rest_route( \Press_Sync\API::NAMESPACE, "/{self::$route}/{self::$endpoint}", array(
+		$route    = static::$route;
+		$endpoint = static::$endpoint;
+
+		register_rest_route( \Press_Sync\API::NAMESPACE, "/{$route}/{$endpoint}", array(
 			'methods'             => array( 'GET' ),
-			'callback'            => __NAMESPACE__ . '\\' . __CLASS__ . '::get_api_response',
-			'permission_callback' => array( \Press_Sync\Press_Sync::init()->API, 'validate_sync_key' ),
-			'args'                => array( 'request', 'press_sync_key' ),
+			'callback'            => static::class . '::get_api_response',
+			'permission_callback' => array( \Press_Sync\Press_Sync::init()->api, 'validate_sync_key' ),
+			'args'                => array(
+				'request' => array(
+					'required' => true,
+				),
+				'press_sync_key' => array(
+					'required' => true,
+				),
+			),
 		) );
 	}
 }

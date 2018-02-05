@@ -110,6 +110,7 @@ class Validation {
 		);
 
 		foreach ( $validators as $validation_class ) {
+			$validation_class = "\\Press_Sync\\validators\\{$validation_class}";
 			$validation_class::register_api_endpoints();
 		}
 	}

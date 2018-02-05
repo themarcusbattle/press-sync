@@ -19,13 +19,12 @@ class Users extends Validation_Utility implements Validation_Interface {
 	 * @since NEXT
 	 */
 	public function get_source_data() {
+		$counts = self::count_users();
+		$counts = $this->prepare_counts( $counts );
+
 		$this->source_data = array(
-			'counts' => array(
-				'administrators' => 1,
-				'editors'        => 23,
-				'subscribers'    => 112,
-			),
-			'users' => array(
+			'counts' => $counts,
+			'users'  => array(
 				'blah' => array(
 					'ID'         => 453,
 					'user_login' => 'blah',
@@ -126,6 +125,33 @@ class Users extends Validation_Utility implements Validation_Interface {
 	}
 
 	public static function get_api_response( $response ) {
-		wp_send_json_success( 'blah' );
+		try {
+			$request = $response->get_param( 'request' );
+
+			switch ( strtolower( $request ) ) {
+				case 'count':
+					$data = self::count_users();
+					break;
+
+				default:
+					throw new \Exception( sprintf( __( 'Unrecognized request parameter: %s', 'press-sync' ), $request ) );
+			}
+
+			wp_send_json_success( $data );
+		} catch ( \Exception $e ) {
+			$message = sprintf( __( 'There was an error processing the request: %s', 'press-sync' ), $e->getMessage() );
+			trigger_error( $message, E_USER_ERROR );
+			wp_send_json_error( $message );
+		}
+	}
+
+	private static function count_users() {
+		return count_users();
+	}
+
+	private function prepare_counts( $counts ) {
+		$prepared = $counts['avail_roles'];
+		$prepared['total'] = $counts['total_users'];
+		return $prepared;
 	}
 }
