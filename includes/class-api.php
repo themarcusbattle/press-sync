@@ -85,14 +85,6 @@ class API extends \WP_REST_Controller {
 			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
 		) );
 
-		/*
-		@todo Complete the individual post syncing.
-		register_rest_route( 'press-sync/v1', '/sync/(?P<id>\d+)', array(
-			'methods' => array( 'GET', 'POST' ),
-			'callback' => array( $this, 'sync_objects' ),
-		) );
-		 */
-
 	}
 
 	/**
