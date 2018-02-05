@@ -307,13 +307,10 @@ class Press_Sync {
 
 		if ( $results ) {
 
-			foreach ( $results as $user ) {
-
-				// Get user role.
-				$role = $user->roles[0];
+			foreach ( $results as $raw_user ) {
 
 				// Get user data.
-				$user = (array) $user->data;
+				$user = (array) $raw_user->data;
 				$user_meta = get_user_meta( $user['ID'] );
 
 				foreach ( $user_meta as $key => $value ) {
@@ -322,7 +319,12 @@ class Press_Sync {
 
 				$user['meta_input']['press_sync_user_id'] = $user['ID'];
 				$user['meta_input']['press_sync_source']  = home_url();
-				$user['role'] = $role;
+				$user['role'] = '';
+
+				if ( ! empty( $raw_user->roles ) ) {
+					// Get user role.
+					$user['role'] = $raw_user->roles[0];
+				}
 
 				unset( $user['ID'] );
 
