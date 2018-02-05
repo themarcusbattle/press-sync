@@ -7,6 +7,8 @@ namespace Press_Sync;
  */
 class API extends \WP_REST_Controller {
 
+	const NAMESPACE = 'press-sync/v1';
+
 	/**
 	 * Parent plugin class.
 	 *
