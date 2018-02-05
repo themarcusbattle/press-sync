@@ -85,6 +85,7 @@ class API extends \WP_REST_Controller {
 			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
 		) );
 
+		\Press_Sync\Validation::register_api_endpoints();
 	}
 
 	/**

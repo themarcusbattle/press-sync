@@ -7,6 +7,8 @@
 
 namespace Press_Sync;
 
+use Press_Sync\validators;
+
 /**
  * Validation class to manage overall actions of Validators.
  */
@@ -61,7 +63,8 @@ class Validation {
 		}
 
 		// If we're validating, find out what we're validating and delete the option.
-		self::$validation_type = array_pop( explode( ' ', strtolower( $current_validation ) ) );
+		$current_validation = explode( ' ', strtolower( $current_validation ) );
+		self::$validation_type = array_pop( $current_validation );
 		delete_option( self::VALIDATION_OPTION );
 
 		return true;
@@ -99,5 +102,15 @@ class Validation {
 		$validation_class = '\Press_Sync\validators\\' . ucwords( self::$validation_type, '_' ); // Validate_Users
 		$validator = new $validation_class();
 		return $validator->compare_results();
+	}
+
+	public static function register_api_endpoints() {
+		static $validators = array(
+			'Users',
+		);
+
+		foreach ( $validators as $validation_class ) {
+			$validation_class::register_api_endpoints();
+		}
 	}
 }

@@ -11,6 +11,8 @@ namespace Press_Sync\validators;
  * User validation class to get and compare results.
  */
 class Users extends Validation_Utility implements Validation_Interface {
+	protected static $endpoint = 'users';
+
 	/**
 	 * Get data from the source site.
 	 *
@@ -121,5 +123,9 @@ class Users extends Validation_Utility implements Validation_Interface {
 
 		$icon = $this->get_result_icon( $source_count === $destination_count );
 		return sprintf( '%s Count of %s: %d vs %d', $icon, $key, $source_count, $destination_count );
+	}
+
+	public static function get_api_response( $response ) {
+		wp_send_json_success( 'blah' );
 	}
 }
