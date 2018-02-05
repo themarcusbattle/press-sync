@@ -62,23 +62,23 @@ class API extends \WP_REST_Controller {
 	 */
 	public function register_api_endpoints() {
 
-		register_rest_route( 'press-sync/v1', '/status', array(
-			'methods' => 'GET',
+		register_rest_route( self::NAMESPACE, '/status', array(
+			'methods'  => 'GET',
 			'callback' => array( $this, 'get_connection_status_via_api' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/status/(?P<id>\d+)', array(
-			'methods' => 'GET',
+		register_rest_route( self::NAMESPACE, '/status/(?P<id>\d+)', array(
+			'methods'  => 'GET',
 			'callback' => array( $this, 'get_post_sync_status_via_api' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/sync', array(
-			'methods' => array( 'GET', 'POST' ),
-			'callback' => array( $this, 'sync_objects' ),
+		register_rest_route( self::NAMESPACE, '/sync', array(
+			'methods'             => array( 'GET', 'POST' ),
+			'callback'            => array( $this, 'sync_objects' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/progress/', array(
+		register_rest_route( self::NAMESPACE, '/progress/', array(
 			'methods'             => array( 'GET' ),
 			'callback'            => array( $this, 'get_sync_progress' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
