@@ -187,23 +187,10 @@ class Press_Sync {
 	 */
 	public function check_connection( $url = '' ) {
 
-		$url = $this->get_remote_url( $url );
+		$url      = API::get_remote_url( $url );
+		$response = API::get_remote_response( $url );
 
-		$remote_get_args = array(
-			'timeout' => 30,
-		);
-
-		$response      = wp_remote_get( $url, $remote_get_args );
-		$response_code = wp_remote_retrieve_response_code( $response );
-
-		if ( 200 === $response_code ) {
-			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-			return isset( $response_body['success'] ) ? $response_body['success'] : false;
-		}
-
-		return false;
-
+		return ! empty( $response['body']['success'] );
 	}
 
 	/**
@@ -783,29 +770,6 @@ class Press_Sync {
 	}
 
 	/**
-	 * POST data to the remote site.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $url  The url of the remote site.
-	 * @param array  $args The arguments to send to the remote site.
-	 *
-	 * @return JSON $response_body
-	 */
-	public function send_data_to_remote_site( $url, $args ) {
-
-		$args = array(
-			'timeout' => 30,
-			'body'    => $args,
-		);
-
-		$response      = wp_remote_post( $url, $args );
-		$response_body = wp_remote_retrieve_body( $response );
-
-		return $response_body;
-	}
-
-	/**
 	 * Find any embedded images in the post content.
 	 *
 	 * @since 0.1.0
@@ -993,8 +957,10 @@ class Press_Sync {
 		$this->init_connection( $settings['remote_domain'] );
 
 		// Build out the url and send the data to the remote site.
-		$url  = $this->get_remote_url( '', 'sync' );
-		$logs = $this->send_data_to_remote_site( $url, $objects_args );
+		$url  = API::get_remote_url( '', 'sync' );
+		$logs = API::get_remote_response( $url, array(
+			'body' => $objects_args,
+		), 'POST' );
 
 		return array(
 			'objects_to_sync'         => $content_type,
@@ -1267,21 +1233,13 @@ class Press_Sync {
 	 * @since 0.7.0
 	 * @param  array  $args     (Optional) Array of query parameters.
 	 *
+	 * @deprecated NEXT Deprecated in favor of \Press_Sync\API::get_remote_url.
+	 *
 	 * @return string
 	 */
 	public function get_remote_url( $url = '', $endpoint = 'status', $args = array() ) {
-		$url        = $url ? trailingslashit( $url ) : trailingslashit( get_option( 'ps_remote_domain' ) );
-		$query_args = wp_parse_args( $args, array(
-			'press_sync_key' => get_option( 'ps_remote_key' ),
-		) );
-
-		if ( $remote_args = get_option( 'ps_remote_query_args' ) ) {
-			$remote_args = ltrim( $remote_args, '?' );
-			parse_str( $remote_args, $remote_args_array );
-			$query_args = array_merge( $query_args, $remote_args_array );
-		}
-
-		return  "{$url}wp-json/press-sync/v1/{$endpoint}?" . http_build_query( $query_args );
+		_deprecated_function( Press_Sync::class . '::get_remote_url', 'NEXT', '\\Press_Sync\\API::get_remote_url' );
+		return API::get_remote_url( $url, $endpoint, $args );
 	}
 
 	/**
@@ -1357,31 +1315,22 @@ class Press_Sync {
 			return $last_sync;
 		}
 
-		$url = $this->get_remote_url( '', 'progress', array(
+		$url = API::get_remote_url( '', 'progress', array(
 			'post_type'    => $objects_to_sync,
             'preserve_ids' => (bool) get_option( 'ps_preserve_ids' ),
 		) );
 
-		$remote_get_args = array(
-			'timeout' => 30,
-		);
+		$response = API::get_remote_response( $url );
 
-		$response      = wp_remote_get( $url, $remote_get_args );
-		$response_code = wp_remote_retrieve_response_code( $response );
-
-		if ( 200 !== $response_code ) {
+		if ( 200 !== $response['code'] || empty( $response['body']['data']['synced'] ) ) {
 			return array();
 		}
 
-		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$synced = $response['body']['data']['synced'];
 
-		if ( empty( $response_body['data']['synced'] ) ) {
-			return array();
-		}
+		update_option( $option_name, $synced );
 
-		update_option( $option_name, $response_body['data']['synced'] );
-
-		return $response_body['data']['synced'];
+		return $synced;
     }
 
 	/**

@@ -1226,4 +1226,83 @@ SQL;
 			}
 		}
 	}
+
+	/**
+	 * Gets the remote site URL and appends query parameters.
+	 *
+	 * @since 0.5.1
+	 *
+	 * @param  string $url      A URL other than the stored remote URL to use.
+	 * @param  string $endpoint The remote site endpoint.
+	 *
+	 * @since 0.7.0
+	 * @param  array  $args     (Optional) Array of query parameters.
+	 *
+	 * @return string
+	 */
+	public static function get_remote_url( $url, $endpoint = 'status', $args = array() ) {
+		if ( ! $url ) {
+			$url = get_option( 'ps_remote_domain' );
+		}
+
+		$url        = trailingslashit( $url );
+		$endpoint   = ltrim( $endpoint, '/' );
+		$query_args = wp_parse_args( $args, array(
+			'press_sync_key' => get_option( 'ps_remote_key' ),
+		) );
+
+		$remote_args = get_option( 'ps_remote_query_args' );
+
+		if ( ! empty( $remote_args ) ) {
+			$remote_args = ltrim( $remote_args, '?' );
+			parse_str( $remote_args, $remote_args_array );
+			$query_args = array_merge( $query_args, $remote_args_array );
+		}
+
+		$namespace = self::NAMESPACE;
+		return  "{$url}wp-json/{$namespace}/{$endpoint}?" . http_build_query( $query_args );
+	}
+
+	/**
+	 * Gets a remote server's response.
+	 *
+	 * Returns a response array on success-ish, or null on bad request method.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  string $url    The remote server URL.
+	 * @param  array  $args   (Optional) The arguments to pass to wp_remote_* methods.
+	 * @param  string $method (Optional) Set the request method, defaults to 'GET'.
+	 * @return mixed
+	 */
+	public static function get_remote_response( $url, $args = array(), $method = 'GET' ) {
+		$args = wp_parse_args( $args, array(
+			'timeout' => 30,
+		) );
+
+		$data         = array();
+		$data['body'] = '';
+
+		switch ( strtoupper( $method ) ) {
+			case 'GET':
+				$data['raw_response'] = wp_remote_get( $url, $args );
+				break;
+
+			case 'POST':
+				$data['raw_response'] = wp_remote_post( $url, $args );
+				break;
+
+			default:
+				trigger_error( sprintf( __( 'Unsupported HTTP method %s.', 'press-sync' ), $method ), E_USER_WARNING );
+				return;
+		}
+
+		$data['code'] = wp_remote_retrieve_response_code( $data['raw_response'] );
+
+		if ( 200 === $data['code'] ) {
+			$data['body'] = json_decode( wp_remote_retrieve_body( $data['raw_response'] ), true );
+		}
+
+		return $data;
+	}
 }
