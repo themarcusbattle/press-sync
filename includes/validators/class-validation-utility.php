@@ -7,6 +7,8 @@
 
 namespace Press_Sync\validators;
 
+use Press_Sync\API;
+
 /**
  * This class defines utility methods that are common to all Validators.
  */
@@ -47,5 +49,29 @@ abstract class Validation_Utility {
 				),
 			),
 		) );
+	}
+
+	/**
+	 * Get remote data from an API request.
+	 *
+	 * @since NEXT
+	 * @param  string $request The requested datapoint.
+	 * @return array
+	 */
+	public function get_remote_data( $request ) {
+		$route    = static::$route;
+		$endpoint = static::$endpoint;
+
+		$url = API::get_remote_url( '', "{$route}/{$endpoint}", array(
+			'request' => $request,
+		) );
+
+		$response = API::get_remote_response( $url );
+
+		if ( empty( $response['body']['success'] ) ) {
+			return array();
+		}
+
+		return $response['body']['data'];
 	}
 }

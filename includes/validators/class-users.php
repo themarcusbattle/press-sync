@@ -20,7 +20,6 @@ class Users extends Validation_Utility implements Validation_Interface {
 	 */
 	public function get_source_data() {
 		$counts = self::count_users();
-		$counts = $this->prepare_counts( $counts );
 
 		$this->source_data = array(
 			'counts' => $counts,
@@ -61,13 +60,11 @@ class Users extends Validation_Utility implements Validation_Interface {
 	 *
 	 * @since NEXT
 	 */
-	public function get_destintation_data() {
+	public function get_destination_data() {
+		$counts = $this->get_remote_data( 'count' );
+
 		$this->destination_data = array(
-			'counts' => array(
-				'administrators' => 1,
-				'editors'        => 23,
-				'subscribers'    => 111,
-			),
+			'counts' => $counts,
 			'samples' => array(
 				'blah' => array(
 					'ID'         => 332,
@@ -94,7 +91,7 @@ class Users extends Validation_Utility implements Validation_Interface {
 	 */
 	public function compare_results() {
 		$this->get_source_data();
-		$this->get_destintation_data();
+		$this->get_destination_data();
 
 		$results = array(
 			'counts'  => array(),
@@ -124,34 +121,28 @@ class Users extends Validation_Utility implements Validation_Interface {
 		return sprintf( '%s Count of %s: %d vs %d', $icon, $key, $source_count, $destination_count );
 	}
 
-	public static function get_api_response( $response ) {
-		try {
-			$request = $response->get_param( 'request' );
-
-			switch ( strtolower( $request ) ) {
-				case 'count':
-					$data = self::count_users();
-					break;
-
-				default:
-					throw new \Exception( sprintf( __( 'Unrecognized request parameter: %s', 'press-sync' ), $request ) );
-			}
-
-			wp_send_json_success( $data );
-		} catch ( \Exception $e ) {
-			$message = sprintf( __( 'There was an error processing the request: %s', 'press-sync' ), $e->getMessage() );
-			trigger_error( $message, E_USER_ERROR );
-			wp_send_json_error( $message );
-		}
-	}
-
+	/**
+	 * Get the count of users from this site.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
 	private static function count_users() {
-		return count_users();
-	}
-
-	private function prepare_counts( $counts ) {
-		$prepared = $counts['avail_roles'];
+		$counts            = count_users();
+		$prepared          = $counts['avail_roles'];
 		$prepared['total'] = $counts['total_users'];
 		return $prepared;
+	}
+
+	/**
+	 * API handler for getting counts.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  WP_REST_Request $rest_request The HTTP REST request.
+	 * @return array
+	 */
+	protected static function handle_count_request( $rest_request ) {
+		return self::count_users();
 	}
 }

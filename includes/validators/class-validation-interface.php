@@ -56,7 +56,7 @@ interface Validation_Interface {
 	 *
 	 * @since NEXT
 	 */
-	public function get_destintation_data();
+	public function get_destination_data();
 
 	/**
 	 * Register all routes for getting data for this type of object.
