@@ -59,10 +59,15 @@ abstract class AbstractRoute extends \WP_REST_Controller {
 	 */
 	public function validate_sync_key() {
 		// @TODO Check for valid nonce.
-		$press_sync_key_from_remote = isset( $_REQUEST['press_sync_key'] ) ? filter_var( $_REQUEST['press_sync_key'], FILTER_SANITIZE_STRING ) : '';
-		$press_sync_key             = get_option( 'ps_key' );
+		$press_sync_key_from_remote = '';
 
-		return $press_sync_key && ( $press_sync_key_from_remote === $press_sync_key );
+		if ( isset( $_REQUEST['press_sync_key'] ) ) {
+			$press_sync_key_from_remote = filter_var( $_REQUEST['press_sync_key'], FILTER_SANITIZE_STRING );
+		}
+
+		$press_sync_key = get_option( 'ps_key' );
+
+		return $press_sync_key && ( $press_sync_key === $press_sync_key_from_remote );
 	}
 
 	/**
