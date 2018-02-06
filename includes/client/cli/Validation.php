@@ -54,8 +54,11 @@ class ValidationCommand extends AbstractCliCommand {
 	 * @since NEXT
 	 */
 	private function taxonomies( $args ) {
-		$taxonomy = new Taxonomy();
+		if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
+			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
+		}
 
+		$taxonomy       = new Taxonomy();
 		$taxonomy_count = $taxonomy->get_unique_taxonomy_count();
 		$term_count     = $taxonomy->get_term_count_by_taxonomy();
 
