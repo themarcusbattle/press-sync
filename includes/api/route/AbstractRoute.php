@@ -92,7 +92,11 @@ abstract class AbstractRoute extends \WP_REST_Controller {
 				$endpoint = '';
 			}
 
-			register_rest_route( $this->namespace, "{$this->rest_base}/{$endpoint}", wp_parse_args( $route_config, $defaults ) );
+			register_rest_route(
+				$this->namespace,
+				"{$this->rest_base}/{$endpoint}",
+				wp_parse_args( $route_config, $defaults )
+			);
 		}
 	}
 }
