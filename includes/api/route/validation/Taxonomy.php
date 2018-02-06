@@ -11,12 +11,21 @@ use Press_Sync\api\route\AbstractRoute;
  */
 class Taxonomy extends AbstractRoute {
 	/**
+	 * Data source for the API.
+	 *
+	 * @var \Press_Sync\validation\Taxonomy
+	 * @since NEXT
+	 */
+	protected $data_source;
+
+	/**
 	 * Taxonomy validation constructor.
 	 *
 	 * @since NEXT
 	 */
 	public function __construct() {
-		$this->rest_base = 'validation/taxonomy';
+		$this->rest_base   = 'validation/taxonomy';
+		$this->data_source = new \Press_Sync\validation\Taxonomy();
 	}
 
 	/**
@@ -36,7 +45,7 @@ class Taxonomy extends AbstractRoute {
 	public function register_routes() {
 		register_rest_route( $this->namespace, "{$this->rest_base}/count", [
 			'methods'             => [ 'GET' ],
-			'callback'            => array( new \Press_Sync\validation\Taxonomy(), 'get_count' ),
+			'callback'            => array( $this->data_source, 'get_count' ),
 			'permission_callback' => [ $this, 'validate_sync_key' ],
 			'args'                => [
 				'press_sync_key' => [
