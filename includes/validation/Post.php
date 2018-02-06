@@ -1,8 +1,8 @@
 <?php
-
 namespace Press_Sync\validation;
 
-
-class Post {
-
+class Post implements CountInterface {
+	public function get_count() {
+		// TODO: Implement get_count() method.
+	}
 }
