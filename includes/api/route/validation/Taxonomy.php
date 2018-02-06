@@ -24,8 +24,11 @@ class Taxonomy extends AbstractRoute {
 	 * @since NEXT
 	 */
 	public function __construct() {
-		$this->rest_base   = 'validation/taxonomy';
-		$this->data_source = new \Press_Sync\validation\Taxonomy();
+		$this->rest_base       = 'validation/taxonomy';
+		$this->data_source     = new \Press_Sync\validation\Taxonomy();
+		$this->routes['count'] = array(
+			'callback' => array( $this->data_source, 'get_count' ),
+		);
 	}
 
 	/**
@@ -35,23 +38,5 @@ class Taxonomy extends AbstractRoute {
 	 */
 	public function register_hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
-	}
-
-	/**
-	 * Register routes for Taxonomy validation.
-	 *
-	 * @since NEXT
-	 */
-	public function register_routes() {
-		register_rest_route( $this->namespace, "{$this->rest_base}/count", [
-			'methods'             => [ 'GET' ],
-			'callback'            => array( $this->data_source, 'get_count' ),
-			'permission_callback' => [ $this, 'validate_sync_key' ],
-			'args'                => [
-				'press_sync_key' => [
-					'required' => true,
-				],
-			],
-		] );
 	}
 }
