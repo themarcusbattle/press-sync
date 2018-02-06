@@ -2,6 +2,8 @@
 
 namespace Press_Sync;
 
+use Press_Sync\client\cli\AbstractCliCommand;
+
 /**
  * CLI Support for Press Sync.
  *
@@ -16,6 +18,13 @@ class CLI {
 	 * @since 0.1.0
 	 */
 	protected $plugin = null;
+
+	/**
+	 * @var
+	 */
+	protected $commands = array(
+		\Press_Sync\client\cli\ValidationCommand::class,
+	);
 
 	/**
 	 * The constructor.
@@ -37,6 +46,19 @@ class CLI {
 		\WP_CLI::add_command( 'press-sync pages', array( $this, 'sync_pages' ) );
 		\WP_CLI::add_command( 'press-sync users', array( $this, 'sync_users' ) );
 		\WP_CLI::add_command( 'press-sync options', array( $this, 'sync_options' ) );
+	}
+
+	/**
+	 * Initialize concrete instances of AbstractCliCommand objects and register those commands w/ WP-CLI.
+	 *
+	 * @since NEXT
+	 */
+	public function init_commands() {
+		foreach ( $this->commands as $command ) {
+			/* @var AbstractCliCommand $class */
+			$class = new $command();
+			$class->register_command();
+		}
 	}
 
 	/**

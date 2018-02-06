@@ -26,7 +26,10 @@ class Taxonomy {
 		$terms = [];
 
 		foreach ( get_taxonomies() as $name => $taxonomy ) {
-			$terms[ $name ] = count( get_terms( array( 'taxonomy' => $taxonomy ) ) );
+			$terms[] = array(
+				'taxonomy_name'   => $name,
+				'number_of_terms' => count( get_terms( array( 'taxonomy' => $taxonomy ) ) ),
+			);
 		}
 
 		return $terms;
