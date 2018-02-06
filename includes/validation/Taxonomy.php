@@ -7,7 +7,7 @@ namespace Press_Sync\validation;
  * @package Press_Sync\validation
  * @since   NEXT
  */
-class Taxonomy {
+class Taxonomy implements CountInterface {
 	/**
 	 * Get the number of unique taxonomies in this WordPress installation.
 	 *

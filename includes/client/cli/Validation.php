@@ -46,7 +46,7 @@ class ValidationCommand extends AbstractCliCommand {
 		}
 
 		// Call the method in this class that handles the selected entity to validate.
-		$this->{$validation_entity}( $assoc_args );
+		$this->{$validation_entity}();
 	}
 
 	/**
@@ -55,14 +55,14 @@ class ValidationCommand extends AbstractCliCommand {
 	 * @throws ExitException Exception if url parameter is not passed in multisite.
 	 * @since NEXT
 	 */
-	private function taxonomies( $args ) {
+	private function taxonomies() {
 		if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
 			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
 		}
 
-		$taxonomy       = new Taxonomy();
-		$taxonomy_count = $taxonomy->get_unique_taxonomy_count();
-		$term_count     = $taxonomy->get_term_count_by_taxonomy();
+		$count          = ( new Taxonomy() )->get_count();
+		$taxonomy_count = $count['unique_taxonomies'];
+		$term_count     = $count['term_count_by_taxonomy'];
 
 		\WP_CLI::line( 'Local domain results:' );
 		\WP_CLI::line( '' );
