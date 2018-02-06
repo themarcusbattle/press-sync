@@ -99,4 +99,28 @@ abstract class AbstractRoute extends \WP_REST_Controller {
 			);
 		}
 	}
+
+	/**
+	 * Get remote data from an API request.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  string $request The requested datapoint.
+	 *
+	 * @return array
+	 */
+	public function get_data( $request ) {
+		$request = ltrim( $request, '/' );
+		$url     = \Press_Sync\API::get_remote_url( '', "{$this->rest_base}/{$request}", [
+			'request' => $request,
+		] );
+
+		$response = \Press_Sync\API::get_remote_response( $url );
+
+		if ( empty( $response['body']['success'] ) ) {
+			return [];
+		}
+
+		return $response['body']['data'];
+	}
 }

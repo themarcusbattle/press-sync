@@ -52,30 +52,4 @@ class Validation extends \WP_REST_Controller {
 			$class->register_hooks();
 		}
 	}
-
-	/**
-	 * Get remote data from an API request.
-	 *
-	 * @since NEXT
-	 *
-	 * @param  string $request The requested datapoint.
-	 *
-	 * @return array
-	 */
-	public function get_remote_data( $request ) {
-		$route    = static::$route;
-		$endpoint = static::$endpoint;
-
-		$url = API::get_remote_url( '', "{$route}/{$endpoint}", [
-			'request' => $request,
-		] );
-
-		$response = API::get_remote_response( $url );
-
-		if ( empty( $response['body']['success'] ) ) {
-			return [];
-		}
-
-		return $response['body']['data'];
-	}
 }
