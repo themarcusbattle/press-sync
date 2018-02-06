@@ -1,6 +1,7 @@
 <?php
 namespace Press_Sync\client\cli;
 
+use Press_Sync\validation\Post;
 use Press_Sync\validation\Taxonomy;
 use Press_Sync\API;
 use WP_CLI\ExitException;
@@ -86,6 +87,25 @@ class ValidationCommand extends AbstractCliCommand {
 
 		if ( $term_count !== $json['term_count_by_taxonomy'] ) {
 			\WP_CLI::warning( 'Discrepancy in taxonomy term counts.' );
+		}
+	}
+
+	/**
+	 * Get validation data for Post entity.
+	 *
+	 * @throws ExitException
+	 */
+	private function posts() {
+		if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
+			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
+		}
+
+		$count = ( new Post() )->get_count();
+		$json = API::get_remote_data( 'validation/post/count' );
+
+		if ( $count !== $json ) {
+			\WP_CLI::warning( count( $count ) . ':' . count( $json ) );
+			\WP_CLI::warning( 'Discrepancy in post counts.' );
 		}
 	}
 }
