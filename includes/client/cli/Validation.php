@@ -3,6 +3,7 @@ namespace Press_Sync\client\cli;
 
 use Press_Sync\validation\Taxonomy;
 use Press_Sync\API;
+use WP_CLI\ExitException;
 
 /**
  * Class ValidationCommand
@@ -51,6 +52,7 @@ class ValidationCommand extends AbstractCliCommand {
 	/**
 	 * Get validation data for the Taxonomy entity.
 	 *
+	 * @throws ExitException Exception if url parameter is not passed in multisite.
 	 * @since NEXT
 	 */
 	private function taxonomies( $args ) {
