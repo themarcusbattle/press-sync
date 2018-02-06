@@ -1308,4 +1308,25 @@ SQL;
 
 		return $data;
 	}
+
+	/**
+	 * Get remote data from an API request.
+	 *
+	 * @since NEXT
+	 * @param  string $request The requested datapoint.
+	 * @return array
+	 */
+	public static function get_remote_data( $request ) {
+		$url = API::get_remote_url( get_option( 'ps_remote_domain' ), $request, array(
+			'press_sync_key' => get_option( 'ps_remote_key')
+		) );
+
+		$response = API::get_remote_response( $url );
+
+		if ( empty( $response['body'] ) ) {
+			return array();
+		}
+
+		return $response['body'];
+	}
 }

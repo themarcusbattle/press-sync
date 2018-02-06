@@ -56,32 +56,31 @@ class ValidationCommand extends AbstractCliCommand {
 	private function taxonomies( $args ) {
 		$taxonomy = new Taxonomy();
 
-		\WP_CLI\Utils\format_items( 'table', array( array( 'unique_taxonomies' => $taxonomy->get_unique_taxonomy_count() ) ), array( 'unique_taxonomies' ) );
-		\WP_CLI\Utils\format_items( 'table', $taxonomy->get_term_count_by_taxonomy(), array( 'taxonomy_name', 'number_of_terms' ) );
+		$taxonomy_count = $taxonomy->get_unique_taxonomy_count();
+		$term_count     = $taxonomy->get_term_count_by_taxonomy();
 
-		$json = $this->get_remote_data( 'taxonomy' );
+		\WP_CLI::line( 'Local domain results:' );
+		\WP_CLI::line( '' );
+		\WP_CLI\Utils\format_items( 'table', array( array( 'unique_taxonomies' => $taxonomy_count ) ), array( 'unique_taxonomies' ) );
+		\WP_CLI\Utils\format_items( 'table', $term_count, array( 'taxonomy_name', 'number_of_terms' ) );
 
-		\WP_CLI::success( print_r( $json, true ) );
-	}
+		$json = API::get_remote_data( 'validation/taxonomy/count' );
 
-	/**
-	 * Get remote data from an API request.
-	 *
-	 * @since NEXT
-	 * @param  string $request The requested datapoint.
-	 * @return array
-	 */
-	public function get_remote_data( $request ) {
-		$url = API::get_remote_url( 'http://cmt-single.localhost/', "validation/taxonomy", array(
-			'request' => $request,
-		) );
-
-		$response = API::get_remote_response( $url );
-
-		if ( empty( $response['body']['success'] ) ) {
-			return array();
+		if ( $taxonomy_count === $json['unique_taxonomies'] && $term_count === $json['term_count_by_taxonomy'] ) {
+			\WP_CLI::success( 'Taxonomies and term counts on remote domain are identical to the values printed above.' );
+			return;
 		}
 
-		return $response['body']['data'];
+		\WP_CLI::line( 'Remote domain results:' );
+		\WP_CLI\Utils\format_items( 'table', array( array( 'unique_taxonomies' => $json['unique_taxonomies'] ) ), array( 'unique_taxonomies' ) );
+		\WP_CLI\Utils\format_items( 'table', $json['term_count_by_taxonomy'], array( 'taxonomy_name', 'number_of_terms' ) );
+
+		if ( $taxonomy_count !== $json['unique_taxonomies'] ) {
+			\WP_CLI::warning( 'Discrepancy in number of unique taxonomies.' );
+		}
+
+		if ( $term_count !== $json['term_count_by_taxonomy'] ) {
+			\WP_CLI::warning( 'Discrepancy in taxonomy term counts.' );
+		}
 	}
 }
