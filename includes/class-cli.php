@@ -54,6 +54,10 @@ class CLI {
 	 * @since NEXT
 	 */
 	public function init_commands() {
+		if ( ! class_exists( '\WP_CLI' ) ) {
+			return;
+		}
+
 		foreach ( $this->commands as $command ) {
 			/* @var AbstractCliCommand $class */
 			$class = new $command();
