@@ -2,10 +2,12 @@
 
 namespace Press_Sync;
 
+use Press_Sync\api\route\Validation;
+
 /**
  * The Press_Sync_API class.
  */
-class API extends \WP_REST_Controller {
+class API {
 
 	const NAMESPACE = 'press-sync/v1';
 
@@ -51,6 +53,9 @@ class API extends \WP_REST_Controller {
 	 * @since  0.1.0
 	 */
 	public function hooks() {
+		$validation = new Validation();
+		$validation->register_routes();
+
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
 		add_action( 'press_sync_sync_post', array( $this, 'add_p2p_connections' ), 10, 2 );
 	}
@@ -84,8 +89,6 @@ class API extends \WP_REST_Controller {
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
 		) );
-
-		\Press_Sync\Validation::register_api_endpoints();
 	}
 
 	/**

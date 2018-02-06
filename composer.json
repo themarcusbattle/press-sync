@@ -11,6 +11,9 @@
     ],
     "minimum-stability": "stable",
     "autoload": {
+        "psr-4": {
+            "Press_Sync\\api\\": "includes/api"
+        },
         "classmap": [
             "includes/"
         ]
