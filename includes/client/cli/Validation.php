@@ -25,6 +25,14 @@ class ValidationCommand extends AbstractCliCommand {
 	/**
 	 * Validate data consistency between source site and destination site.
 	 *
+	 * ## OPTIONS
+	 *
+	 * <validation_entity>
+	 * : The type of entity to validate.
+	 * options:
+	 *   - posts
+	 *   - taxonomies
+	 *
 	 * @param array $args       Command arguments.
 	 * @param array $assoc_args Command associative arguments.
 	 *
