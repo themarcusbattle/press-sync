@@ -55,16 +55,19 @@ class ValidationCommand extends AbstractCliCommand {
 		}
 
 		// Call the method in this class that handles the selected entity to validate.
-		$this->{$validation_entity}();
+		$this->{$validation_entity}( $assoc_args );
 	}
 
 	/**
 	 * Get validation data for the Taxonomy entity.
 	 *
+	 * @param array $args Associative arguments from the validate command.
+	 *
 	 * @throws ExitException Exception if url parameter is not passed in multisite.
+	 * @return void
 	 * @since NEXT
 	 */
-	private function taxonomies() {
+	private function taxonomies( $args ) {
 		if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
 			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
 		}
@@ -101,9 +104,12 @@ class ValidationCommand extends AbstractCliCommand {
 	/**
 	 * Get validation data for Post entity.
 	 *
-	 * @throws ExitException
+	 * @param array $args Associative arguments from the validate command.
+	 *
+	 * @throws ExitException Throw exception if --url argument is missing on multisite.
+	 * @since NEXT
 	 */
-	private function posts() {
+	private function posts( $args ) {
 		if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
 			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
 		}
