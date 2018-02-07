@@ -114,12 +114,51 @@ class ValidationCommand extends AbstractCliCommand {
 			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
 		}
 
-		$count = ( new Post() )->get_count();
-		$json = API::get_remote_data( 'validation/post/count' );
+		$post_count_data   = ( new Post() )->get_count();
+		$json              = API::get_remote_data( 'validation/post/count' );
+		$post_count_values = $this->prepare_post_data_for_table_rendering( $post_count_data );
+		$json_values       = $this->prepare_post_data_for_table_rendering( $json );
 
-		if ( $count !== $json ) {
-			\WP_CLI::warning( count( $count ) . ':' . count( $json ) );
+		$this->render_post_data_table( $post_count_values );
+		$this->render_post_data_table( $json_values );
+
+
+		if ( $post_count_values !== $json_values ) {
 			\WP_CLI::warning( 'Discrepancy in post counts.' );
 		}
+	}
+
+	private function render_post_data_table( $table_values ) {
+		\WP_CLI\Utils\format_items(
+			'table',
+			array_filter(
+				$table_values,
+				function ( $table_values ) {
+					return $table_values;
+				}
+			),
+			array_keys( $table_values[0] )
+		);
+	}
+
+	private function prepare_post_data_for_table_rendering( $count ) {
+		$table_values = array();
+
+		foreach ( $count as $post_type => $values ) {
+			$new_array              = array();
+			$new_array['post_type'] = $post_type;
+
+			foreach ( get_object_vars( $values ) as $key => $value ) {
+				$new_array[ $key ] = $value;
+			}
+
+			$table_values[] = $new_array;
+		}
+
+		return $table_values;
+	}
+
+	private function get_table_values( $count ) {
+		return $count[0];
 	}
 }
