@@ -6,8 +6,8 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 <div class="wrap about-wrap press-sync">
     <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
 	<form class="form" method="post" action="options.php">
-		<?php settings_fields( 'press-sync-export' ); ?>
-		<?php do_settings_sections( 'press-sync-export' ); ?>
+		<?php settings_fields( 'press-sync-advanced' ); ?>
+		<?php do_settings_sections( 'press-sync-advanced' ); ?>
 		<table class="form-table">
             <tr>
                 <th scope="row">Testing Post ID</th>
@@ -71,6 +71,16 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
                     <span>Search for and sync missing objects, if possible.</span>
                 </td>
             </tr>
+			<tr valign="top">
+				<th scope="row">Post Content Match Threshold</th>
+				<td>
+					<input type="number" min="0" max="100" name="ps_content_threshold" value="<?php echo esc_attr( get_option( 'ps_content_threshold' ) ?: '0' ); ?>" />%
+                    <p>
+                        A threshold &gt; 0% will result in a post_content check for duplicates upon import. If the duplicate post_content fields are
+                        not as similar as the threshold value, they will be treated as <strong>non-duplicates</strong> and a new post will be created.
+                    </p>
+				</td>
+			</tr>
 		</table>
 		<?php submit_button(); ?>
 	</form>

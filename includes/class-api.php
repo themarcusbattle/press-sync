@@ -174,13 +174,14 @@ class API {
 	 */
 	public function sync_objects( $request ) {
 
-		$objects_to_sync    = $request->get_param( 'objects_to_sync' );
-		$objects            = $request->get_param( 'objects' );
-		$duplicate_action   = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
-		$force_update       = $request->get_param( 'force_update' );
-		$this->skip_assets  = (bool) $request->get_param( 'skip_assets' );
-		$this->preserve_ids = (bool) $request->get_param( 'preserve_ids' );
-		$this->fix_terms    = (bool) $request->get_param( 'fix_terms' );
+		$objects_to_sync         = $request->get_param( 'objects_to_sync' );
+		$objects                 = $request->get_param( 'objects' );
+		$duplicate_action        = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$force_update            = $request->get_param( 'force_update' );
+		$this->skip_assets       = (bool) $request->get_param( 'skip_assets' );
+		$this->preserve_ids      = (bool) $request->get_param( 'preserve_ids' );
+		$this->fix_terms         = (bool) $request->get_param( 'fix_terms' );
+		$this->content_threshold = absint( $request->get_param( 'ps_content_threshold' ) );
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -856,8 +857,8 @@ class API {
 			$duplicate_post = $wpdb->get_row( $prepared_sql, ARRAY_A ) ?: false;
 		}
 
-        // Post content check.
-        $content_threshold = get_option( 'ps_content_threshold', false );
+		// Post content check.
+		$content_threshold = $this->content_threshold;
 
 		if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
 			$content_threshold = absint( $content_threshold );

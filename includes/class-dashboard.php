@@ -33,6 +33,19 @@ class Dashboard {
 	 */
 	private $next_page;
 
+	const ADVANCED_OPTIONS = [
+		'ps_options',
+		'ps_request_buffer_time',
+		'ps_start_object_offset',
+		'ps_only_sync_missing',
+		'ps_testing_post',
+		'ps_skip_assets',
+		'ps_preserve_ids',
+		'ps_fix_terms',
+		'ps_delta_date',
+		'ps_content_threshold',
+	];
+
 	/**
 	 * The Constructor.
 	 *
@@ -138,23 +151,13 @@ class Dashboard {
 		register_setting( 'press-sync', 'ps_remote_query_args' );
 		register_setting( 'press-sync', 'ps_remote_key' );
 
-		// @TODO update option names and locations below this line.
-		// Export page.
-		register_setting( 'press-sync-export', 'ps_options' );
-		register_setting( 'press-sync-export', 'ps_request_buffer_time' );
-		register_setting( 'press-sync-export', 'ps_start_object_offset' );
-		register_setting( 'press-sync-export', 'ps_only_sync_missing' );
-		register_setting( 'press-sync-export', 'ps_testing_post' );
-		register_setting( 'press-sync-export', 'ps_skip_assets' );
-		register_setting( 'press-sync-export', 'ps_preserve_ids' );
-		register_setting( 'press-sync-export', 'ps_fix_terms' );
-		register_setting( 'press-sync-export', 'ps_delta_date' );
-
-		// Import page.
-		register_setting( 'press-sync-import', 'ps_content_threshold' );
-
 		// Validation
 		register_setting( 'press-sync-validation', Validation::VALIDATION_OPTION );
+
+		// Advanced page.
+		foreach ( self::ADVANCED_OPTIONS as $option ) {
+			register_setting( 'press-sync-advanced', $option );
+		}
 	}
 
 	/**

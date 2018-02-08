@@ -1009,17 +1009,18 @@ class Press_Sync {
 	public function parse_sync_settings( $settings = array() ) {
 
 		return wp_parse_args( $settings, array(
-			'remote_domain'    => get_option( 'ps_remote_domain' ),
-			'ps_remote_key'    => get_option( 'ps_remote_key' ),
-			'sync_method'      => get_option( 'ps_sync_method' ),
-			'objects_to_sync'  => get_option( 'ps_objects_to_sync' ),
-			'duplicate_action' => get_option( 'ps_duplicate_action' ),
-			'force_update'     => get_option( 'ps_force_update', false ),
-			'skip_assets'      => get_option( 'ps_skip_assets', false ),
-			'options'          => get_option( 'ps_options_to_sync' ),
-			'local_folder'     => '',
-			'preserve_ids'     => get_option( 'ps_preserve_ids', false ),
-			'fix_terms'        => get_option( 'ps_fix_terms', false ),
+			'remote_domain'        => get_option( 'ps_remote_domain' ),
+			'ps_remote_key'        => get_option( 'ps_remote_key' ),
+			'sync_method'          => get_option( 'ps_sync_method' ),
+			'objects_to_sync'      => get_option( 'ps_objects_to_sync' ),
+			'duplicate_action'     => get_option( 'ps_duplicate_action' ),
+			'force_update'         => get_option( 'ps_force_update', false ),
+			'skip_assets'          => get_option( 'ps_skip_assets', false ),
+			'options'              => get_option( 'ps_options_to_sync' ),
+			'local_folder'         => '',
+			'preserve_ids'         => get_option( 'ps_preserve_ids', false ),
+			'fix_terms'            => get_option( 'ps_fix_terms', false ),
+			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
 		) );
 	}
 
