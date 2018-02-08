@@ -5,10 +5,8 @@ use Press_Sync\client\cli\AbstractCliCommand;
 
 use Press_Sync\client\cli\command\validate\AbstractValidateSubcommand;
 use Press_Sync\client\cli\command\validate\PostSubcommand;
-use Press_Sync\client\cli\command\validate\PostValidateSubcommand;
-use Press_Sync\client\cli\command\validate\Taxonomy;
 use Press_Sync\client\cli\command\validate\TaxonomySubcommand;
-use Press_Sync\validation\ValidatorInterface;
+use Press_Sync\client\cli\command\validate\UserSubcommand;
 
 /**
  * Class Validate
@@ -25,6 +23,7 @@ class Validate extends AbstractCliCommand {
 	private $subcommands = array(
 		'posts'      => PostSubcommand::class,
 		'taxonomies' => TaxonomySubcommand::class,
+		'users'      => UserSubcommand::class,
 	);
 
 	/**

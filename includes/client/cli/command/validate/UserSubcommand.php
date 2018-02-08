@@ -4,6 +4,12 @@ namespace Press_Sync\client\cli\command\validate;
 use Press_Sync\validators\UserValidator;
 use WP_CLI\ExitException;
 
+/**
+ * Class UserSubcommand
+ *
+ * @package Press_Sync\client\cli\command\validate
+ * @since NEXT
+ */
 class UserSubcommand extends AbstractValidateSubcommand {
 	/**
 	 * @param array $args Associative args from the parent command.
@@ -25,11 +31,8 @@ class UserSubcommand extends AbstractValidateSubcommand {
 
 		$data = $this->validator->validate();
 
-		echo '<pre>', print_r($data, true); die;
-		$this->output( $data['source'], 'Local:' );
-		$this->output( $data['destination'], 'Remote:' );
-
-		$this->output_comparison_statements( $data['source'], $data['destination'] );
+		$this->output( $data['source'], 'Local User Counts' );
+		$this->output( $data['destination'], 'Remote User Counts' );
 	}
 
 	/**
@@ -44,33 +47,6 @@ class UserSubcommand extends AbstractValidateSubcommand {
 			\WP_CLI::line( $message );
 		}
 
-		\WP_CLI\Utils\format_items( 'table', $data['term_count_by_taxonomy'], array( 'taxonomy_name', 'number_of_terms' ) );
-		\WP_CLI::line( "Unique taxonomies: {$data['unique_taxonomies']}" );
+		\WP_CLI\Utils\format_items( 'table', array( $data ), array_keys( $data ) );
 	}
-
-	/**
-	 * Output statements comparing local and remote data sets.
-	 *
-	 * @param array $local_data  Local install taxonomy data.
-	 * @param array $remote_data Remote install taxonomy data.
-	 *
-	 * @since NEXT
-	 */
-	private function output_comparison_statements( $local_data, $remote_data ) {
-		if ( $this->validator->compare( $local_data['unique_taxonomies'], $remote_data['unique_taxonomies'] )
-			&& $this->validator->compare( $local_data['term_count_by_taxonomy'], $remote_data['term_count_by_taxonomy'] ) ) {
-			\WP_CLI::success( 'Taxonomies and term counts on remote domain are identical to the values printed above.' );
-
-			return;
-		}
-
-		if ( ! $this->validator->compare( $local_data['unique_taxonomies'], $remote_data['unique_taxonomies'] ) ) {
-			\WP_CLI::warning( 'Discrepancy in number of unique taxonomies.' );
-		}
-
-		if ( ! $this->validator->compare( $local_data['term_count_by_taxonomy'], $remote_data['term_count_by_taxonomy'] ) ) {
-			\WP_CLI::warning( 'Discrepancy in taxonomy term counts.' );
-		}
-	}
-
 }
