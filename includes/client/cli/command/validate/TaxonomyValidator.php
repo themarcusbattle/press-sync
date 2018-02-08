@@ -1,12 +1,16 @@
 <?php
 namespace Press_Sync\client\cli\command\validate;
 
-
 use Press_Sync\API;
 use Press_Sync\validation\Taxonomy;
-use Press_Sync\validators\Validation_Interface;
+use Press_Sync\validation\ValidatorInterface;
 
-class TaxonomyValidator implements Validator, Validation_Interface {
+/**
+ * Class TaxonomyValidator
+ *
+ * @package Press_Sync\client\cli\command\validate
+ */
+class TaxonomyValidator implements ValidatorInterface {
 	/**
 	 * Get validation data for the Taxonomy entity.
 	 *
@@ -49,10 +53,6 @@ class TaxonomyValidator implements Validator, Validation_Interface {
 		}
 	}
 
-	public function compare_results() {
-		// TODO: Implement compare_results() method.
-	}
-
 	/**
 	 * @return array
 	 */
@@ -65,9 +65,5 @@ class TaxonomyValidator implements Validator, Validation_Interface {
 	 */
 	public function get_destination_data() {
 		return API::get_remote_data( 'validation/taxonomy/count' );
-	}
-
-	public static function register_api_endpoints() {
-		// TODO: Implement register_api_endpoints() method.
 	}
 }

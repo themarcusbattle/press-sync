@@ -4,7 +4,7 @@ namespace Press_Sync\client\cli\command\validate;
 
 use Press_Sync\API;
 use Press_Sync\validation\Post;
-use Press_Sync\validators\Validation_Interface;
+use Press_Sync\validation\ValidatorInterface;
 use WP_CLI\ExitException;
 
 
@@ -13,7 +13,7 @@ use WP_CLI\ExitException;
  *
  * @package Press_Sync\client\cli\command\validate
  */
-class PostValidator implements Validator, Validation_Interface {
+class PostValidator implements ValidatorInterface {
 	/**
 	 * @var
 	 */
@@ -62,20 +62,18 @@ class PostValidator implements Validator, Validation_Interface {
 		}
 	}
 
-	public function compare_results() {
-		// TODO: Implement compare_results() method.
-	}
-
+	/**
+	 *
+	 */
 	public function get_source_data() {
 		// TODO: Implement get_source_data() method.
 	}
 
+	/**
+	 *
+	 */
 	public function get_destination_data() {
 		// TODO: Implement get_destination_data() method.
-	}
-
-	public static function register_api_endpoints() {
-		// TODO: Implement register_api_endpoints() method.
 	}
 
 	/**

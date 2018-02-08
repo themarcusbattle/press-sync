@@ -5,10 +5,7 @@ use Press_Sync\client\cli\AbstractCliCommand;
 
 use Press_Sync\client\cli\command\validate\PostValidator;
 use Press_Sync\client\cli\command\validate\TaxonomyValidator;
-use Press_Sync\client\cli\command\validate\Validator;
-use Press_Sync\validation\Taxonomy;
-use Press_Sync\API;
-use WP_CLI\ExitException;
+use Press_Sync\validation\ValidatorInterface;
 
 /**
  * Class Validate
@@ -23,7 +20,7 @@ class Validate extends AbstractCliCommand {
 	 * @var array
 	 */
 	private $subcommands = array(
-		'posts' => PostValidator::class,
+		'posts'      => PostValidator::class,
 		'taxonomies' => TaxonomyValidator::class,
 	);
 
@@ -69,7 +66,7 @@ class Validate extends AbstractCliCommand {
 		}
 
 		// Call the method in this class that handles the selected entity to validate.
-		/* @var $subcommand Validator */
+		/* @var $subcommand ValidatorInterface */
 		$subcommand = new $this->subcommands[ $validation_entity ]( $assoc_args );
 		$subcommand->validate();
 	}
