@@ -1595,14 +1595,10 @@ SQL;
 	 * @return array
 	 */
 	public function maybe_repair_meta( $posts ) {
-		$meta_fields = get_option( 'ps_meta_repair_fields' );
-
-		if ( ! $meta_fields ) {
+		if ( empty( get_option( 'ps_meta_repair_fields' ) ) ) {
 			return $posts;
 		}
 
-		$meta_fields = explode( ',', $meta_fields );
-		$meta_fields = array_map( 'trim', $meta_fields );
 		$meta_posts  = array();
 
 		foreach ( $posts as $post ) {
@@ -1612,7 +1608,7 @@ SQL;
 			);
 
 			foreach ( $post['meta_input'] as $field => $value ) {
-				if ( false === strpos( $field, 'press_sync_' ) && ! in_array( $field, $meta_fields ) ) {
+				if ( ! $this->is_repair_meta_field( $field ) ) {
 					continue;
 				}
 
@@ -1647,5 +1643,31 @@ SQL;
 		$join_clause   = $GLOBALS['wpdb']->prepare( $join_clause, $meta_fields );
 
 		return $join_clause;
+	}
+
+	/**
+	 * Check to see if the meta field is in the set specified for repair.
+	 *
+	 * @since NEXT
+	 * @param  string $field  The meta field to test.
+	 * @param  array  $fields The meta fields in the repair set.
+	 * @return bool
+	 */
+	public function is_repair_meta_field( $field, $fields = array() ) {
+		if ( empty( $fields ) ) {
+			$fields = get_option( 'ps_meta_repair_fields' );
+			$fields = explode( ',', $fields );
+			$fields = array_map( 'trim', $fields );
+		}
+
+		if ( 0 === strpos( $field, 'press_sync_' ) ) {
+			return true;
+		}
+
+		if( in_array( $field, $fields ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }

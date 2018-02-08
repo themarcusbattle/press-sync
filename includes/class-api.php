@@ -1267,7 +1267,7 @@ SQL;
 		$meta_result = array();
 
 		foreach ( $post_args['meta_input'] as $field => $value ) {
-			if ( false === strpos( $field, 'press_sync_' ) && ! in_array( $field, $this->ps_meta_repair_fields ) ) {
+			if ( ! $this->plugin->is_repair_meta_field( $field, $this->ps_meta_repair_fields ) ) {
 				continue;
 			}
 
