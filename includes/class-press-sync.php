@@ -1625,6 +1625,13 @@ SQL;
 		return $meta_posts;
 	}
 
+	/**
+	 * If we're repairing post meta, we only need to join get posts that match the fields to sync.
+	 *
+	 * @since NEXT
+	 * @param  string $join_clause The current JOIN clause.
+	 * @return string
+	 */
 	public function maybe_join_post_meta( $join_clause ) {
 		$meta_fields = get_option( 'ps_meta_repair_fields' );
 
