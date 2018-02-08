@@ -405,6 +405,9 @@ class API extends \WP_REST_Controller {
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
 		}
+		// Check to see if the post exists.
+		$local_attachment = $this->get_synced_post( $attachment_args );
+		echo '<pre>', print_r($local_attachment, true); die;
 
 		if ( isset( $attachment_args['ID'] ) ) {
 			$import_id = $attachment_args['ID'];
@@ -1258,7 +1261,7 @@ SQL;
 	 * @param  array $post_args  Array of incoming post arguments.
 	 * @return array
 	 */
-	private function maybe_repair_meta_fields( $local_post, $post_args )
+	private function maybe_repair_meta_fields( $local_post, $post_args ) {
 		$meta_result = array();
 
 		foreach ( $post_args['meta_input'] as $field => $value ) {

@@ -83,6 +83,7 @@ class Press_Sync {
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
 		add_filter( 'press_sync_posts_to_sync', [ $this, 'maybe_repair_meta' ] );
+		add_filter( 'press_sync_count_posts_joins', [ $this, 'maybe_join_post_meta' ] );
 	}
 
 	/**
@@ -270,7 +271,9 @@ class Press_Sync {
 			$where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
 		}
 
-		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
+		$join_clause  = apply_filters( 'press_sync_count_posts_joins', '' );
+
+		$sql            = "SELECT * FROM {$wpdb->posts} p {$join_clause} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
 		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
 		// Get the results.
@@ -444,8 +447,9 @@ class Press_Sync {
 			return 1;
 		}
 
-		$query         = "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}";
-		$prepared_sql  = $wpdb->prepare( $query, $objects_to_sync );
+		$join_clause  = apply_filters( 'press_sync_count_posts_joins', '' );
+		$query        = "SELECT count(*) FROM {$wpdb->posts} p {$join_clause} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}";
+		$prepared_sql = $wpdb->prepare( $query, $objects_to_sync );
 
 		trigger_error( sprintf( 'Queried for count of posts to sync using: %s', $prepared_sql ) );
 
@@ -1611,5 +1615,23 @@ SQL;
 		}
 
 		return $meta_posts;
+	}
+
+	public function maybe_join_post_meta( $join_clause ) {
+		$meta_fields = get_option( 'ps_meta_repair_fields' );
+
+		if ( ! $meta_fields ) {
+			return $join_clause;
+		}
+
+		$meta_fields = explode( ',', $meta_fields );
+		$meta_fields = array_map( 'trim', $meta_fields );
+
+		$placeholders  = array_fill( 0, count( $meta_fields ), '%s' );
+		$format_string = implode( ', ', $placeholders );
+
+		$join_clause = " JOIN {$GLOBALS['wpdb']->postmeta} pm ON( p.ID = pm.post_id AND pm.meta_key IN ( {$format_string} ) ) ";
+		$join_clause = $GLOBALS['wpdb']->prepare( $join_clause, $meta_fields );
+		return $join_clause;
 	}
 }
