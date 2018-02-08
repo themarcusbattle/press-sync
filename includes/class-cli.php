@@ -3,6 +3,7 @@
 namespace Press_Sync;
 
 use Press_Sync\client\cli\AbstractCliCommand;
+use Press_Sync\client\cli\command\Validate;
 
 /**
  * CLI Support for Press Sync.
@@ -20,10 +21,15 @@ class CLI {
 	protected $plugin = null;
 
 	/**
-	 * @var
+	 * Commands registered to this plugin.
+	 *
+	 * @TODO Refactor everything currently into the constructor into standalone classes and add them to this array.
+	 *
+	 * @var array
+	 * @since NEXT
 	 */
 	protected $commands = array(
-		\Press_Sync\client\cli\ValidationCommand::class,
+		Validate::class,
 	);
 
 	/**

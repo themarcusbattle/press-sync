@@ -1,18 +1,30 @@
 <?php
-namespace Press_Sync\client\cli;
+namespace Press_Sync\client\cli\command;
 
-use Press_Sync\validation\Post;
+use Press_Sync\client\cli\AbstractCliCommand;
+
+use Press_Sync\client\cli\command\validate\PostValidator;
+use Press_Sync\client\cli\command\validate\Validator;
 use Press_Sync\validation\Taxonomy;
 use Press_Sync\API;
 use WP_CLI\ExitException;
 
 /**
- * Class ValidationCommand
+ * Class Validate
  *
  * @package Press_Sync\client\cli
  * @since NEXT
  */
-class ValidationCommand extends AbstractCliCommand {
+class Validate extends AbstractCliCommand {
+	/**
+	 * Set of validate subcommands.
+	 *
+	 * @var array
+	 */
+	private $subcommands = array(
+		'posts' => PostValidator::class,
+	);
+
 	/**
 	 * Register our custom commands with WP-CLI.
 	 *
@@ -49,13 +61,15 @@ class ValidationCommand extends AbstractCliCommand {
 
 		$validation_entity = filter_var( $args[0], FILTER_SANITIZE_STRING );
 
-		if ( ! method_exists( $this, $validation_entity ) ) {
+		if ( ! isset( $this->subcommands[ $validation_entity ] ) ) {
 			\WP_CLI::warning( "{$validation_entity} is not a valid entity type." );
 			return;
 		}
 
 		// Call the method in this class that handles the selected entity to validate.
-		$this->{$validation_entity}( $assoc_args );
+		/* @var $subcommand Validator */
+		$subcommand = new $this->subcommands[ $validation_entity ]( $assoc_args );
+		$subcommand->validate();
 	}
 
 	/**
@@ -99,66 +113,5 @@ class ValidationCommand extends AbstractCliCommand {
 		if ( $term_count !== $json['term_count_by_taxonomy'] ) {
 			\WP_CLI::warning( 'Discrepancy in taxonomy term counts.' );
 		}
-	}
-
-	/**
-	 * Get validation data for Post entity.
-	 *
-	 * @param array $args Associative arguments from the validate command.
-	 *
-	 * @throws ExitException Throw exception if --url argument is missing on multisite.
-	 * @since NEXT
-	 */
-	private function posts( $args ) {
-		if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
-			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
-		}
-
-		$post_count_data   = ( new Post() )->get_count();
-		$json              = API::get_remote_data( 'validation/post/count' );
-		$post_count_values = $this->prepare_post_data_for_table_rendering( $post_count_data );
-		$json_values       = $this->prepare_post_data_for_table_rendering( $json );
-
-		$this->render_post_data_table( $post_count_values );
-		$this->render_post_data_table( $json_values );
-
-
-		if ( $post_count_values !== $json_values ) {
-			\WP_CLI::warning( 'Discrepancy in post counts.' );
-		}
-	}
-
-	private function render_post_data_table( $table_values ) {
-		\WP_CLI\Utils\format_items(
-			'table',
-			array_filter(
-				$table_values,
-				function ( $table_values ) {
-					return $table_values;
-				}
-			),
-			array_keys( $table_values[0] )
-		);
-	}
-
-	private function prepare_post_data_for_table_rendering( $count ) {
-		$table_values = array();
-
-		foreach ( $count as $post_type => $values ) {
-			$new_array              = array();
-			$new_array['post_type'] = $post_type;
-
-			foreach ( get_object_vars( $values ) as $key => $value ) {
-				$new_array[ $key ] = $value;
-			}
-
-			$table_values[] = $new_array;
-		}
-
-		return $table_values;
-	}
-
-	private function get_table_values( $count ) {
-		return $count[0];
 	}
 }
