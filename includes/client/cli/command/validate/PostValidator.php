@@ -1,5 +1,4 @@
 <?php
-
 namespace Press_Sync\client\cli\command\validate;
 
 use Press_Sync\API;
@@ -7,22 +6,18 @@ use Press_Sync\validation\Post;
 use Press_Sync\validation\ValidatorInterface;
 use WP_CLI\ExitException;
 
-
 /**
  * Class PostValidator
  *
  * @package Press_Sync\client\cli\command\validate
+ * @since NEXT
  */
-class PostValidator implements ValidatorInterface {
-	/**
-	 * @var
-	 */
-	private $args;
-
+class PostValidator extends AbstractValidator implements ValidatorInterface {
 	/**
 	 * PostValidator constructor.
 	 *
-	 * @param $args
+	 * @param array $args Associative args from the parent CLI command.
+	 * @since NEXT
 	 */
 	public function __construct( $args ) {
 		$this->args = $args;
@@ -31,66 +26,69 @@ class PostValidator implements ValidatorInterface {
 	/**
 	 * Get validation data for Post entity.
 	 *
-	 * @param array $args Associative arguments from the validate command.
-	 *
 	 * @throws ExitException Throw exception if --url argument is missing on multisite.
 	 * @since NEXT
 	 */
 	public function validate() {
-		try {
-			if ( is_multisite() && ! \WP_CLI::get_config( 'url' ) ) {
-				throw new ExitException();
-			}
+		$this->check_multisite_params();
 
-			$post_count_data        = ( new Post() )->get_count();
-			$remote_post_count_data = API::get_remote_data( 'validation/post/count' );
+		$post_count_data        = $this->prepare_output( $this->get_source_data() );
+		$remote_post_count_data = $this->prepare_output( $this->get_destination_data() );
 
-			$prepared_post_count_data        = $this->prepare_post_data_for_output( $post_count_data );
-			$prepared_remote_post_count_data = $this->prepare_post_data_for_output( $remote_post_count_data );
+		$this->output( $post_count_data, 'Local post counts by type and status:' );
+		$this->output( $remote_post_count_data, 'Remote post counts by type and status:' );
 
-			\WP_CLI::line( 'Local post counts by type and status:' );
-			$this->output_post_data_table( $prepared_post_count_data );
-
-			\WP_CLI::line( 'Remote post counts by type and status:' );
-			$this->output_post_data_table( $prepared_remote_post_count_data );
-
-			if ( $prepared_post_count_data !== $prepared_remote_post_count_data ) {
-				\WP_CLI::warning( 'Discrepancy in post counts.' );
-			}
-		} catch ( ExitException $e ) {
-			\WP_CLI::error( 'You must include the --url parameter when calling this command on WordPress multisite.' );
+		if ( $post_count_data !== $remote_post_count_data ) {
+			\WP_CLI::warning( 'Discrepancy in post counts.' );
 		}
 	}
 
 	/**
+	 * Get data from the local WordPress installation.
 	 *
+	 * @return array
+	 * @since NEXT
 	 */
 	public function get_source_data() {
-		// TODO: Implement get_source_data() method.
+		return ( new Post() )->get_count();
 	}
 
 	/**
+	 * Get data from the remote WordPress installation.
 	 *
+	 * @return array
+	 * @since NEXT
 	 */
 	public function get_destination_data() {
-		// TODO: Implement get_destination_data() method.
+		return API::get_remote_data( 'validation/post/count' );
 	}
 
+
 	/**
-	 * Outputs the post data table in the CLI.
+	 * Output data to the CLI.
 	 *
-	 * @param array $post_data Table data.
+	 * @param array  $post_data Array of post data.
+	 * @param string $message   Optional message to print before the data table.
+	 *
+	 * @since NEXT
 	 */
-	private function output_post_data_table( $post_data ) {
+	private function output( $post_data, $message = '' ) {
+		if ( $message ) {
+			\WP_CLI::line( $message );
+		}
+
 		\WP_CLI\Utils\format_items( 'table', $post_data, array_keys( $post_data[0] ) );
 	}
 
 	/**
-	 * @param $post_data
+	 * Prepare data for output to the CLI.
+	 *
+	 * @param array $post_data Array of post data.
 	 *
 	 * @return array
+	 * @since NEXT
 	 */
-	private function prepare_post_data_for_output( $post_data ) {
+	private function prepare_output( $post_data ) {
 		$table_values = array();
 
 		foreach ( $post_data as $post_type => $post_status_count ) {
