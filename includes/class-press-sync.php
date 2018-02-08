@@ -78,10 +78,10 @@ class Press_Sync {
 	 * @since 0.1.0
 	 */
 	public function hooks() {
+		$this->cli->init_commands();
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
-
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
 	}
 

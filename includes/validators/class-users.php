@@ -7,10 +7,14 @@
 
 namespace Press_Sync\validators;
 
+use Press_Sync\validation\ValidatorInterface;
+
 /**
  * User validation class to get and compare results.
  */
-class Users extends Validation_Utility implements Validation_Interface {
+class Users implements ValidatorInterface {
+	use ValidationUtility;
+
 	protected static $endpoint = 'users';
 
 	/**
@@ -89,7 +93,7 @@ class Users extends Validation_Utility implements Validation_Interface {
 	 * @since NEXT
 	 * @return array
 	 */
-	public function compare_results() {
+	public function validate() {
 		$this->get_source_data();
 		$this->get_destination_data();
 
