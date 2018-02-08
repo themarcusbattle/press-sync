@@ -217,11 +217,11 @@ class API extends \WP_REST_Controller {
 		$this->preserve_ids          = (bool) $request->get_param( 'preserve_ids' );
 		$this->fix_terms             = (bool) $request->get_param( 'fix_terms' );
 		$this->content_threshold     = absint( $request->get_param( 'ps_content_threshold' ) );
-		$this->ps_meta_repair_fields = $request->get_param( 'ps_meta_repair_fields' );
+		$this->ps_sync_meta_fields = $request->get_param( 'ps_sync_meta_fields' );
 
-		if ( $this->ps_meta_repair_fields ) {
-			$this->ps_meta_repair_fields = explode( ',', $this->ps_meta_repair_fields );
-			$this->ps_meta_repair_fields = array_map( 'trim', $this->ps_meta_repair_fields );
+		if ( $this->ps_sync_meta_fields ) {
+			$this->ps_sync_meta_fields = explode( ',', $this->ps_sync_meta_fields );
+			$this->ps_sync_meta_fields = array_map( 'trim', $this->ps_sync_meta_fields );
 		}
 
 		if ( ! $objects_to_sync ) {
@@ -431,7 +431,7 @@ class API extends \WP_REST_Controller {
 			return false;
 		}
 
-		if ( ! empty( $this->ps_meta_repair_fields ) ) {
+		if ( ! empty( $this->ps_sync_meta_fields ) ) {
 			$attachment_args['post_type'] = 'attachment';
 			$local_attachment             = $this->get_synced_post( $attachment_args );
 
@@ -1288,18 +1288,18 @@ SQL;
 	}
 
 	/**
-	 * Function for handling meta repair task.
+	 * Syncs meta fields specified from sending side when we're syncing meta only.
 	 *
 	 * @since NEXT
 	 * @param  array $local_post An array of post data from the local post.
 	 * @param  array $post_args  Array of incoming post arguments.
 	 * @return array
 	 */
-	private function maybe_repair_meta_fields( $local_post, $post_args ) {
+	private function sync_meta_fields( $local_post, $post_args ) {
 		$meta_result = array();
 
 		foreach ( $post_args['meta_input'] as $field => $value ) {
-			if ( ! $this->plugin->is_repair_meta_field( $field, $this->ps_meta_repair_fields ) ) {
+			if ( ! $this->plugin->is_valid_sync_meta_field( $field, $this->ps_sync_meta_fields ) ) {
 				continue;
 			}
 
@@ -1343,16 +1343,16 @@ SQL;
 			return $this->fix_term_relationships( $local_post['ID'], $post_args );
 		}
 
-		if ( ! empty( $this->ps_meta_repair_fields ) ) {
+		if ( ! empty( $this->ps_sync_meta_fields ) ) {
 			if ( ! $local_post ) {
 				return array(
 					'debug' => array(
-						'message' => __( 'Could not find a local post to repair meta for.', 'press-sync' ),
+						'message' => __( 'Could not find a local post to sync meta for.', 'press-sync' ),
 					),
 				);
 			}
 
-			return $this->maybe_repair_meta_fields( $local_post, $post_args );
+			return $this->sync_meta_fields( $local_post, $post_args );
 		}
 
 		return array();

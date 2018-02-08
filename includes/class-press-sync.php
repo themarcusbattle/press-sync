@@ -82,7 +82,7 @@ class Press_Sync {
 		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
-		add_filter( 'press_sync_posts_to_sync', [ $this, 'maybe_repair_meta' ] );
+		add_filter( 'press_sync_posts_to_sync', [ $this, 'maybe_sync_meta' ] );
 		add_filter( 'press_sync_posts_join', [ $this, 'maybe_join_post_meta' ] );
 	}
 
@@ -1071,7 +1071,7 @@ class Press_Sync {
 			'preserve_ids'          => get_option( 'ps_preserve_ids', false ),
 			'fix_terms'             => get_option( 'ps_fix_terms', false ),
 			'ps_content_threshold'  => get_option( 'ps_content_threshold', false ),
-			'ps_meta_repair_fields' => get_option( 'ps_meta_repair_fields' ),
+			'ps_sync_meta_fields' => get_option( 'ps_sync_meta_fields' ),
 		) );
 	}
 
@@ -1588,14 +1588,14 @@ SQL;
 	}
 
 	/**
-	 * If we have the meta repair option, we are only sending post ID and applicable meta.
+	 * If we have the meta sync option, we are only sending post ID and applicable meta.
 	 *
 	 * @since NEXT
 	 * @param  array $posts The posts that we got to send over.
 	 * @return array
 	 */
-	public function maybe_repair_meta( $posts ) {
-		if ( empty( get_option( 'ps_meta_repair_fields' ) ) ) {
+	public function maybe_sync_meta( $posts ) {
+		if ( empty( get_option( 'ps_sync_meta_fields' ) ) ) {
 			return $posts;
 		}
 
@@ -1608,7 +1608,7 @@ SQL;
 			);
 
 			foreach ( $post['meta_input'] as $field => $value ) {
-				if ( ! $this->is_repair_meta_field( $field ) ) {
+				if ( ! $this->is_valid_sync_meta_field( $field ) ) {
 					continue;
 				}
 
@@ -1622,14 +1622,14 @@ SQL;
 	}
 
 	/**
-	 * If we're repairing post meta, we only need to join get posts that match the fields to sync.
+	 * If we're syncing post meta, we only need to join get posts that match the fields to sync.
 	 *
 	 * @since NEXT
 	 * @param  string $join_clause The current JOIN clause.
 	 * @return string
 	 */
 	public function maybe_join_post_meta( $join_clause ) {
-		$meta_fields = get_option( 'ps_meta_repair_fields' );
+		$meta_fields = get_option( 'ps_sync_meta_fields' );
 
 		if ( ! $meta_fields ) {
 			return $join_clause;
@@ -1646,16 +1646,16 @@ SQL;
 	}
 
 	/**
-	 * Check to see if the meta field is in the set specified for repair.
+	 * Check to see if the meta field is in the set specified for syncing.
 	 *
 	 * @since NEXT
 	 * @param  string $field  The meta field to test.
-	 * @param  array  $fields The meta fields in the repair set.
+	 * @param  array  $fields The meta fields in the sync set.
 	 * @return bool
 	 */
-	public function is_repair_meta_field( $field, $fields = array() ) {
+	public function is_valid_sync_meta_field( $field, $fields = array() ) {
 		if ( empty( $fields ) ) {
-			$fields = get_option( 'ps_meta_repair_fields' );
+			$fields = get_option( 'ps_sync_meta_fields' );
 			$fields = explode( ',', $fields );
 			$fields = array_map( 'trim', $fields );
 		}
