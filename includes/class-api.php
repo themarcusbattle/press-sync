@@ -32,6 +32,38 @@ class API extends \WP_REST_Controller {
 	private $fix_terms = false;
 
 	/**
+	 * Whether we're skipping asset sync.
+	 *
+	 * @var bool
+	 * @since NEXT
+	 */
+	private $skip_assets = false;
+
+	/**
+	 * Whether we're preserving post-type object IDs.
+	 *
+	 * @var bool
+	 * @since NEXT
+	 */
+	private $preserve_ids = false;
+
+	/**
+	 * The content threshold for comparing duplicate post_content.
+	 *
+	 * @var int
+	 * @since NEXT
+	 */
+	private $content_threshold;
+
+	/**
+	 * Array of meta fields to sync if we're only syncing meta for post-type objects.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	private $ps_sync_meta_fields = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
