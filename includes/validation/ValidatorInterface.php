@@ -1,16 +1,13 @@
 <?php
+namespace Press_Sync\validation;
+
 /**
- * Validation interface.
+ * Interface Validator
  *
- * @package PressSync
+ * @package Press_Sync\client\cli\command\validate
+ * @since NEXT
  */
-
-namespace Press_Sync\validators;
-
-/**
- * Define an interface that all Validators should implement.
- */
-interface Validation_Interface {
+interface ValidatorInterface {
 	/**
 	 * Method to build full comparison of results.
 	 *
@@ -39,10 +36,8 @@ interface Validation_Interface {
 	 * )
 	 *
 	 * @since NEXT
-	 *
-	 * @return array
 	 */
-	public function compare_results();
+	public function validate();
 
 	/**
 	 * This method should gather data from the source site for comparison.
@@ -57,9 +52,4 @@ interface Validation_Interface {
 	 * @since NEXT
 	 */
 	public function get_destination_data();
-
-	/**
-	 * Register all routes for getting data for this type of object.
-	 */
-	public static function register_api_endpoints();
 }

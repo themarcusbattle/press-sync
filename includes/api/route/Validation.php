@@ -1,6 +1,7 @@
 <?php
 namespace Press_Sync\api\route;
 
+use Press_Sync\api\route\validation\Post;
 use Press_Sync\api\route\validation\User;
 use Press_Sync\api\route\validation\Taxonomy;
 
@@ -27,6 +28,7 @@ class Validation extends \WP_REST_Controller {
 	protected $routes = array(
 		User::class,
 		Taxonomy::class,
+		Post::class,
 	);
 
 	/**

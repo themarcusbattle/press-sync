@@ -7,11 +7,12 @@ namespace Press_Sync\validation;
  * @package Press_Sync\validation
  * @since   NEXT
  */
-class Taxonomy {
+class Taxonomy implements CountInterface {
 	/**
 	 * Get the number of unique taxonomies in this WordPress installation.
 	 *
 	 * @return int
+	 * @since NEXT
 	 */
 	public function get_unique_taxonomy_count() {
 		return count( get_taxonomies() );
@@ -21,12 +22,21 @@ class Taxonomy {
 	 * Get the number of terms for each taxonomy in this WordPress installation.
 	 *
 	 * @return array
+	 * @since NEXT
 	 */
 	public function get_term_count_by_taxonomy() {
 		$terms = [];
 
 		foreach ( get_taxonomies() as $name => $taxonomy ) {
-			$terms[ $name ] = count( get_terms( array( 'taxonomy' => $taxonomy ) ) );
+			$terms[] = array(
+				'taxonomy_name'   => $name,
+				'number_of_terms' => count(
+					get_terms( array(
+						'taxonomy'   => $taxonomy,
+						'hide_empty' => false,
+					)
+				) ),
+			);
 		}
 
 		return $terms;
