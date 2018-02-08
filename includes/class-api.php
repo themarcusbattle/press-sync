@@ -405,9 +405,20 @@ class API extends \WP_REST_Controller {
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
 		}
-		// Check to see if the post exists.
-		$local_attachment = $this->get_synced_post( $attachment_args );
-		echo '<pre>', print_r($local_attachment, true); die;
+
+		if ( ! empty( $this->ps_meta_repair_fields ) ) {
+			$attachment_args['post_type'] = 'attachment';
+			$local_attachment             = $this->get_synced_post( $attachment_args );
+
+			if ( ! $local_attachment ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to repair meta for.', 'press-sync' ),
+					),
+				);
+			}
+			return $this->maybe_repair_meta_fields( $local_attachment, $attachment_args );
+		}
 
 		if ( isset( $attachment_args['ID'] ) ) {
 			$import_id = $attachment_args['ID'];
