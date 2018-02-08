@@ -5,7 +5,7 @@ use Press_Sync\API;
 use Press_Sync\validation\ValidatorInterface;
 use Press_Sync\validation\Taxonomy;
 
-class TaxonomyValidator implements ValidatorInterface {
+class TaxonomyValidator extends AbstractValidator implements ValidatorInterface {
 	/**
 	 * @return array
 	 */

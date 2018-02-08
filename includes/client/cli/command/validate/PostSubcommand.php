@@ -39,7 +39,7 @@ class PostSubcommand extends AbstractValidateSubcommand {
 		$this->output( $post_count_data, 'Local post counts by type and status:' );
 		$this->output( $remote_post_count_data, 'Remote post counts by type and status:' );
 
-		if ( $post_count_data !== $remote_post_count_data ) {
+		if ( ! $this->validator->compare( $post_count_data, $remote_post_count_data ) ) {
 			\WP_CLI::warning( 'Discrepancy in post counts.' );
 		}
 	}

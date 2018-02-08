@@ -11,7 +11,7 @@ use Press_Sync\validation\Post;
  * @package Press_Sync\validators
  * @since NEXT
  */
-class PostValidator implements ValidatorInterface {
+class PostValidator extends AbstractValidator implements ValidatorInterface {
 	/**
 	 * Validate the Post data.
 	 *
