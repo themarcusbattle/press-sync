@@ -51,6 +51,7 @@ class TaxonomySubcommand extends AbstractValidateSubcommand {
 		}
 
 		\WP_CLI\Utils\format_items( 'table', $data['term_count_by_taxonomy'], array( 'taxonomy_name', 'number_of_terms' ) );
+		\WP_CLI\Utils\format_items( 'table', $data['post_terms'], array( 'taxonomy', 'term', 'post_count' ) );
 		\WP_CLI::line( "Unique taxonomies: {$data['unique_taxonomies']}" );
 	}
 
