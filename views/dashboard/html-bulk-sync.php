@@ -31,6 +31,20 @@
 						<option value="push" <?php selected( get_option( 'ps_sync_method' ), 'push' ); ?>>Push</option>
 					</select>
 				</td>
+				<?php if ( apply_filters( 'press_sync_show_advanced_options', false ) ) : ?>
+					<td rowspan="1000" style="vertical-align: top; width: calc(100% - 70%); background: #ddd;">
+						<strong>Advanced Options</strong>
+						<ul>
+						<?php $has_advanced = false; foreach ( \Press_Sync\Dashboard::ADVANCED_OPTIONS as $option ) : ?>
+							<?php $value = get_option( $option ); if ( ! $value ) { continue; } $has_advanced = true; ?>
+							<li><strong><?php echo esc_html( $option ); ?></strong> &mdash; <?php echo esc_html( $value ); ?></li>
+						<?php endforeach; ?>
+						</ul>
+						<?php if ( ! $has_advanced ) : ?>
+							<em>There are no advanced options configured.</em>
+						<?php endif; ?>
+					</td>
+				<?php endif; ?>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Objects to Sync</th>
