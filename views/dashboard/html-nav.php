@@ -11,8 +11,7 @@ namespace Press_Sync;
 		<a href="?page=press-sync&amp;tab=credentials" class="nav-tab credentials <?php echo active_tab( 'credentials' ); ?>" data-div-name="credentials-tab">Credentials</a>
 		<a href="?page=press-sync&amp;tab=help" class="nav-tab help <?php echo active_tab( 'help' ); ?>" data-div-name="help-tab">Help</a>
         <?php if ( apply_filters( 'press_sync_show_advanced_options', false ) ) : ?>
-            <a href="?page=press-sync&amp;tab=export" class="nav-tab export <?php echo active_tab( 'export' ); ?> " data-div-name="export-tab">Advanced Export</a>
-            <a href="?page=press-sync&amp;tab=import" class="nav-tab import <?php echo active_tab( 'import' ); ?> " data-div-name="import-tab">Advanced Import</a>
+            <a href="?page=press-sync&amp;tab=advanced" class="nav-tab advanced <?php echo active_tab( 'advanced' ); ?> " data-div-name="advanced-tab">Advanced</a>
         <?php endif; ?>
 	</h2>
 <?php
