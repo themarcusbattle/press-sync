@@ -176,14 +176,20 @@ class API extends \WP_REST_Controller {
 	 */
 	public function sync_objects( $request ) {
 
-		$objects_to_sync         = $request->get_param( 'objects_to_sync' );
-		$objects                 = $request->get_param( 'objects' );
-		$duplicate_action        = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
-		$force_update            = $request->get_param( 'force_update' );
-		$this->skip_assets       = (bool) $request->get_param( 'skip_assets' );
-		$this->preserve_ids      = (bool) $request->get_param( 'preserve_ids' );
-		$this->fix_terms         = (bool) $request->get_param( 'fix_terms' );
-		$this->content_threshold = absint( $request->get_param( 'ps_content_threshold' ) );
+		$objects_to_sync             = $request->get_param( 'objects_to_sync' );
+		$objects                     = $request->get_param( 'objects' );
+		$duplicate_action            = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$force_update                = $request->get_param( 'force_update' );
+		$this->skip_assets           = (bool) $request->get_param( 'skip_assets' );
+		$this->preserve_ids          = (bool) $request->get_param( 'preserve_ids' );
+		$this->fix_terms             = (bool) $request->get_param( 'fix_terms' );
+		$this->content_threshold     = absint( $request->get_param( 'ps_content_threshold' ) );
+		$this->ps_meta_repair_fields = $request->get_param( 'ps_meta_repair_fields' );
+
+		if ( $this->ps_meta_repair_fields ) {
+			$this->ps_meta_repair_fields = explode( ',', $this->ps_meta_repair_fields );
+			$this->ps_meta_repair_fields = array_map( 'trim', $this->ps_meta_repair_fields );
+		}
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -266,6 +272,17 @@ class API extends \WP_REST_Controller {
 				);
 			}
 			return $this->fix_term_relationships( $local_post['ID'], $post_args );
+		}
+
+		if ( ! empty( $this->ps_meta_repair_fields ) ) {
+			if ( ! $local_post ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to repair meta for.', 'press-sync' ),
+					),
+				);
+			}
+			return $this->maybe_repair_meta_fields( $local_post, $post_args );
 		}
 
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
@@ -1231,5 +1248,39 @@ SQL;
 				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
 			}
 		}
+	}
+
+	/**
+	 * Function for handling meta repair task.
+	 *
+	 * @since NEXT
+	 * @param  array $local_post An array of post data from the local post.
+	 * @param  array $post_args  Array of incoming post arguments.
+	 * @return array
+	 */
+	private function maybe_repair_meta_fields( $local_post, $post_args )
+		$meta_result = array();
+
+		foreach ( $post_args['meta_input'] as $field => $value ) {
+			if ( false === strpos( $field, 'press_sync_' ) && ! in_array( $field, $this->ps_meta_repair_fields ) ) {
+				continue;
+			}
+
+			$result = update_post_meta( $local_post['ID'], $field, $value );
+			$meta_result[] = array(
+				'field'         => $field,
+				'value'         => $value,
+				'update_result' => var_export( $result, 1 ),
+			);
+		}
+
+		return array(
+			'debug' => array(
+				'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
+				'local_post_id'   => $local_post['ID'],
+				'message'         => __( 'The post meta has been synced with the remote site', 'press-sync' ),
+				'update_result'   => $meta_result,
+			),
+		);
 	}
 }

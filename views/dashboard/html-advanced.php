@@ -46,6 +46,13 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row">Post Meta Repair</th>
+				<td>
+					<input type="input" name="ps_meta_repair_fields" value="<?php echo esc_attr( get_option( 'ps_meta_repair_fields' ) ); ?>" />
+					<span>Comma-separated list of post meta fields to sync. Other fields (including Post fields) will be ignored.</span>
+				</td>
+			</tr>
+			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
 				</td>

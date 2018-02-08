@@ -44,6 +44,7 @@ class Dashboard {
 		'ps_fix_terms',
 		'ps_delta_date',
 		'ps_content_threshold',
+		'ps_meta_repair_fields',
 	];
 
 	/**

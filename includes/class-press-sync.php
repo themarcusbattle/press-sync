@@ -81,8 +81,8 @@ class Press_Sync {
 		add_filter( 'http_request_host_is_external', array( $this, 'approve_localhost_urls' ), 10, 3 );
 		add_filter( 'press_sync_order_to_sync_all', array( $this, 'order_to_sync_all' ), 10, 1 );
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
-
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
+		add_filter( 'press_sync_posts_to_sync', [ $this, 'maybe_repair_meta' ] );
 	}
 
 	/**
@@ -256,7 +256,6 @@ class Press_Sync {
 	 * @return array  $posts           The posts to return.
 	 */
 	public function get_posts_to_sync( $objects_to_sync, $next_page = 1, $taxonomies = [], $where_clause = '' ) {
-
 		global $wpdb;
 
 		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
@@ -293,8 +292,15 @@ class Press_Sync {
 			}
 		}
 
+		/**
+		 * Filters the posts that we got to sync.
+		 *
+		 * @since NEXT
+		 * @param  array $posts The posts that we got to sync.
+		 * @return array
+		 */
+		$posts = apply_filters( 'press_sync_posts_to_sync', $posts );
 		return $posts;
-
 	}
 
 	/**
@@ -1041,18 +1047,19 @@ class Press_Sync {
 	public function parse_sync_settings( $settings = array() ) {
 
 		return wp_parse_args( $settings, array(
-			'remote_domain'        => get_option( 'ps_remote_domain' ),
-			'ps_remote_key'        => get_option( 'ps_remote_key' ),
-			'sync_method'          => get_option( 'ps_sync_method' ),
-			'objects_to_sync'      => get_option( 'ps_objects_to_sync' ),
-			'duplicate_action'     => get_option( 'ps_duplicate_action' ),
-			'force_update'         => get_option( 'ps_force_update', false ),
-			'skip_assets'          => get_option( 'ps_skip_assets', false ),
-			'options'              => get_option( 'ps_options_to_sync' ),
-			'local_folder'         => '',
-			'preserve_ids'         => get_option( 'ps_preserve_ids', false ),
-			'fix_terms'            => get_option( 'ps_fix_terms', false ),
-			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
+			'remote_domain'         => get_option( 'ps_remote_domain' ),
+			'ps_remote_key'         => get_option( 'ps_remote_key' ),
+			'sync_method'           => get_option( 'ps_sync_method' ),
+			'objects_to_sync'       => get_option( 'ps_objects_to_sync' ),
+			'duplicate_action'      => get_option( 'ps_duplicate_action' ),
+			'force_update'          => get_option( 'ps_force_update', false ),
+			'skip_assets'           => get_option( 'ps_skip_assets', false ),
+			'options'               => get_option( 'ps_options_to_sync' ),
+			'local_folder'          => '',
+			'preserve_ids'          => get_option( 'ps_preserve_ids', false ),
+			'fix_terms'             => get_option( 'ps_fix_terms', false ),
+			'ps_content_threshold'  => get_option( 'ps_content_threshold', false ),
+			'ps_meta_repair_fields' => get_option( 'ps_meta_repair_fields' ),
 		) );
 	}
 
@@ -1566,5 +1573,43 @@ SQL;
 		}
 
 		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->delta_date );
+	}
+
+	/**
+	 * If we have the meta repair option, we are only sending post ID and applicable meta.
+	 *
+	 * @since NEXT
+	 * @param  array $posts The posts that we got to send over.
+	 * @return array
+	 */
+	public function maybe_repair_meta( $posts ) {
+		$meta_fields = get_option( 'ps_meta_repair_fields' );
+
+		if ( ! $meta_fields ) {
+			return $posts;
+		}
+
+		$meta_fields = explode( ',', $meta_fields );
+		$meta_fields = array_map( 'trim', $meta_fields );
+		$meta_posts  = array();
+
+		foreach ( $posts as $post ) {
+			$meta_post = array(
+				'ID'         => $post['ID'],
+				'meta_input' => array(),
+			);
+
+			foreach ( $post['meta_input'] as $field => $value ) {
+				if ( false === strpos( $field, 'press_sync_' ) && ! in_array( $field, $meta_fields ) ) {
+					continue;
+				}
+
+				$meta_post['meta_input'][ $field ] = $value;
+			}
+
+			$meta_posts[] = $meta_post;
+		}
+
+		return $meta_posts;
 	}
 }
