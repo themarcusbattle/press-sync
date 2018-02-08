@@ -51,6 +51,7 @@ class API extends \WP_REST_Controller {
 	public function hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
 		add_action( 'press_sync_sync_post', array( $this, 'add_p2p_connections' ), 10, 2 );
+		add_filter( 'press_sync_pre_sync_post', [ $this, 'maybe_short_circuit_post_sync'], 10, 3 );
 	}
 
 	/**
@@ -263,26 +264,18 @@ class API extends \WP_REST_Controller {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
-		if ( $this->fix_terms ) {
-			if ( ! $local_post ) {
-				return array(
-					'debug' => array(
-						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
-					),
-				);
-			}
-			return $this->fix_term_relationships( $local_post['ID'], $post_args );
-		}
+		/**
+		 * Filters the post arguments to see if we should return early.
+		 *
+		 * @param  array $early_return If this array is not empty we will return early.
+		 * @param  array $post_args    The arguments of the syncing post.
+		 * @param  array $local_post   The local post attached to the syncing post, if any.
+		 * @return array
+		 */
+		$early_return = apply_filters( 'press_sync_pre_sync_post', [], $post_args, $local_post );
 
-		if ( ! empty( $this->ps_meta_repair_fields ) ) {
-			if ( ! $local_post ) {
-				return array(
-					'debug' => array(
-						'message' => __( 'Could not find a local post to repair meta for.', 'press-sync' ),
-					),
-				);
-			}
-			return $this->maybe_repair_meta_fields( $local_post, $post_args );
+		if ( ! empty( $early_return ) ) {
+			return $early_return;
 		}
 
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
@@ -410,14 +403,12 @@ class API extends \WP_REST_Controller {
 			$attachment_args['post_type'] = 'attachment';
 			$local_attachment             = $this->get_synced_post( $attachment_args );
 
-			if ( ! $local_attachment ) {
-				return array(
-					'debug' => array(
-						'message' => __( 'Could not find a local post to repair meta for.', 'press-sync' ),
-					),
-				);
+			/** This filter is documented in \Press_Sync\API::sync_post */
+			$early_return = apply_filters( 'press_sync_pre_sync_post', [], $attachment_args, $local_attachment );
+
+			if ( ! empty( $early_return ) ) {
+				return $early_return;
 			}
-			return $this->maybe_repair_meta_fields( $local_attachment, $attachment_args );
 		}
 
 		if ( isset( $attachment_args['ID'] ) ) {
@@ -1296,5 +1287,42 @@ SQL;
 				'update_result'   => $meta_result,
 			),
 		);
+	}
+
+	/**
+	 * In some cases we want to short-circuit the sync process.
+	 *
+	 * @since NEXT
+	 * @param  array $early_return If this array is populated, the calling method will return early.
+	 * @param  array $post_args    The arguments for the syncing post.
+	 * @param  array $local_post   The local post for the syncing post, if any.
+	 * @return array
+	 */
+	public function maybe_short_circuit_post_sync( $early_return, $post_args, $local_post ) {
+		if ( $this->fix_terms ) {
+			if ( ! $local_post ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
+					),
+				);
+			}
+
+			return $this->fix_term_relationships( $local_post['ID'], $post_args );
+		}
+
+		if ( ! empty( $this->ps_meta_repair_fields ) ) {
+			if ( ! $local_post ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to repair meta for.', 'press-sync' ),
+					),
+				);
+			}
+
+			return $this->maybe_repair_meta_fields( $local_post, $post_args );
+		}
+
+		return array();
 	}
 }
