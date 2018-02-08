@@ -32,6 +32,38 @@ class API extends \WP_REST_Controller {
 	private $fix_terms = false;
 
 	/**
+	 * Whether we're skipping asset sync.
+	 *
+	 * @var bool
+	 * @since NEXT
+	 */
+	private $skip_assets = false;
+
+	/**
+	 * Whether we're preserving post-type object IDs.
+	 *
+	 * @var bool
+	 * @since NEXT
+	 */
+	private $preserve_ids = false;
+
+	/**
+	 * The content threshold for comparing duplicate post_content.
+	 *
+	 * @var int
+	 * @since NEXT
+	 */
+	private $content_threshold;
+
+	/**
+	 * Array of meta fields to sync if we're only syncing meta for post-type objects.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	private $ps_sync_meta_fields = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
@@ -51,6 +83,7 @@ class API extends \WP_REST_Controller {
 	public function hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
 		add_action( 'press_sync_sync_post', array( $this, 'add_p2p_connections' ), 10, 2 );
+		add_filter( 'press_sync_pre_sync_post', [ $this, 'maybe_short_circuit_post_sync'], 10, 3 );
 	}
 
 	/**
@@ -176,14 +209,20 @@ class API extends \WP_REST_Controller {
 	 */
 	public function sync_objects( $request ) {
 
-		$objects_to_sync         = $request->get_param( 'objects_to_sync' );
-		$objects                 = $request->get_param( 'objects' );
-		$duplicate_action        = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
-		$force_update            = $request->get_param( 'force_update' );
-		$this->skip_assets       = (bool) $request->get_param( 'skip_assets' );
-		$this->preserve_ids      = (bool) $request->get_param( 'preserve_ids' );
-		$this->fix_terms         = (bool) $request->get_param( 'fix_terms' );
-		$this->content_threshold = absint( $request->get_param( 'ps_content_threshold' ) );
+		$objects_to_sync             = $request->get_param( 'objects_to_sync' );
+		$objects                     = $request->get_param( 'objects' );
+		$duplicate_action            = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
+		$force_update                = $request->get_param( 'force_update' );
+		$this->skip_assets           = (bool) $request->get_param( 'skip_assets' );
+		$this->preserve_ids          = (bool) $request->get_param( 'preserve_ids' );
+		$this->fix_terms             = (bool) $request->get_param( 'fix_terms' );
+		$this->content_threshold     = absint( $request->get_param( 'ps_content_threshold' ) );
+		$this->ps_sync_meta_fields = $request->get_param( 'ps_sync_meta_fields' );
+
+		if ( $this->ps_sync_meta_fields ) {
+			$this->ps_sync_meta_fields = explode( ',', $this->ps_sync_meta_fields );
+			$this->ps_sync_meta_fields = array_map( 'trim', $this->ps_sync_meta_fields );
+		}
 
 		if ( ! $objects_to_sync ) {
 			wp_send_json_error( array(
@@ -257,15 +296,18 @@ class API extends \WP_REST_Controller {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
-		if ( $this->fix_terms ) {
-			if ( ! $local_post ) {
-				return array(
-					'debug' => array(
-						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
-					),
-				);
-			}
-			return $this->fix_term_relationships( $local_post['ID'], $post_args );
+		/**
+		 * Filters the post arguments to see if we should return early.
+		 *
+		 * @param  array $early_return If this array is not empty we will return early.
+		 * @param  array $post_args    The arguments of the syncing post.
+		 * @param  array $local_post   The local post attached to the syncing post, if any.
+		 * @return array
+		 */
+		$early_return = apply_filters( 'press_sync_pre_sync_post', [], $post_args, $local_post );
+
+		if ( ! empty( $early_return ) ) {
+			return $early_return;
 		}
 
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
@@ -387,6 +429,18 @@ class API extends \WP_REST_Controller {
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
 			return false;
+		}
+
+		if ( ! empty( $this->ps_sync_meta_fields ) ) {
+			$attachment_args['post_type'] = 'attachment';
+			$local_attachment             = $this->get_synced_post( $attachment_args );
+
+			/** This filter is documented in \Press_Sync\API::sync_post */
+			$early_return = apply_filters( 'press_sync_pre_sync_post', [], $attachment_args, $local_attachment );
+
+			if ( ! empty( $early_return ) ) {
+				return $early_return;
+			}
 		}
 
 		if ( isset( $attachment_args['ID'] ) ) {
@@ -1231,5 +1285,76 @@ SQL;
 				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
 			}
 		}
+	}
+
+	/**
+	 * Syncs meta fields specified from sending side when we're syncing meta only.
+	 *
+	 * @since NEXT
+	 * @param  array $local_post An array of post data from the local post.
+	 * @param  array $post_args  Array of incoming post arguments.
+	 * @return array
+	 */
+	private function sync_meta_fields( $local_post, $post_args ) {
+		$meta_result = array();
+
+		foreach ( $post_args['meta_input'] as $field => $value ) {
+			if ( ! $this->plugin->is_valid_sync_meta_field( $field, $this->ps_sync_meta_fields ) ) {
+				continue;
+			}
+
+			$result = update_post_meta( $local_post['ID'], $field, $value );
+			$meta_result[] = array(
+				'field'         => $field,
+				'value'         => $value,
+				'update_result' => var_export( $result, 1 ),
+			);
+		}
+
+		return array(
+			'debug' => array(
+				'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
+				'local_post_id'   => $local_post['ID'],
+				'message'         => __( 'The post meta has been synced with the remote site', 'press-sync' ),
+				'update_result'   => $meta_result,
+			),
+		);
+	}
+
+	/**
+	 * In some cases we want to short-circuit the sync process.
+	 *
+	 * @since NEXT
+	 * @param  array $early_return If this array is populated, the calling method will return early.
+	 * @param  array $post_args    The arguments for the syncing post.
+	 * @param  array $local_post   The local post for the syncing post, if any.
+	 * @return array
+	 */
+	public function maybe_short_circuit_post_sync( $early_return, $post_args, $local_post ) {
+		if ( $this->fix_terms ) {
+			if ( ! $local_post ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
+					),
+				);
+			}
+
+			return $this->fix_term_relationships( $local_post['ID'], $post_args );
+		}
+
+		if ( ! empty( $this->ps_sync_meta_fields ) ) {
+			if ( ! $local_post ) {
+				return array(
+					'debug' => array(
+						'message' => __( 'Could not find a local post to sync meta for.', 'press-sync' ),
+					),
+				);
+			}
+
+			return $this->sync_meta_fields( $local_post, $post_args );
+		}
+
+		return array();
 	}
 }
