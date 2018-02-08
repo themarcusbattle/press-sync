@@ -12,6 +12,7 @@ class Taxonomy implements CountInterface {
 	 * Get the number of unique taxonomies in this WordPress installation.
 	 *
 	 * @return int
+	 * @since NEXT
 	 */
 	public function get_unique_taxonomy_count() {
 		return count( get_taxonomies() );
@@ -21,6 +22,7 @@ class Taxonomy implements CountInterface {
 	 * Get the number of terms for each taxonomy in this WordPress installation.
 	 *
 	 * @return array
+	 * @since NEXT
 	 */
 	public function get_term_count_by_taxonomy() {
 		$terms = [];
