@@ -3,8 +3,11 @@ namespace Press_Sync\client\cli\command;
 
 use Press_Sync\client\cli\AbstractCliCommand;
 
-use Press_Sync\client\cli\command\validate\PostValidator;
-use Press_Sync\client\cli\command\validate\TaxonomyValidator;
+use Press_Sync\client\cli\command\validate\AbstractValidateSubcommand;
+use Press_Sync\client\cli\command\validate\PostSubcommand;
+use Press_Sync\client\cli\command\validate\PostValidateSubcommand;
+use Press_Sync\client\cli\command\validate\Taxonomy;
+use Press_Sync\client\cli\command\validate\TaxonomySubcommand;
 use Press_Sync\validation\ValidatorInterface;
 
 /**
@@ -20,8 +23,8 @@ class Validate extends AbstractCliCommand {
 	 * @var array
 	 */
 	private $subcommands = array(
-		'posts'      => PostValidator::class,
-		'taxonomies' => TaxonomyValidator::class,
+		'posts'      => PostSubcommand::class,
+		'taxonomies' => TaxonomySubcommand::class,
 	);
 
 	/**
@@ -66,7 +69,7 @@ class Validate extends AbstractCliCommand {
 		}
 
 		// Call the method in this class that handles the selected entity to validate.
-		/* @var $subcommand ValidatorInterface */
+		/* @var $subcommand AbstractValidateSubcommand */
 		$subcommand = new $this->subcommands[ $validation_entity ]( $assoc_args );
 		$subcommand->validate();
 	}

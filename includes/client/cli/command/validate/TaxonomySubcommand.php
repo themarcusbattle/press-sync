@@ -1,26 +1,25 @@
 <?php
 namespace Press_Sync\client\cli\command\validate;
 
-use Press_Sync\API;
-use Press_Sync\validation\Taxonomy;
-use Press_Sync\validation\ValidatorInterface;
+use Press_Sync\validators\TaxonomyValidator;
 use WP_CLI\ExitException;
 
 /**
- * Class TaxonomyValidator
+ * Class TaxonomySubcommand
  *
  * @package Press_Sync\client\cli\command\validate
  * @since NEXT
  */
-class TaxonomyValidator extends AbstractValidator implements ValidatorInterface {
+class TaxonomySubcommand extends AbstractValidateSubcommand {
 	/**
-	 * TaxonomyValidator constructor.
+	 * Taxonomy constructor.
 	 *
 	 * @param array $args Associative args from the parent command.
 	 * @since NEXT
 	 */
 	public function __construct( $args ) {
-		$this->args = $args;
+		$this->args      = $args;
+		$this->validator = new TaxonomyValidator();
 	}
 	/**
 	 * Get validation data for the Taxonomy entity.
@@ -31,13 +30,12 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	public function validate() {
 		$this->check_multisite_params();
 
-		$taxonomy_data        = $this->get_source_data();
-		$remote_taxonomy_data = $this->get_destination_data();
+		$data = $this->validator->validate();
 
-		$this->output( $taxonomy_data, 'Local taxonomy data:' );
-		$this->output( $remote_taxonomy_data, 'Remote taxonomy data:' );
+		$this->output( $data['source'], 'Local taxonomy data:' );
+		$this->output( $data['destination'], 'Remote taxonomy data:' );
 
-		$this->output_comparison_statements( $taxonomy_data, $remote_taxonomy_data );
+		$this->output_comparison_statements( $data['source'], $data['destination'] );
 	}
 
 	/**
@@ -79,25 +77,5 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 		if ( $local_data['term_count_by_taxonomy'] !== $remote_data['term_count_by_taxonomy'] ) {
 			\WP_CLI::warning( 'Discrepancy in taxonomy term counts.' );
 		}
-	}
-
-	/**
-	 * Get taxonomy data from the local WordPress installation.
-	 *
-	 * @return array
-	 * @since NEXT
-	 */
-	public function get_source_data() {
-		return ( new Taxonomy() )->get_count();
-	}
-
-	/**
-	 * Get taxonomy data from the remote WordPress installation.
-	 *
-	 * @return array
-	 * @since NEXT
-	 */
-	public function get_destination_data() {
-		return API::get_remote_data( 'validation/taxonomy/count' );
 	}
 }

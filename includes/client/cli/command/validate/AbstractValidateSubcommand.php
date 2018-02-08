@@ -1,20 +1,32 @@
 <?php
 namespace Press_Sync\client\cli\command\validate;
 
+use Press_Sync\validation\ValidatorInterface;
 use WP_CLI\ExitException;
 
 /**
- * Class AbstractValidator
+ * Class AbstractValidateSubcommand
  *
  * @package Press_Sync\client\cli\command\validate
  */
-class AbstractValidator {
+abstract class AbstractValidateSubcommand {
 	/**
-	 * Associatve args from the parent CLI command.
+	 * Associative args from the parent CLI command.
 	 *
 	 * @var array
 	 */
 	public $args;
+
+	/**
+	 * @var ValidatorInterface
+	 */
+	public $validator;
+
+	/**
+	 *
+	 */
+	abstract public function validate();
+
 	/**
 	 * Check for valid parameters for targeting sites in multisite.
 	 *

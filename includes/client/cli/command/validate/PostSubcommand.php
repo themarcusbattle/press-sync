@@ -1,26 +1,25 @@
 <?php
 namespace Press_Sync\client\cli\command\validate;
 
-use Press_Sync\API;
-use Press_Sync\validation\Post;
-use Press_Sync\validation\ValidatorInterface;
+use Press_Sync\validators\PostValidator;
 use WP_CLI\ExitException;
 
 /**
- * Class PostValidator
+ * Class PostSubcommand
  *
  * @package Press_Sync\client\cli\command\validate
  * @since NEXT
  */
-class PostValidator extends AbstractValidator implements ValidatorInterface {
+class PostSubcommand extends AbstractValidateSubcommand {
 	/**
-	 * PostValidator constructor.
+	 * PostValidateSubcommand constructor.
 	 *
 	 * @param array $args Associative args from the parent CLI command.
 	 * @since NEXT
 	 */
 	public function __construct( $args ) {
-		$this->args = $args;
+		$this->args      = $args;
+		$this->validator = new PostValidator();
 	}
 
 	/**
@@ -32,8 +31,10 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	public function validate() {
 		$this->check_multisite_params();
 
-		$post_count_data        = $this->prepare_output( $this->get_source_data() );
-		$remote_post_count_data = $this->prepare_output( $this->get_destination_data() );
+		$data = $this->validator->validate();
+
+		$post_count_data        = $this->prepare_output( $data['source'] );
+		$remote_post_count_data = $this->prepare_output( $data['destination'] );
 
 		$this->output( $post_count_data, 'Local post counts by type and status:' );
 		$this->output( $remote_post_count_data, 'Remote post counts by type and status:' );
@@ -42,27 +43,6 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 			\WP_CLI::warning( 'Discrepancy in post counts.' );
 		}
 	}
-
-	/**
-	 * Get data from the local WordPress installation.
-	 *
-	 * @return array
-	 * @since NEXT
-	 */
-	public function get_source_data() {
-		return ( new Post() )->get_count();
-	}
-
-	/**
-	 * Get data from the remote WordPress installation.
-	 *
-	 * @return array
-	 * @since NEXT
-	 */
-	public function get_destination_data() {
-		return API::get_remote_data( 'validation/post/count' );
-	}
-
 
 	/**
 	 * Output data to the CLI.
