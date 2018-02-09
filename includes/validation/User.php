@@ -49,7 +49,7 @@ class User {
 
 		for ( $count; $count--; ) {
 			$offset = rand(0, count( $users ) ) - 1;
-			$samples[] = array_slice( $users, $offset, 1 );
+			$samples[] = current( array_slice( $users, $offset, 1 ) );
 		}
 
 		return $samples;
