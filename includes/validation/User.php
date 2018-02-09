@@ -13,6 +13,18 @@ class User {
 	 */
 	protected $sample_count = 0;
 
+	public function __construct( $args = array() ) {
+		$args = wp_parse_args( $args, array(
+			'sample_count' => 5,
+		) );
+
+		foreach ( $args as $key => $value ) {
+			if ( isset( $this->{$key} ) ) {
+				$this->{$key} = $value;
+			}
+		}
+	}
+
 	/**
 	 * Get the number of users in the WordPress install.
 	 */
@@ -30,32 +42,16 @@ class User {
 	 * @since NEXT
 	 * @return array
 	 */
-	public function get_samples() {
-		$count = absint( $this->sample_count ) ?: 5;
+	public function get_samples( $args = array() ) {
+		$count   = absint( $this->sample_count ) ?: 5;
+		$users   = get_users();
+		$samples = array();
 
-		/**
-		 * Sample data for samples.
-		 *
-		array(
-			'blah' => array(
-				'ID'         => 453,
-				'user_login' => 'blah',
-				// ... other wp_users data
-				'meta_input' => array(
-					'admin_color' => 'fresh',
-					// ... other wp_usermeta data
-				),
-				'additional_data' => array(
-					'user_role' => 'Editor',
-					'authored'  => array(
-						'post'         => 52,
-						'mtvn_sponsor' => 3,
-						'page'         => 1,
-					),
-				),
-			),
-		),
-		// ...
-		*/
+		for ( $count; $count--; ) {
+			$offset = rand(0, count( $users ) ) - 1;
+			$samples[] = array_slice( $users, $offset, 1 );
+		}
+
+		return $samples;
 	}
 }

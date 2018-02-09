@@ -1317,12 +1317,13 @@ SQL;
 	 * @param  string $request The requested datapoint.
 	 * @return array
 	 */
-	public static function get_remote_data( $request ) {
-		$url = API::get_remote_url( get_option( 'ps_remote_domain' ), $request, array(
+	public static function get_remote_data( $request, $args = array() ) {
+		$args = wp_parse_args( $args, array(
 			'press_sync_key' => get_option( 'ps_remote_key')
 		) );
 
-		$response = API::get_remote_response( $url );
+		$url      = API::get_remote_url( get_option( 'ps_remote_domain' ), $request, $args );
+		$response = API::get_remote_response( $url, $args );
 
 		if ( empty( $response['body'] ) ) {
 			return array();

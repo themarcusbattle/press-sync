@@ -17,7 +17,10 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	 */
 	public function __construct( $args ) {
 		$this->args      = $args;
-		$this->validator = new UserValidator();
+		$this->validator = new UserValidator( array(
+			'good' => '%G',
+			'bad'  => '%R',
+		) );
 	}
 
 	/**
@@ -29,10 +32,18 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	public function validate() {
 		$this->check_multisite_params();
 
-		$data = $this->validator->validate();
+		$data = ( $this->validator )( array(
+			'sample_count' => 1,
+		) );
 
-		$this->output( $data['source'], 'Local User Counts' );
-		$this->output( $data['destination'], 'Remote User Counts' );
+		foreach ( $data['counts']['destination'] as $role => $count ) {
+			$data['counts']['destination'][ $role ] = \WP_CLI::colorize( $data['counts']['processed'][ $role ] . '%n' );
+		}
+
+		$this->output( $data['counts']['source'], 'Local User Counts' );
+		$this->output( $data['counts']['destination'], 'Remote User Counts' );
+
+		echo '<pre>', print_r($data['samples']['source'], true); die;
 	}
 
 	/**
@@ -47,6 +58,10 @@ class UserSubcommand extends AbstractValidateSubcommand {
 			\WP_CLI::line( $message );
 		}
 
-		\WP_CLI\Utils\format_items( 'table', array( $data ), array_keys( $data ) );
+		$format = 'table';
+		$fields = array_keys( $data );
+		$assoc_args = compact( 'format', 'fields' );
+		$formatter = new \WP_CLI\Formatter( $assoc_args );
+		$formatter->display_items( array( $data ), true );
 	}
 }
