@@ -32,9 +32,7 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	public function validate() {
 		$this->check_multisite_params();
 
-		$data = ( $this->validator )( array(
-			'sample_count' => 1,
-		) );
+		$data = ( $this->validator )();
 
 		foreach ( $data['counts']['destination'] as $role => $count ) {
 			$data['counts']['destination'][ $role ] = \WP_CLI::colorize( $data['counts']['processed'][ $role ] . '%n' );
@@ -43,7 +41,8 @@ class UserSubcommand extends AbstractValidateSubcommand {
 		$this->output( $data['counts']['source'], 'Local User Counts' );
 		$this->output( $data['counts']['destination'], 'Remote User Counts' );
 
-		echo '<pre>', print_r($data['samples']['source'], true); die;
+		// @TODO output sample data.
+		// echo '<pre>', print_r($data['samples']['destination'], true); die("G");
 	}
 
 	/**
