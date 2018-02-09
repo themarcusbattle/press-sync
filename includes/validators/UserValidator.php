@@ -22,7 +22,8 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 	public function __invoke( $runtime_args = array() ) {
 		$this->runtime_args = $runtime_args;
 		parent::validate();
-		$this->validate();
+		$this->get_source_data();
+		$this->get_destination_data();
 		$this->compare_data();
 
 		return array(
@@ -32,7 +33,8 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 				'processed'   => $this->processed_data['counts'],
 			),
 			'samples' => array(
-				'source' => $this->source_data['samples'],
+				'source'      => $this->source_data['samples'],
+				'destination' => $this->destination_data['samples'],
 			),
 		);
 	}
@@ -55,7 +57,20 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 	 */
 	public function get_destination_data() {
 		$this->destination_data['counts'] = API::get_remote_data( 'validation/user/count' );
-		$this->destination_data['counts'] = API::get_remote_data( 'validation/user/sample', array( 'runtime_args' => $this->runtime_args ) );
+
+		$args = array(
+			'source_users' => array(),
+		);
+
+		foreach ( $this->source_data['samples'] as $user ) {
+			$args['source_users'][] = array(
+				'ID'         => $user->ID,
+				'user_login' => $user->data->user_login,
+				'user_email' => $user->data->user_email,
+			);
+		}
+
+		$this->destination_data['samples'] = API::get_remote_data( 'validation/user/samples', $args );
 	}
 
 	private function compare_data() {
