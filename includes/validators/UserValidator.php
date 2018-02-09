@@ -14,62 +14,61 @@ use Press_Sync\validation\User;
  * User validation class to get and compare results.
  */
 class UserValidator extends AbstractValidator implements ValidatorInterface {
-	protected $processed_data   = array();
-	protected $source_data      = array();
-	protected $destination_data = array();
-	private $runtime_args       = array();
+	protected $source_data = array();
 
-	public function validate( $runtime_args = array() ) {
-		$this->runtime_args = $runtime_args;
-		$this->get_source_data();
-		$this->get_destination_data();
-		$this->compare_counts();
-		// $this->compare_samples
-
-		return array(
-			'counts' => array(
-				'source'      => $this->source_data['counts'],
-				'destination' => $this->destination_data['counts'],
-				'processed'   => $this->processed_data['counts'],
-			),
-			'samples' => array(
-				'source'      => $this->source_data['samples'],
-				'destination' => $this->destination_data['samples'],
-			),
+	/**
+	 * Return the validation data.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
+	public function validate() {
+		$return = array(
+			'source'      => $this->get_source_data(),
+			'destination' => $this->get_destination_data(),
+			'comparison'  => array(),
 		);
+
+		$return['comparison'] = $this->compare_data( $return['source'], $return['destination'] );
+		return $return;
 	}
 
 	/**
 	 * Get data from the source site.
 	 *
 	 * @since NEXT
+	 * @return array
 	 */
 	public function get_source_data() {
-		$source = new User( $this->runtime_args );
-		$this->source_data['counts']  = $source->get_count();
-		$this->source_data['samples'] = $source->get_samples();
+		$this->source_data = ( new User( $this->args ) )->get_data();
+		return $this->source_data;
 	}
 
 	/**
 	 * Get data from the destination site.
 	 *
 	 * @since NEXT
+	 * @return array
 	 */
 	public function get_destination_data() {
-		$this->get_destination_counts();
-		$this->get_destination_samples();
+		return array(
+			'count'  => API::get_remote_data( 'validation/user/count' ),
+			'sample' => $this->get_destination_samples(),
+		);
 	}
 
-	private function get_destination_counts() {
-		$this->destination_data['counts'] = API::get_remote_data( 'validation/user/count' );
-	}
-
+	/**
+	 * Get samples from the destination site based on source data.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
 	private function get_destination_samples() {
 		$args = array(
 			'source_users' => array(),
 		);
 
-		foreach ( $this->source_data['samples'] as $user ) {
+		foreach ( $this->source_data['sample'] as $user ) {
 			$args['source_users'][] = array(
 				'ID'         => $user->ID,
 				'user_login' => $user->data->user_login,
@@ -77,37 +76,44 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 			);
 		}
 
-		$this->destination_data['samples'] = API::get_remote_data( 'validation/user/samples', $args );
+		return API::get_remote_data( 'validation/user/samples', $args );
+	}
+
+	/**
+	 * Compares source and destination data.
+	 *
+	 * @since NEXT
+	 * @param  array $source      The source dataset.
+	 * @param  array $destination The destination dataset.
+	 * @return array
+	 */
+	public function compare_data( array $source, array $destination ) {
+		return array(
+			'count' => $this->compare_counts( $source['count'], $destination['count'] ),
+		);
 	}
 
 	/**
 	 * Compare counts between source and destination.
 	 *
 	 * @since NEXT
+	 * @param  array $source      Source counts.
+	 * @param  array $destination Destination counts.
+	 * @return array
 	 */
-	private function compare_counts() {
-		$this->processed_data['count'] = array();
+	private function compare_counts( $source, $destination ) {
+		$comparison = array();
 
-		foreach ( $this->source_data['counts'] as $role => $src_count ) {
+		foreach ( $source as $role => $src_count ) {
 			$dest_count = 0;
 
-			if ( isset( $this->destination_data['counts'][ $role ] ) ) {
-				$dest_count = $this->destination_data['counts'][ $role ];
+			if ( isset( $destination[ $role ] ) ) {
+				$dest_count = $destination[ $role ];
 			}
 
-			$this->processed_data['counts'][ $role ] = $this->diff_counts( $src_count, $dest_count );
-		}
-	}
-
-	private function diff_counts( $count, $compare ) {
-		$pre  = $this->runtime_args['pre_match'];
-		$post = $this->runtime_args['post_match'];
-
-		if ( $count !== $compare ) {
-			$pre = $this->runtime_args['pre_mismatch'];
-			$post = $this->runtime_args['post_mismatch'];
+			$comparison[ $role ] = $this->apply_diff_to_values( $src_count, $dest_count );
 		}
 
-		return "{$pre}{$compare}{$post}";
+		return $comparison;
 	}
 }
