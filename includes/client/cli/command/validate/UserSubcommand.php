@@ -17,7 +17,10 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	 */
 	public function __construct( $args ) {
 		$this->args      = $args;
-		$this->validator = new UserValidator();
+		$this->validator = new UserValidator( array(
+			'sample_count' => 2,
+			'format'       => $this->get_data_output_format(),
+		) );
 	}
 
 	/**
@@ -29,24 +32,18 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	public function validate() {
 		$this->check_multisite_params();
 
-		$data = $this->validator->validate( array(
-			'sample_count'  => 2,
-			'pre_match'     => '%G',
-			'post_match'    => '%n',
-			'pre_mismatch'  => '%R',
-			'post_mismatch' => '%n',
-		) );
+		$data = $this->validator->validate();
 
-		foreach ( $data['counts']['destination'] as $role => $count ) {
-			$data['counts']['destination'][ $role ] = \WP_CLI::colorize( $data['counts']['processed'][ $role ] );
+		foreach ( $data['destination']['count'] as $role => $count ) {
+			$data['destination']['count'][ $role ] = \WP_CLI::colorize( $data['comparison']['count'][ $role ] );
 		}
 
-		$this->output( $data['counts']['source'], 'Local User Counts' );
-		$this->output( $data['counts']['destination'], 'Remote User Counts' );
+		$this->output( $data['source']['count'], 'Local User Counts' );
+		$this->output( $data['destination']['count'], 'Remote User Counts' );
 
 		// @TODO output sample data.
 		// echo '<pre>', print_r($data['samples']['destination'], true); die("G");
-		echo '<pre>', print_r($data['samples'], true); die;
+		#echo '<pre>', print_r($data['samples'], true); die;
 	}
 
 	/**
