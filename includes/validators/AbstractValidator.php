@@ -7,36 +7,82 @@ namespace Press_Sync\validators;
  * @package Press_Sync\validators
  */
 abstract class AbstractValidator {
-	protected $source_data;
-	protected $destination_data;
+	/**
+	 * The arguments used to create this class.
+	 *
+	 * @since NEXT
+	 * @var array
+	 */
+	protected $args = array();
 
-	public function __construct( $args = array() ) {
-		foreach ( $args as $key => $value ) {
-			$this->{$key} = $value;
+	/**
+	 * Gets all validation and comparison data.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
+	abstract public function validate();
+
+	/**
+	 * Setup the validator.
+	 *
+	 * @since NEXT
+	 * @param array $args {
+	 *     Array of arguments for the validator.
+	 *
+	 *     @type array format       Formatting characters to wrap mis/matches for display.
+	 * }
+	 *
+	 * @throws \InvalidArgumentException When a required argument is missing.
+	 */
+	public function __construct( $args ) {
+		$this->args = $args;
+
+		if ( ! isset( $args['format'] ) ) {
+			throw new \InvalidArgumentException( __( UserValidator::class . ' missing required argument "format"!', 'press-sync' ) );
 		}
 	}
 
-	public function validate() {
-		$this->get_source_data();
-		$this->get_destination_data();
-	}
-
 	/**
-	 * Compare two items to see if they are the same.
+	 * Magic getter.
 	 *
-	 * @param $item1
-	 * @param $item2
-	 *
-	 * @return bool
 	 * @since NEXT
+	 * @param  string $key The property key to grab.
+	 * @return mixed
 	 */
-	public function compare( $item1, $item2 ) {
-		return $item1 === $item2;
-	}
-
 	public function __get( $key ) {
 		if ( isset( $this->key ) ) {
 			return $this->key;
 		}
+	}
+
+	/**
+	 * Compares source and destination data.
+	 *
+	 * @since NEXT
+	 * @param  array $source      The source dataset.
+	 * @param  array $destination The destination dataset.
+	 * @return array
+	 */
+	abstract public function compare_data( array $source, array $destination );
+
+	/**
+	 * Determine if two values are the same and wrap them in appropriate formatting.
+	 *
+	 * @since NEXT
+	 * @param  mixed    $count   The first count to compare.
+	 * @param  mixed    $compare The count to compare against the first.
+	 * @return string
+	 */
+	protected function apply_diff_to_values( $count, $compare ) {
+		$pre  = $this->args['format']['match_open_wrap'];
+		$post = $this->args['format']['match_close_wrap'];
+
+		if ( $count !== $compare ) {
+			$pre  = $this->args['format']['mismatch_open_wrap'];
+			$post = $this->args['format']['mismatch_close_wrap'];
+		}
+
+		return "{$pre}{$compare}{$post}";
 	}
 }
