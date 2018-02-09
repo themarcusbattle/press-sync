@@ -21,9 +21,7 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 
 	public function __invoke( $runtime_args = array() ) {
 		$this->runtime_args = $runtime_args;
-		parent::validate();
-		$this->get_source_data();
-		$this->get_destination_data();
+        $this->validate();
 		$this->compare_data();
 
 		return array(

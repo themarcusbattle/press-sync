@@ -22,6 +22,10 @@ class User extends AbstractRoute {
 		$this->routes['count']    = array(
 			'callback' => array( $this->data_source, 'get_count' ),
 		);
+
+        $this->routes['samples'] = array(
+            'callback' => array( $this->data_source, 'get_samples' ),
+        );
 	}
 
 	/**
