@@ -3,6 +3,7 @@ namespace Press_Sync\client\cli\command\validate;
 
 use Press_Sync\validators\PostValidator;
 use WP_CLI\ExitException;
+use WP_CLI\Formatter;
 
 /**
  * Class PostSubcommand
@@ -19,7 +20,9 @@ class PostSubcommand extends AbstractValidateSubcommand {
 	 */
 	public function __construct( $args ) {
 		$this->args      = $args;
-		$this->validator = new PostValidator();
+		$this->validator = new PostValidator( array(
+			'format' => $this->get_data_output_format(),
+		) );
 	}
 
 	/**
@@ -32,32 +35,30 @@ class PostSubcommand extends AbstractValidateSubcommand {
 		$this->check_multisite_params();
 
 		$data = $this->validator->validate();
+		$data = $this->prepare_colorized_output( $data );
 
-		$post_count_data        = $this->prepare_output( $data['source'] );
-		$remote_post_count_data = $this->prepare_output( $data['destination'] );
-
-		$this->output( $post_count_data, 'Local post counts by type and status:' );
-		$this->output( $remote_post_count_data, 'Remote post counts by type and status:' );
-
-		if ( ! $this->validator->compare( $post_count_data, $remote_post_count_data ) ) {
-			\WP_CLI::warning( 'Discrepancy in post counts.' );
-		}
+		$this->output( $this->prepare_output( $data['source']['count'] ), 'Local post counts by type and status:' );
+		$this->output( $this->prepare_output( $data['destination']['count'] ), 'Remote post counts by type and status:' );
 	}
 
 	/**
 	 * Output data to the CLI.
 	 *
-	 * @param array  $post_data Array of post data.
-	 * @param string $message   Optional message to print before the data table.
+	 * @param array  $data    Array of post data.
+	 * @param string $message Optional message to print before the data table.
 	 *
 	 * @since NEXT
 	 */
-	private function output( $post_data, $message = '' ) {
+	private function output( $data, $message = '' ) {
 		if ( $message ) {
 			\WP_CLI::line( $message );
 		}
 
-		\WP_CLI\Utils\format_items( 'table', $post_data, array_keys( $post_data[0] ) );
+		$format     = 'table';
+		$fields     = array_keys( $data[0] );
+		$assoc_args = compact( 'format', 'fields' );
+		$formatter  = new Formatter( $assoc_args );
+		$formatter->display_items( $data, true );
 	}
 
 	/**
@@ -83,5 +84,23 @@ class PostSubcommand extends AbstractValidateSubcommand {
 		}
 
 		return $table_values;
+	}
+
+	/**
+	 * Prepare colorized output of value differences on destination site.
+	 *
+	 * @param array $data Data to colorize.
+	 *
+	 * @return array
+	 * @since NEXT
+	 */
+	private function prepare_colorized_output( $data ) {
+		foreach ( $data['destination']['count'] as $post_type => $status ) {
+			foreach ( $status as $status_name => $count ) {
+				$data['destination']['count'][ $post_type ][ $status_name ] = \WP_CLI::colorize( $data['comparison']['count'][ $post_type ][ $status_name ] );
+			}
+		}
+
+		return $data;
 	}
 }

@@ -39,7 +39,7 @@ abstract class AbstractValidator {
 		$this->args = $args;
 
 		if ( ! isset( $args['format'] ) ) {
-			throw new \InvalidArgumentException( __( UserValidator::class . ' missing required argument "format"!', 'press-sync' ) );
+			throw new \InvalidArgumentException( __( get_called_class() . ' missing required argument "format"!', 'press-sync' ) );
 		}
 	}
 
@@ -75,12 +75,13 @@ abstract class AbstractValidator {
 	 * @return string
 	 */
 	protected function apply_diff_to_values( $count, $compare ) {
-		$pre  = $this->args['format']['match_open_wrap'];
-		$post = $this->args['format']['match_close_wrap'];
+		$format = $this->args['format'];
+		$pre    = $format['match_open_wrap'];
+		$post   = $format['match_close_wrap'];
 
 		if ( $count !== $compare ) {
-			$pre  = $this->args['format']['mismatch_open_wrap'];
-			$post = $this->args['format']['mismatch_close_wrap'];
+			$pre  = $format['mismatch_open_wrap'];
+			$post = $format['mismatch_close_wrap'];
 		}
 
 		return "{$pre}{$compare}{$post}";
