@@ -605,11 +605,13 @@ class Press_Sync {
 		$media['meta_input'] = get_post_meta( $thumbnail_id );
 
 		// Maybe filter out wp built-in meta.
-		if ( ! get_option( 'ps_skip_assets' ) ) {
-			foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
-				if ( 0 === strpos( $meta_key, '_wp_' ) ) {
-					unset( $media['meta_input'][$meta_key] );
-				}
+		foreach ( $media['meta_input'] as $meta_key => $meta_value ) {
+			if ( ! get_option( 'ps_skip_assets' ) && 0 === strpos( $meta_key, '_wp_' ) ) {
+				unset( $media['meta_input'][$meta_key] );
+			}
+
+			if ( is_array( $meta_value ) ) {
+				$media['meta_input'][$meta_key] = serialize( $meta_value );
 			}
 		}
 
