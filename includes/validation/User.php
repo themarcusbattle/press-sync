@@ -42,7 +42,7 @@ class User {
 	 * @since NEXT
 	 * @return array
 	 */
-	public function get_samples( $request = null ) {
+	public function get_sample( $request = null ) {
 		if ( $request ) {
 			$source_users = $request->get_param( 'source_users' );
 			return $this->find_sample_matches( $source_users );
@@ -60,56 +60,56 @@ class User {
 	 *
 	 * @TODO This needs to be cleaned up!
 	 */
-    private function find_sample_matches( $samples ) {
-        $results = array();
-        $meta_key = 'press_sync_user_id';
+	private function find_sample_matches( $samples ) {
+		$results = array();
+		$meta_key = 'press_sync_user_id';
 
-        if ( is_multisite() ) {
-            global $blog_id;
-            $meta_key = "press_sync_{$blog_id}_user_id";
-        }
+		if ( is_multisite() ) {
+			global $blog_id;
+			$meta_key = "press_sync_{$blog_id}_user_id";
+		}
 
-        foreach ( $samples as $args ) {
-            // Strongest match is all three matching.
-            $user_args = array(
-                'meta_key'   => $meta_key,
-                'meta_value' => $args['ID'],
-                'login'      => $args['user_login'],
-                'user_email' => $args['user_email'],
-            );
+		foreach ( $samples as $args ) {
+			// Strongest match is all three matching.
+			$user_args = array(
+				'meta_key'   => $meta_key,
+				'meta_value' => $args['ID'],
+				'login'      => $args['user_login'],
+				'user_email' => $args['user_email'],
+			);
 
-            $user_args = array_filter( $user_args );
+			$user_args = array_filter( $user_args );
 
-            $query = new \WP_User_Query( $user_args );
-            $users = $query->get_results();
+			$query = new \WP_User_Query( $user_args );
+			$users = $query->get_results();
 
-            if ( ! $users ) {
-                unset( $user_args['meta_key'] );
-                unset( $user_args['meta_value'] );
-            }
+			if ( ! $users ) {
+				unset( $user_args['meta_key'] );
+				unset( $user_args['meta_value'] );
+			}
 
-            while ( empty( $users ) && count( $user_args ) ) {
-                $query = new \WP_User_Query( $user_args );
-                $users = $query->get_results();
+			while ( empty( $users ) && count( $user_args ) ) {
+				$query = new \WP_User_Query( $user_args );
+				$users = $query->get_results();
 
-                if ( empty( $users ) ) {
-                    array_shift( $user_args );
-                }
-            }
+				if ( empty( $users ) ) {
+					array_shift( $user_args );
+				}
+			}
 
-            if ( ! count( $users ) ) {
-                $user = [];
-            } else {
-                $user = (array) $users[0];
-            }
+			if ( ! count( $users ) ) {
+				$user = [];
+			} else {
+				$user = (array) $users[0];
+			}
 
-            $user['source_data']    = $args;
-            $user['matched_fields'] = $user_args;
-            $results[]              = $user;
-        }
+			$user['source_data']    = $args;
+			$user['matched_fields'] = $user_args;
+			$results[]              = $user;
+		}
 
-        return $results;
-    }
+		return $results;
+	}
 
 	/**
 	 * Gets local sample data.
@@ -128,5 +128,12 @@ class User {
 		}
 
 		return $samples;
+	}
+
+	public function get_data() {
+		return array(
+			'count' => $this->get_count(),
+			'sample' => $this->get_sample(),
+		);
 	}
 }
