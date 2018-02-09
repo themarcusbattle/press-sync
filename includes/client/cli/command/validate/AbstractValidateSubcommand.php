@@ -3,13 +3,14 @@ namespace Press_Sync\client\cli\command\validate;
 
 use Press_Sync\validation\ValidatorInterface;
 use WP_CLI\ExitException;
+use Press_Sync\validation\ValidationOutputInterface;
 
 /**
  * Class AbstractValidateSubcommand
  *
  * @package Press_Sync\client\cli\command\validate
  */
-abstract class AbstractValidateSubcommand {
+abstract class AbstractValidateSubcommand implements ValidationOutputInterface {
 	/**
 	 * Associative args from the parent CLI command.
 	 *
@@ -23,7 +24,9 @@ abstract class AbstractValidateSubcommand {
 	public $validator;
 
 	/**
+	 * Run the subcommand's validation.
 	 *
+	 * @since NEXT
 	 */
 	abstract public function validate();
 
@@ -44,5 +47,20 @@ abstract class AbstractValidateSubcommand {
 		} catch ( ExitException $e ) {
 			\WP_CLI::error( $e->getMessage() );
 		}
+	}
+
+	/**
+	 * Gets the output data formatting for CLI commands.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
+	public function get_data_output_format() {
+		return array(
+			'match_open_wrap'     => '%G',
+			'match_close_wrap'    => '%n',
+			'mismatch_open_wrap'  => '%R',
+			'mismatch_close_wrap' => '%n',
+		);
 	}
 }
