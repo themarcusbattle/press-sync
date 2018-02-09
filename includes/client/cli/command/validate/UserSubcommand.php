@@ -38,7 +38,7 @@ class UserSubcommand extends AbstractValidateSubcommand {
 		) );
 
 		foreach ( $data['counts']['destination'] as $role => $count ) {
-			$data['counts']['destination'][ $role ] = \WP_CLI::colorize( $data['counts']['processed'][ $role ] . '%n' );
+			$data['counts']['destination'][ $role ] = \WP_CLI::colorize( $data['counts']['processed'][ $role ] );
 		}
 
 		$this->output( $data['counts']['source'], 'Local User Counts' );
