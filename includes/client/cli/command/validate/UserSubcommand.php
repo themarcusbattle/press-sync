@@ -17,10 +17,7 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	 */
 	public function __construct( $args ) {
 		$this->args      = $args;
-		$this->validator = new UserValidator( array(
-			'good' => '%G',
-			'bad'  => '%R',
-		) );
+		$this->validator = new UserValidator();
 	}
 
 	/**
@@ -32,7 +29,13 @@ class UserSubcommand extends AbstractValidateSubcommand {
 	public function validate() {
 		$this->check_multisite_params();
 
-		$data = ( $this->validator )();
+		$data = $this->validator->validate( array(
+			'sample_count'  => 2,
+			'pre_match'     => '%G',
+			'post_match'    => '%n',
+			'pre_mismatch'  => '%R',
+			'post_mismatch' => '%n',
+		) );
 
 		foreach ( $data['counts']['destination'] as $role => $count ) {
 			$data['counts']['destination'][ $role ] = \WP_CLI::colorize( $data['counts']['processed'][ $role ] . '%n' );
@@ -43,6 +46,7 @@ class UserSubcommand extends AbstractValidateSubcommand {
 
 		// @TODO output sample data.
 		// echo '<pre>', print_r($data['samples']['destination'], true); die("G");
+		echo '<pre>', print_r($data['samples'], true); die;
 	}
 
 	/**

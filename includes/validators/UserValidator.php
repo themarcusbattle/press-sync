@@ -19,10 +19,12 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 	protected $destination_data = array();
 	private $runtime_args       = array();
 
-	public function __invoke( $runtime_args = array() ) {
+	public function validate( $runtime_args = array() ) {
 		$this->runtime_args = $runtime_args;
-        $this->validate();
-		$this->compare_data();
+		$this->get_source_data();
+		$this->get_destination_data();
+		$this->compare_counts();
+		// $this->compare_samples
 
 		return array(
 			'counts' => array(
@@ -54,8 +56,15 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 	 * @since NEXT
 	 */
 	public function get_destination_data() {
-		$this->destination_data['counts'] = API::get_remote_data( 'validation/user/count' );
+		$this->get_destination_counts();
+		$this->get_destination_samples();
+	}
 
+	private function get_destination_counts() {
+		$this->destination_data['counts'] = API::get_remote_data( 'validation/user/count' );
+	}
+
+	private function get_destination_samples() {
 		$args = array(
 			'source_users' => array(),
 		);
@@ -71,10 +80,11 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 		$this->destination_data['samples'] = API::get_remote_data( 'validation/user/samples', $args );
 	}
 
-	private function compare_data() {
-		$this->compare_counts();
-	}
-
+	/**
+	 * Compare counts between source and destination.
+	 *
+	 * @since NEXT
+	 */
 	private function compare_counts() {
 		$this->processed_data['count'] = array();
 
@@ -85,7 +95,19 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 				$dest_count = $this->destination_data['counts'][ $role ];
 			}
 
-			$this->processed_data['counts'][ $role ] = ( $src_count === $dest_count ? $this->good : $this->bad ) . "{$dest_count} ";
+			$this->processed_data['counts'][ $role ] = $this->diff_counts( $src_count, $dest_count );
 		}
+	}
+
+	private function diff_counts( $count, $compare ) {
+		$pre  = $this->runtime_args['pre_match'];
+		$post = $this->runtime_args['post_match'];
+
+		if ( $count !== $compare ) {
+			$pre = $this->runtime_args['pre_mismatch'];
+			$post = $this->runtime_args['post_mismatch'];
+		}
+
+		return "{$pre}{$compare}{$post}";
 	}
 }
