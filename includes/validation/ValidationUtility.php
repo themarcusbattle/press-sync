@@ -23,4 +23,6 @@ trait ValidationUtility {
 	protected function get_result_icon( $result ) {
 		return ( (bool) $result ) === true ? '✅' : '❌';
 	}
+
+	abstract public function get_output_format();
 }
