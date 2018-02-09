@@ -11,7 +11,7 @@ class User {
 	 * @since NEXT
 	 * @var int
 	 */
-	protected $sample_count = 0;
+	protected $sample_count = 5;
 
 	public function __construct( $args = array() ) {
 		$args = wp_parse_args( $args, array(
@@ -48,18 +48,18 @@ class User {
 			return $this->find_sample_matches( $source_users );
 		}
 
-		$count   = absint( $this->sample_count ) ?: 5;
-		$users   = get_users();
-		$samples = array();
-
-		for ( $count; $count--; ) {
-			$offset = rand(0, count( $users ) ) - 1;
-			$samples[] = current( array_slice( $users, $offset, 1 ) );
-		}
-
-		return $samples;
+		return $this->get_local_samples();
 	}
 
+	/**
+	 * Looks for matches for the given sample data.
+	 *
+	 * @since NEXT
+	 * @param  array $samples The array of sample data to find matches for.
+	 * @return array
+	 *
+	 * @TODO This needs to be cleaned up!
+	 */
     private function find_sample_matches( $samples ) {
         $results = array();
         $meta_key = 'press_sync_user_id';
@@ -110,4 +110,23 @@ class User {
 
         return $results;
     }
+
+	/**
+	 * Gets local sample data.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
+	public function get_local_samples() {
+		$count   = absint( $this->sample_count );
+		$users   = get_users();
+		$samples = array();
+
+		for ( $count; $count--; ) {
+			$offset    = rand(0, count( $users ) ) - 1;
+			$samples[] = current( array_slice( $users, $offset, 1 ) );
+		}
+
+		return $samples;
+	}
 }
