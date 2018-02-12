@@ -41,6 +41,10 @@ class PostSubcommand extends AbstractValidateSubcommand {
 		$this->output( $this->prepare_output( $data['source']['sample'] ) );
 		$this->output( $this->prepare_output( $data['destination']['sample'] ) );
 
+		if ( count( $data['source']['sample'] ) !== count( $data['destination']['sample'] ) ) {
+			\WP_CLI::warning( 'Destination sample missing posts from source.' );
+		}
+
 		$this->output( $this->prepare_output( $data['source']['count'] ), 'Local post counts by type and status:' );
 		$this->output( $this->prepare_output( $data['destination']['count'] ), 'Remote post counts by type and status:' );
 	}
