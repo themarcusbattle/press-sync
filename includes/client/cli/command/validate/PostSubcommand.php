@@ -38,6 +38,9 @@ class PostSubcommand extends AbstractValidateSubcommand {
 		$data = $this->validator->validate();
 		$data = $this->prepare_colorized_output( $data );
 
+		$this->output( $this->prepare_output( $data['source']['sample'] ) );
+		$this->output( $this->prepare_output( $data['destination']['sample'] ) );
+
 		$this->output( $this->prepare_output( $data['source']['count'] ), 'Local post counts by type and status:' );
 		$this->output( $this->prepare_output( $data['destination']['count'] ), 'Remote post counts by type and status:' );
 	}
