@@ -66,18 +66,18 @@ class TaxonomySubcommand extends AbstractValidateSubcommand {
 	 * @since NEXT
 	 */
 	private function output_comparison_statements( $local_data, $remote_data ) {
-		if ( $this->validator->compare( $local_data['unique_taxonomies'], $remote_data['unique_taxonomies'] )
-			&& $this->validator->compare( $local_data['term_count_by_taxonomy'], $remote_data['term_count_by_taxonomy'] ) ) {
+		if ( $local_data['unique_taxonomies'] === $remote_data['unique_taxonomies']
+			&& $local_data['term_count_by_taxonomy'] === $remote_data['term_count_by_taxonomy'] ) {
 			\WP_CLI::success( 'Taxonomies and term counts on remote domain are identical to the values printed above.' );
 
 			return;
 		}
 
-		if ( ! $this->validator->compare( $local_data['unique_taxonomies'], $remote_data['unique_taxonomies'] ) ) {
+		if ( $local_data['unique_taxonomies'] !== $remote_data['unique_taxonomies'] ) {
 			\WP_CLI::warning( 'Discrepancy in number of unique taxonomies.' );
 		}
 
-		if ( ! $this->validator->compare( $local_data['term_count_by_taxonomy'], $remote_data['term_count_by_taxonomy'] ) ) {
+		if ( $local_data['term_count_by_taxonomy'] !== $remote_data['term_count_by_taxonomy'] ) {
 			\WP_CLI::warning( 'Discrepancy in taxonomy term counts.' );
 		}
 	}
