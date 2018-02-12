@@ -52,5 +52,22 @@ class Post extends AbstractRoute {
 				],
 			],
 		] );
+
+		/**
+		 *
+		 */
+		register_rest_route( $this->namespace, "{$this->rest_base}/sample", [
+			'methods'             => [ 'GET' ],
+			'callback'            => array( $this->data_source, 'get_sample' ),
+			'permission_callback' => [ $this, 'validate_sync_key' ],
+			'args'                => [
+				'count' => [
+					'required' => false,
+				],
+				'press_sync_key' => [
+					'required' => true,
+				],
+			],
+		]);
 	}
 }

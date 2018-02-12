@@ -35,4 +35,16 @@ class Post implements CountInterface {
 
 		return $posts;
 	}
+
+	/**
+	 * @param int $number
+	 */
+	public function get_sample( \WP_REST_Request $request ) {
+		$query = new \WP_Query( array(
+			'post_type' => 'any',
+			'posts_per_page' => $request->get_param( 'count'  ),
+		) );
+
+		return $query->get_posts();
+	}
 }

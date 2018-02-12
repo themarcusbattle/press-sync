@@ -21,7 +21,8 @@ class PostSubcommand extends AbstractValidateSubcommand {
 	public function __construct( $args ) {
 		$this->args      = $args;
 		$this->validator = new PostValidator( array(
-			'format' => $this->get_data_output_format(),
+			'sample_count' => 5,
+			'format'       => $this->get_data_output_format(),
 		) );
 	}
 
