@@ -68,7 +68,13 @@ class Post implements CountInterface {
 	public function get_comparison_sample( array $ids ) {
 		$query = new \WP_Query( array(
 			'posts_per_page' => count( $ids ),
-			'post__in'       => $ids,
+			'meta_query'     => array(
+				array(
+					'key'     => 'press_sync_post_id',
+					'value'   => $ids,
+					'compare' => 'IN',
+				),
+			),
 		) );
 
 		$posts = $query->get_posts();

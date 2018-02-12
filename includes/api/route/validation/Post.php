@@ -61,14 +61,17 @@ class Post extends AbstractRoute {
 			'callback'            => array( $this, 'get_sample' ),
 			'permission_callback' => [ $this, 'validate_sync_key' ],
 			'args'                => [
-				'count' => [
+				'count'          => [
+					'required' => false,
+				],
+				'ids'            => [
 					'required' => false,
 				],
 				'press_sync_key' => [
 					'required' => true,
 				],
 			],
-		]);
+		] );
 	}
 
 	/**
