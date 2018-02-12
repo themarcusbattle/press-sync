@@ -16,7 +16,8 @@ class Post implements CountInterface {
 	 */
 	public function get_data() {
 		return array(
-			'count' => $this->get_count(),
+			'count'  => $this->get_count(),
+			'sample' => $this->get_sample(),
 		);
 	}
 
@@ -49,7 +50,41 @@ class Post implements CountInterface {
 		) );
 
 		$posts = $query->get_posts();
-		$data  = array();
+
+		wp_reset_postdata();
+
+		return $this->format_sample_data( $posts );
+	}
+
+	/**
+	 * Get a collection of posts to use for comparison against a sample.
+	 *
+	 * @since NEXT
+	 *
+	 * @param array $ids Array of post IDs.
+	 *
+	 * @return array
+	 */
+	public function get_comparison_sample( array $ids ) {
+		$query = new \WP_Query( array(
+			'posts_per_page' => count( $ids ),
+			'post__in'       => $ids,
+		) );
+
+		$posts = $query->get_posts();
+
+		wp_reset_postdata();
+
+		return $this->format_sample_data( $posts );
+	}
+
+	/**
+	 * @param $posts
+	 *
+	 * @return array
+	 */
+	public function format_sample_data( $posts ) {
+		$data = array();
 
 		foreach ( $posts as $post ) {
 			$author = get_userdata( $post->post_author );

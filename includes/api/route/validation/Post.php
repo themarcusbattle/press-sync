@@ -79,6 +79,16 @@ class Post extends AbstractRoute {
 	public function get_sample( \WP_REST_Request $request ) {
 		$count = $request->get_param( 'count' );
 
-		return $this->data_source->get_sample( $count );
+		if ( $count ) {
+			return $this->data_source->get_sample( $count );
+		}
+
+		$ids = $request->get_param( 'ids' );
+
+		if ( $ids ) {
+			return $this->data_source->get_comparison_sample( $ids );
+		}
+
+		return [];
 	}
 }

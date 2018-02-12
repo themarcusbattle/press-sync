@@ -58,8 +58,21 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 */
 	public function get_destination_data() {
 		return array(
-			'count' => API::get_remote_data( 'validation/post/count' ),
+			'count'  => API::get_remote_data( 'validation/post/count' ),
+			'sample' => API::get_remote_data(
+				'validation/post/sample',
+				array( 'ids' => $this->get_source_sample_ids() ) ),
 		);
+	}
+
+	private function get_source_sample_ids() {
+		$ids = array();
+
+		foreach ( $this->source_data['sample'] as $post ) {
+			$ids[] = $post['ID'];
+		}
+
+		return $ids;
 	}
 
 	/**
