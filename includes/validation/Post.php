@@ -16,8 +16,9 @@ class Post implements CountInterface {
 	 */
 	public function get_data() {
 		return array(
-			'count'  => $this->get_count(),
-			'sample' => $this->get_sample(),
+			'count'      => $this->get_count(),
+			'sample'     => $this->get_sample_posts_data(),
+			'sample_tax' => $this->get_sample_post_terms(),
 		);
 	}
 
@@ -37,12 +38,7 @@ class Post implements CountInterface {
 		return $posts;
 	}
 
-	/**
-	 * Get a sample number of posts.
-	 *
-	 * @param int $count
-	 */
-	public function get_sample( $count = 5 ) {
+	private function get_random_posts( $count = 5 ) {
 		$query = new \WP_Query( array(
 			'post_type'      => 'any',
 			'posts_per_page' => $count ?? 5,
@@ -53,7 +49,16 @@ class Post implements CountInterface {
 
 		wp_reset_postdata();
 
-		return $this->format_sample_data( $posts );
+		return $posts;
+	}
+
+	/**
+	 * Get a sample number of posts.
+	 *
+	 * @param int $count
+	 */
+	public function get_sample_posts_data( $count = 5 ) {
+		return $this->format_sample_post_data( $this->get_random_posts( $count ) );
 	}
 
 	/**
@@ -65,7 +70,7 @@ class Post implements CountInterface {
 	 *
 	 * @return array
 	 */
-	public function get_comparison_sample( array $ids ) {
+	public function get_comparison_posts( array $ids ) {
 		$query = new \WP_Query( array(
 			'posts_per_page' => count( $ids ),
 			'meta_query'     => array(
@@ -81,7 +86,30 @@ class Post implements CountInterface {
 
 		wp_reset_postdata();
 
-		return $this->format_sample_data( $posts );
+		return $this->format_sample_post_data( $posts );
+	}
+
+	/**
+	 * Get the taxonomy term assignments for a random sample of posts.
+	 *
+	 * @param int $count Number of posts to retrieve.
+	 *
+	 * @return array
+	 */
+	public function get_sample_terms_data( $count = 5 ) {
+		return $this->format_sample_post_terms( $this->get_random_posts( $count ) );
+	}
+
+	/**
+	 * Compare the taxonomy term assignments for a set of posts.
+	 *
+	 * @param array $ids Array of post IDs.
+	 *
+	 * @return array
+	 */
+	public function get_comparison_post_terms( $ids ) {
+		// @TODO Implement this method.
+		return [];
 	}
 
 	/**
@@ -89,7 +117,7 @@ class Post implements CountInterface {
 	 *
 	 * @return array
 	 */
-	public function format_sample_data( $posts ) {
+	public function format_sample_post_data( $posts ) {
 		$data = array();
 
 		foreach ( $posts as $post ) {
@@ -104,5 +132,48 @@ class Post implements CountInterface {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * @param array $posts
+	 */
+	public function format_sample_post_terms( array $posts ) {
+		$post_terms = array();
+
+		foreach ( $posts as $key => $post ) {
+			$terms = array(
+				'ID'    => $post->ID,
+				'terms' => $this->get_post_terms( $post->ID ),
+			);
+
+			$ps_id = get_post_meta( $post->ID, 'press_sync_post_id' );
+
+			if ( $ps_id ) {
+				$terms['press_sync_post_id'] = $ps_id[0];
+			}
+
+			$post_terms[] = $terms;
+		}
+
+		return $post_terms;
+	}
+
+	/**
+	 * @param $post_id
+	 *
+	 * @return array
+	 */
+	private function get_post_terms( $post_id ) {
+		$post_terms = array();
+
+		foreach ( get_taxonomies() as $taxonomy ) {
+			$terms = wp_get_post_terms( $post_id, $taxonomy, array( 'fields' => 'slugs' ) );
+
+			if ( $terms ) {
+				$post_terms[ $taxonomy ] = $terms;
+			}
+		}
+
+		return $post_terms;
 	}
 }

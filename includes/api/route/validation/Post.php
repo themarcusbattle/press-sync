@@ -61,6 +61,9 @@ class Post extends AbstractRoute {
 			'callback'            => array( $this, 'get_sample' ),
 			'permission_callback' => [ $this, 'validate_sync_key' ],
 			'args'                => [
+				'type'           => [
+					'required' => true,
+				],
 				'count'          => [
 					'required' => false,
 				],
@@ -80,18 +83,40 @@ class Post extends AbstractRoute {
 	 * @return array
 	 */
 	public function get_sample( \WP_REST_Request $request ) {
-		$count = $request->get_param( 'count' );
+		$params = array(
+			'count' => $request->get_param( 'count' ),
+			'ids'   => $request->get_param( 'ids' ),
+			'type'  => $request->get_param( 'type' ),
+		);
 
-		if ( $count ) {
-			return $this->data_source->get_sample( $count );
+		$type = $this->get_sample_method( $request->get_route() );
+
+		if ( $params['count'] ) {
+			$callback = "get_sample_{$params['type']}_data";
+			return $this->data_source->{$callback}( $params['count'] );
 		}
 
-		$ids = $request->get_param( 'ids' );
-
-		if ( $ids ) {
-			return $this->data_source->get_comparison_sample( $ids );
+		if ( $params['ids'] ) {
+			$callback = "get_comparison_{$params['type']}";
+			return $this->data_source->{$callback}( $params['ids'] );
 		}
 
 		return [];
+	}
+
+	/**
+	 * @param $route
+	 *
+	 * @return string
+	 */
+	private function get_sample_method( $route ) {
+		switch ( $route ) {
+			case '/press-sync/v1/validation/post/sample':
+				return 'posts';
+			case '/press-sync/v1/validation/post/terms':
+				return 'post_terms';
+			default:
+				return '';
+		}
 	}
 }
