@@ -103,20 +103,4 @@ class Post extends AbstractRoute {
 
 		return [];
 	}
-
-	/**
-	 * @param $route
-	 *
-	 * @return string
-	 */
-	private function get_sample_method( $route ) {
-		switch ( $route ) {
-			case '/press-sync/v1/validation/post/sample':
-				return 'posts';
-			case '/press-sync/v1/validation/post/terms':
-				return 'post_terms';
-			default:
-				return '';
-		}
-	}
 }
