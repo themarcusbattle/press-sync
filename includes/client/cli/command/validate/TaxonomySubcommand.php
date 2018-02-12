@@ -19,7 +19,9 @@ class TaxonomySubcommand extends AbstractValidateSubcommand {
 	 */
 	public function __construct( $args ) {
 		$this->args      = $args;
-		$this->validator = new TaxonomyValidator();
+		$this->validator = new TaxonomyValidator( array(
+			'format' => $this->get_data_output_format(),
+		) );
 	}
 	/**
 	 * Get validation data for the Taxonomy entity.
