@@ -5,7 +5,7 @@ namespace Press_Sync\validation;
  * Class Post
  *
  * @package Press_Sync\validation
- * @since NEXT
+ * @since   NEXT
  */
 class Post implements CountInterface {
 	/**
@@ -37,14 +37,31 @@ class Post implements CountInterface {
 	}
 
 	/**
-	 * @param int $number
+	 * Get a sample number of posts.
+	 *
+	 * @param int $count
 	 */
-	public function get_sample( \WP_REST_Request $request ) {
+	public function get_sample( $count = 5 ) {
 		$query = new \WP_Query( array(
-			'post_type' => 'any',
-			'posts_per_page' => $request->get_param( 'count'  ),
+			'post_type'      => 'any',
+			'posts_per_page' => $count ?? 5,
+			'orderby'        => 'rand', // @codingStandardsIgnoreLine
 		) );
 
-		return $query->get_posts();
+		$posts = $query->get_posts();
+		$data  = array();
+
+		foreach ( $posts as $post ) {
+			$author = get_userdata( $post->post_author );
+			$data[] = array(
+				'ID'      => $post->ID,
+				'type'    => $post->post_type,
+				'author'  => $author->user_login,
+				'content' => $post->post_content,
+				'meta'    => get_post_meta( $post->ID ),
+			);
+		}
+
+		return $data;
 	}
 }

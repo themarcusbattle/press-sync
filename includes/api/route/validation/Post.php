@@ -58,7 +58,7 @@ class Post extends AbstractRoute {
 		 */
 		register_rest_route( $this->namespace, "{$this->rest_base}/sample", [
 			'methods'             => [ 'GET' ],
-			'callback'            => array( $this->data_source, 'get_sample' ),
+			'callback'            => array( $this, 'get_sample' ),
 			'permission_callback' => [ $this, 'validate_sync_key' ],
 			'args'                => [
 				'count' => [
@@ -69,5 +69,16 @@ class Post extends AbstractRoute {
 				],
 			],
 		]);
+	}
+
+	/**
+	 * @param \WP_REST_Request $request
+	 *
+	 * @return array
+	 */
+	public function get_sample( \WP_REST_Request $request ) {
+		$count = $request->get_param( 'count' );
+
+		return $this->data_source->get_sample( $count );
 	}
 }
