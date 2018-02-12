@@ -78,6 +78,8 @@ class Post extends AbstractRoute {
 	}
 
 	/**
+	 * Get a sample of post data.
+	 *
 	 * @param \WP_REST_Request $request
 	 *
 	 * @return array
@@ -88,8 +90,6 @@ class Post extends AbstractRoute {
 			'ids'   => $request->get_param( 'ids' ),
 			'type'  => $request->get_param( 'type' ),
 		);
-
-		$type = $this->get_sample_method( $request->get_route() );
 
 		if ( $params['count'] ) {
 			$callback = "get_sample_{$params['type']}_data";
