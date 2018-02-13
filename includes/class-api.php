@@ -1117,7 +1117,7 @@ SQL;
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
-				if ( $this->is_short_term_sync( $terms ) ) {
+				if ( $this->is_partial_term_sync( $terms ) ) {
 					wp_set_object_terms( $post_id, $terms['slug'], $terms['taxonomy'], true );
 					wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
 					continue;
@@ -1239,13 +1239,13 @@ SQL;
 	}
 
 	/**
-	 * Determine if we're syncing short terms.
+	 * Determine if we're syncing partial terms with the post object.
 	 *
 	 * @since NEXT
 	 * @param  array $terms The array of terms to test.
 	 * @return bool
 	 */
-	private function is_short_term_sync( $terms ) {
+	private function is_partial_term_sync( $terms ) {
 		return 2 == count( $terms );
 	}
 }
