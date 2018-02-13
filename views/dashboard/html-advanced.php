@@ -55,6 +55,13 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 					</span>
 				</td>
 			</tr>
+            <tr>
+                <th scope="row">Page Size</th>
+                <td>
+                    <input type="number" name="ps_page_size" min="1" max="100" value="<?php echo esc_attr( get_option( 'ps_page_size' ) ); ?>" />
+                    <p>The size of each batch sent, default and recommendd is 5.</p>
+                </td>
+            </tr>
 			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>

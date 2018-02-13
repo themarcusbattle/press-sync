@@ -260,7 +260,7 @@ class Press_Sync {
 
 		global $wpdb;
 
-		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * self::PAGE_SIZE : 0;
+		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * $this->settings['ps_page_size'] : 0;
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
 		// @TODO let's filter the where clause in general.
@@ -272,7 +272,7 @@ class Press_Sync {
 			$where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
 		}
 
-		$page_size    = self::PAGE_SIZE;
+		$page_size    = $this->settings['ps_page_size'];
 		$sql          = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT {$page_size} OFFSET %d";
 		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
@@ -310,8 +310,8 @@ class Press_Sync {
 	 */
 	public function get_users_to_sync( $next_page = 1 ) {
 		$query_args = array(
-			'number' => self::PAGE_SIZE,
-			'offset' => ( $next_page > 1 ) ? ( $next_page - 1 ) * self::PAGE_SIZE : 0,
+			'number' => $this->settings['ps_page_size'],
+			'offset' => ( $next_page > 1 ) ? ( $next_page - 1 ) * $this->settings['ps_page_size'] : 0,
 			'paged'  => $next_page,
 		);
 
@@ -1026,7 +1026,7 @@ SQL;
 		return array(
 			'objects_to_sync'         => $content_type,
 			'total_objects'           => $total_objects,
-			'total_objects_processed' => ( $next_page * self::PAGE_SIZE ) - ( self::PAGE_SIZE - count( $objects ) ),
+			'total_objects_processed' => ( $next_page * $this->settings['ps_page_size'] ) - ( $this->settings['ps_page_size'] - count( $objects ) ),
 			'next_page'               => $next_page + 1,
 			'log'                     => $logs,
 		);
@@ -1081,6 +1081,7 @@ SQL;
 			'fix_terms'            => get_option( 'ps_fix_terms', false ),
 			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
 			'ps_short_terms'       => get_option( 'ps_short_terms', false ),
+			'ps_page_size'         => get_option( 'ps_page_size', self::PAGE_SIZE ),
 		) );
 
 		return $this->settings;
@@ -1361,7 +1362,7 @@ SQL;
 
 		if ( 0 < $page_offset && 1 === absint( $next_page ) ) {
 
-			$page_offset = floor( $page_offset / self::PAGE_SIZE );
+			$page_offset = floor( $page_offset / $this->settings['ps_page_size'] );
 			$next_page  += ( $page_offset - 1);
 
 			error_log( '----NP: ' . $next_page );
@@ -1480,7 +1481,7 @@ SQL;
 	 * @return array
 	 */
 	public function get_taxonomy_term_to_sync( $next_page ) {
-		$offset = ( $next_page * self::PAGE_SIZE ) - self::PAGE_SIZE;
+		$offset = ( $next_page * $this->settings['ps_page_size'] ) - $this->settings['ps_page_size'];
 		$select = '';
 		$joins  = '';
 		$where  = ' WHERE 1=1 ';
@@ -1532,7 +1533,7 @@ SQL;
 {$joins}
 {$where}
 ORDER BY t.term_id ASC
-LIMIT {$offset}, self::PAGE_SIZE
+LIMIT {$offset}, $this->settings['ps_page_size']
 SQL;
 
 		return $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );

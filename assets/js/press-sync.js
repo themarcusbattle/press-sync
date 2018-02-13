@@ -26,6 +26,10 @@ window.PressSync = ( function( window, document, $ ) {
 		}).done(function( response ) {
 			app.updateProgressBar( response.data.objects_to_sync, 0, response.data.total_objects );
 
+			if ( response.data.page_size ) {
+				app.PAGE_SIZE = response.data.page_size;
+			}
+
 			if ( 'all' == response.data.objects_to_sync ) {
 				app.syncAll();
 			} else {
