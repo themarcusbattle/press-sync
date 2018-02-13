@@ -125,15 +125,51 @@ class Taxonomy implements CountInterface {
 		$data = array();
 
 		foreach ( get_taxonomies() as $taxonomy ) {
-			foreach ( get_terms( array( 'taxonomy' => $taxonomy ) ) as $term ) {
-				$meta = get_term_meta( $term->term_id );
-
-				if ( $meta ) {
-					$data[ $taxonomy ][ $term->slug ] = $meta;
-				}
-			}
+			$terms                          = get_terms( array( 'taxonomy' => $taxonomy ) );
+			$data[ $taxonomy ]['terms']     = $this->get_term_slugs( $terms );
+			$data[ $taxonomy ]['term_meta'] = $this->get_taxonomy_term_meta( $terms );
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Get the term slugs from an array of terms.
+	 *
+	 * @param array $terms Term objects.
+	 *
+	 * @return array
+	 */
+	private function get_term_slugs( $terms ) {
+		$slugs = array();
+
+		foreach ( $terms as $term ) {
+			$slugs[] = $term->slug;
+		}
+
+		return $slugs;
+	}
+
+	/**
+	 * Get the term meta from an array of terms.
+	 *
+	 * @param array $terms Term objects.
+	 *
+	 * @return array
+	 */
+	private function get_taxonomy_term_meta( $terms ) {
+		$term_meta = array();
+
+		foreach ( $terms as $term ) {
+			$term_meta[ $term->slug ] = array();
+
+			$meta = get_term_meta( $term->term_id );
+
+			if ( $meta ) {
+				$term_meta[ $term->slug ] = $meta;
+			}
+		}
+
+		return $term_meta;
 	}
 }
