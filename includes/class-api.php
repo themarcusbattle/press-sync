@@ -1117,7 +1117,7 @@ SQL;
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
-				if ( 2 == count( $terms ) ) {
+				if ( $this->is_short_term_sync( $terms ) ) {
 					wp_set_object_terms( $post_id, $terms['slug'], $terms['taxonomy'], true );
 					wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
 					continue;
@@ -1236,5 +1236,16 @@ SQL;
 				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
 			}
 		}
+	}
+
+	/**
+	 * Determine if we're syncing short terms.
+	 *
+	 * @since NEXT
+	 * @param  array $terms The array of terms to test.
+	 * @return bool
+	 */
+	private function is_short_term_sync( $terms ) {
+		return 2 == count( $terms );
 	}
 }

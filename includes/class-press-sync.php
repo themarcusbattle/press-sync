@@ -13,7 +13,13 @@ namespace Press_Sync;
  * @since 0.1.0
  */
 class Press_Sync {
-	const PAGE_SIZE = 1;
+	/**
+	 * Default page size for sync batches.
+	 *
+	 * @since NEXT
+	 * @var int
+	 */
+	const PAGE_SIZE = 5;
 
 	/**
 	 * Plugin class
