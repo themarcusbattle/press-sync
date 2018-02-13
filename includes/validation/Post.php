@@ -18,7 +18,7 @@ class Post implements CountInterface {
 		return array(
 			'count'      => $this->get_count(),
 			'sample'     => $this->get_sample_posts_data(),
-			'sample_tax' => $this->get_sample_post_terms(),
+			'sample_tax' => $this->get_sample_terms_data(),
 		);
 	}
 

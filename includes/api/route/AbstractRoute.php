@@ -87,7 +87,10 @@ abstract class AbstractRoute extends \WP_REST_Controller {
 			),
 		);
 
+
 		foreach ( $this->routes as $endpoint => $route_config ) {
+			$config = wp_parse_args( $route_config, $defaults );
+
 			if ( is_numeric( $endpoint ) ) {
 				$endpoint = '';
 			}
@@ -95,7 +98,7 @@ abstract class AbstractRoute extends \WP_REST_Controller {
 			register_rest_route(
 				$this->namespace,
 				"{$this->rest_base}/{$endpoint}",
-				wp_parse_args( $route_config, $defaults )
+				$config
 			);
 		}
 	}

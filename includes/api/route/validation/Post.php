@@ -25,6 +25,20 @@ class Post extends AbstractRoute {
 	public function __construct() {
 		$this->rest_base   = 'validation/post';
 		$this->data_source = new \Press_Sync\validation\Post();
+		$this->routes      = array(
+			'count'  => array(
+				'callback' => array( $this->data_source, 'get_count' ),
+			),
+			'sample' => array(
+				'callback' => array( $this, 'get_sample' ),
+				'args'     => array(
+					'type'           => array( 'required' => true ),
+					'count'          => array( 'required' => false ),
+					'ids'            => array( 'required' => false ),
+					'press_sync_key' => array( 'required' => true ),
+				),
+			),
+		);
 	}
 
 	/**
@@ -34,47 +48,6 @@ class Post extends AbstractRoute {
 	 */
 	public function register_hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
-	}
-
-	/**
-	 * Register routes for Post validation.
-	 *
-	 * @since NEXT
-	 */
-	public function register_routes() {
-		register_rest_route( $this->namespace, "{$this->rest_base}/count", [
-			'methods'             => [ 'GET' ],
-			'callback'            => array( $this->data_source, 'get_count' ),
-			'permission_callback' => [ $this, 'validate_sync_key' ],
-			'args'                => [
-				'press_sync_key' => [
-					'required' => true,
-				],
-			],
-		] );
-
-		/**
-		 *
-		 */
-		register_rest_route( $this->namespace, "{$this->rest_base}/sample", [
-			'methods'             => [ 'GET' ],
-			'callback'            => array( $this, 'get_sample' ),
-			'permission_callback' => [ $this, 'validate_sync_key' ],
-			'args'                => [
-				'type'           => [
-					'required' => true,
-				],
-				'count'          => [
-					'required' => false,
-				],
-				'ids'            => [
-					'required' => false,
-				],
-				'press_sync_key' => [
-					'required' => true,
-				],
-			],
-		] );
 	}
 
 	/**
