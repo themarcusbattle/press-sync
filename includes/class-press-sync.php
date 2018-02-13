@@ -386,6 +386,29 @@ class Press_Sync {
 	 * @return array $taxonomies
 	 */
 	public function get_relationships( $object_id, $taxonomies ) {
+		if ( $this->settings['ps_short_terms'] ) {
+			/**
+			 * Get just the terms and taxonomies.
+			 */
+			$sql = <<<SQL
+SELECT
+	t.slug,
+	tt.taxonomy
+FROM
+{$GLOBALS['wpdb']->terms} t
+JOIN
+{$GLOBALS['wpdb']->term_taxonomy} tt USING( term_id )
+JOIN
+{$GLOBALS['wpdb']->term_relationships} tr USING ( term_taxonomy_id )
+WHERE
+	tr.object_id = %d
+SQL;
+
+			$sql   = $GLOBALS['wpdb']->prepare( $sql, $object_id );
+			$terms = $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
+
+			return $terms;
+		}
 
 		foreach ( $taxonomies as $key => $taxonomy ) {
 			$taxonomies[ $taxonomy ] = get_the_terms( $object_id, $taxonomy ) ?: array();
@@ -1044,7 +1067,7 @@ class Press_Sync {
 	 */
 	public function parse_sync_settings( $settings = array() ) {
 
-		return wp_parse_args( $settings, array(
+		$this->settings = wp_parse_args( $settings, array(
 			'remote_domain'        => get_option( 'ps_remote_domain' ),
 			'ps_remote_key'        => get_option( 'ps_remote_key' ),
 			'sync_method'          => get_option( 'ps_sync_method' ),
@@ -1057,7 +1080,10 @@ class Press_Sync {
 			'preserve_ids'         => get_option( 'ps_preserve_ids', false ),
 			'fix_terms'            => get_option( 'ps_fix_terms', false ),
 			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
+			'ps_short_terms'       => get_option( 'ps_short_terms', false ),
 		) );
+
+		return $this->settings;
 	}
 
 	/**
