@@ -46,9 +46,9 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 				</td>
 			</tr>
 			<tr valign="top">
-				<th scope="row">Short Terms</th>
+				<th scope="row">Partial Terms</th>
 				<td>
-					<input type="checkbox" name="ps_short_terms" <?php checked( get_option( 'ps_short_terms' ) ); ?> value="1" />
+					<input type="checkbox" name="ps_partial_terms" <?php checked( get_option( 'ps_partial_terms' ) ); ?> value="1" />
 					<span>
 					If you've already synced terms and taxonomies to the remote site, this option can speed up the transfer of posts and mitigate
 					syncing problems associated with one-to-many post-term relationships and larger-than-average post bodies.
