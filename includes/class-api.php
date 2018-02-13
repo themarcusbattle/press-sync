@@ -249,8 +249,13 @@ class API extends \WP_REST_Controller {
 			return false;
 		}
 
+		$process_log = array();
+		#$process_log[] = 'Syncing post with args:';
+		#$process_log[] = var_export( $post_args, 1 );
+
 		// Check to see if the post exists.
 		$local_post = $this->get_synced_post( $post_args );
+		$process_log[] = 'Looked for $local_post, result: ' . ( $local_post ? 'found: ' . $local_post['ID'] : ' not found.' );
 
 		// Check to see a non-synced duplicate of the post exists.
 		if ( 'sync' === $duplicate_action && ! $local_post ) {
@@ -263,18 +268,19 @@ class API extends \WP_REST_Controller {
 					'debug' => array(
 						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
 					),
+					'process_log' => $process_log,
 				);
 			}
 			return $this->fix_term_relationships( $local_post['ID'], $post_args );
 		}
 
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+		$process_log[]   = 'Final post_args["ID"] = ' . $post_args['ID'];
 
 		// Replace embedded media.
 		if ( isset( $post_args['embedded_media'] ) ) {
-
 			foreach ( $post_args['embedded_media'] as $attachment_args ) {
-
+				$process_log[] = 'Attempting addition of embedded media.';
 				$attachment_id = $this->sync_attachment( $attachment_args );
 
 				if ( abinst( $attachment_id ) ) {
@@ -287,8 +293,12 @@ class API extends \WP_REST_Controller {
 			}
 		}
 
+		$process_log[] = 'Incoming author: ' . $post_args['post_author'];
+
 		// Set the correct post author.
 		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
+
+		$process_log[] = 'Matched author: ' . $post_args['post_author'];
 
 		// Check for post parent and update IDs accordingly.
 		if ( ! $this->preserve_ids && isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
@@ -318,8 +328,10 @@ class API extends \WP_REST_Controller {
 			// Assign a press sync ID.
 			$this->add_press_sync_id( $local_post['ID'], $post_args );
 
-			return array( 'debug' => $response );
-
+			return array(
+				'debug'       => $response,
+				'process_log' => $process_log,
+			);
 		}
 
 		// Add categories.
@@ -344,7 +356,10 @@ class API extends \WP_REST_Controller {
 		// Bail if the insert didn't work.
 		if ( is_wp_error( $local_post_id ) ) {
 			trigger_error( sprintf( 'Error inserting post: ', $local_post_id->get_error_message() ) );
-			return array( 'debug' => $local_post_id );
+			return array(
+				'debug'       => $local_post_id,
+				'process_log' => $process_log,
+			);
 		}
 
 		// Attach featured image.
@@ -366,6 +381,7 @@ class API extends \WP_REST_Controller {
 				'message'         => __( 'The post has been synced with the remote site', 'press-sync' ),
 				'featured_result' => $featured_result,
 			),
+			'process_log' => $process_log,
 		);
 	}
 
