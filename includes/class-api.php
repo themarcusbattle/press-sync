@@ -253,7 +253,7 @@ class API extends \WP_REST_Controller {
 		$local_post = $this->get_synced_post( $post_args );
 
 		// Check to see a non-synced duplicate of the post exists.
-		if ( 'sync' === $duplicate_action && ! $local_post ) {
+		if ( 'sync' === $duplicate_action && ! $local_post && ! $this->preserve_ids ) {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
