@@ -115,4 +115,25 @@ class Taxonomy implements CountInterface {
 			'post_terms'             => $this->get_post_count_by_taxonomy_term(),
 		);
 	}
+
+	/**
+	 * @param int $count Number of terms to process.
+	 *
+	 * @return array
+	 */
+	public function get_sample_meta() {
+		$data = array();
+
+		foreach ( get_taxonomies() as $taxonomy ) {
+			foreach ( get_terms( array( 'taxonomy' => $taxonomy ) ) as $term ) {
+				$meta = get_term_meta( $term->term_id );
+
+				if ( $meta ) {
+					$data[ $taxonomy ][ $term->slug ] = $meta;
+				}
+			}
+		}
+
+		return $data;
+	}
 }
