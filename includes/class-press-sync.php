@@ -13,6 +13,7 @@ namespace Press_Sync;
  * @since 0.1.0
  */
 class Press_Sync {
+	const PAGE_SIZE = 1;
 
 	/**
 	 * Plugin class
@@ -259,7 +260,7 @@ class Press_Sync {
 
 		global $wpdb;
 
-		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0;
+		$offset       = ( $next_page > 1 ) ? ( $next_page - 1 ) * self::PAGE_SIZE : 0;
 		$where_clause = ( $where_clause ) ? ' AND ' . $where_clause : '';
 
 		// @TODO let's filter the where clause in general.
@@ -271,8 +272,9 @@ class Press_Sync {
 			$where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
 		}
 
-		$sql            = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT 5 OFFSET %d";
-		$prepared_sql   = $wpdb->prepare( $sql, $objects_to_sync, $offset );
+		$page_size    = self::PAGE_SIZE;
+		$sql          = "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause} ORDER BY post_date DESC LIMIT {$page_size} OFFSET %d";
+		$prepared_sql = $wpdb->prepare( $sql, $objects_to_sync, $offset );
 
 		// Get the results.
 		$results = $wpdb->get_results( $prepared_sql, ARRAY_A );
@@ -308,8 +310,8 @@ class Press_Sync {
 	 */
 	public function get_users_to_sync( $next_page = 1 ) {
 		$query_args = array(
-			'number' => 5,
-			'offset' => ( $next_page > 1 ) ? ( $next_page - 1 ) * 5 : 0,
+			'number' => self::PAGE_SIZE,
+			'offset' => ( $next_page > 1 ) ? ( $next_page - 1 ) * self::PAGE_SIZE : 0,
 			'paged'  => $next_page,
 		);
 
@@ -427,16 +429,16 @@ class Press_Sync {
 			return $this->count_taxonomy_term_to_sync();
 		}
 
+		// If it's just one post return only 1.
+		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
+			return 1;
+		}
+
 		global $wpdb;
 
 		$where_clause  = '';
 		$where_clause  = $this->get_synced_object_clause( $objects_to_sync );
 		$where_clause .= $this->get_posts_delta( $objects_to_sync );
-
-		// If it's just one post return only 1.
-		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
-			return 1;
-		}
 
 		$query         = "SELECT count(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status NOT IN ('auto-draft','trash') {$where_clause}";
 		$prepared_sql  = $wpdb->prepare( $query, $objects_to_sync );
@@ -1001,7 +1003,7 @@ class Press_Sync {
 		return array(
 			'objects_to_sync'         => $content_type,
 			'total_objects'           => $total_objects,
-			'total_objects_processed' => ( $next_page * 5 ) - ( 5 - count( $objects ) ),
+			'total_objects_processed' => ( $next_page * self::PAGE_SIZE ) - ( self::PAGE_SIZE - count( $objects ) ),
 			'next_page'               => $next_page + 1,
 			'log'                     => $logs,
 		);
@@ -1333,7 +1335,7 @@ class Press_Sync {
 
 		if ( 0 < $page_offset && 1 === absint( $next_page ) ) {
 
-			$page_offset = floor( $page_offset / 5 );
+			$page_offset = floor( $page_offset / self::PAGE_SIZE );
 			$next_page  += ( $page_offset - 1);
 
 			error_log( '----NP: ' . $next_page );
@@ -1452,7 +1454,7 @@ SQL;
 	 * @return array
 	 */
 	public function get_taxonomy_term_to_sync( $next_page ) {
-		$offset = ( $next_page * 5 ) - 5;
+		$offset = ( $next_page * self::PAGE_SIZE ) - self::PAGE_SIZE;
 		$select = '';
 		$joins  = '';
 		$where  = ' WHERE 1=1 ';
@@ -1504,7 +1506,7 @@ SQL;
 {$joins}
 {$where}
 ORDER BY t.term_id ASC
-LIMIT {$offset}, 5
+LIMIT {$offset}, self::PAGE_SIZE
 SQL;
 
 		return $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
