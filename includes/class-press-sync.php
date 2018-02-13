@@ -13,7 +13,13 @@ namespace Press_Sync;
  * @since 0.1.0
  */
 class Press_Sync {
-	const PAGE_SIZE = 1;
+	/**
+	 * Default page size for sync batches.
+	 *
+	 * @since NEXT
+	 * @var int
+	 */
+	const PAGE_SIZE = 5;
 
 	/**
 	 * Plugin class
@@ -390,7 +396,7 @@ class Press_Sync {
 	 * @return array $taxonomies
 	 */
 	public function get_relationships( $object_id, $taxonomies ) {
-		if ( $this->settings['ps_short_terms'] ) {
+		if ( $this->settings['ps_partial_terms'] ) {
 			/**
 			 * Get just the terms and taxonomies.
 			 */
@@ -1088,7 +1094,7 @@ SQL;
 			'preserve_ids'         => get_option( 'ps_preserve_ids', false ),
 			'fix_terms'            => get_option( 'ps_fix_terms', false ),
 			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
-			'ps_short_terms'       => get_option( 'ps_short_terms', false ),
+			'ps_partial_terms'     => get_option( 'ps_partial_terms', false ),
 			'ps_page_size'         => get_option( 'ps_page_size', self::PAGE_SIZE ),
 		) );
 
