@@ -1117,6 +1117,11 @@ SQL;
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
+				if ( 2 == count( $terms ) ) {
+					wp_set_object_terms( $post_id, $terms['slug'], $terms['taxonomy'], true );
+					wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
+					continue;
+				}
 				$this->maybe_create_new_terms( $taxonomy, $terms );
 				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
