@@ -46,6 +46,23 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row">Partial Terms</th>
+				<td>
+					<input type="checkbox" name="ps_partial_terms" <?php checked( get_option( 'ps_partial_terms' ) ); ?> value="1" />
+					<span>
+					If you've already synced terms and taxonomies to the remote site, this option can speed up the transfer of posts and mitigate
+					syncing problems associated with one-to-many post-term relationships and larger-than-average post bodies.
+					</span>
+				</td>
+			</tr>
+            <tr>
+                <th scope="row">Page Size</th>
+                <td>
+                    <input type="number" name="ps_page_size" min="1" max="100" value="<?php echo esc_attr( get_option( 'ps_page_size' ) ); ?>" />
+                    <p>The size of each batch sent, default and recommendd is 5.</p>
+                </td>
+            </tr>
+			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
 				</td>

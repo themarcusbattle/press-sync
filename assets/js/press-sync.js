@@ -2,6 +2,8 @@ window.PressSync = ( function( window, document, $ ) {
 
 	var app = {};
 
+	app.PAGE_SIZE = 1;
+
 	app.init = function() {
 		$(document).on( 'click', '.press-sync-button', app.pressSyncButton );
 	};
@@ -23,6 +25,10 @@ window.PressSync = ( function( window, document, $ ) {
 			}
 		}).done(function( response ) {
 			app.updateProgressBar( response.data.objects_to_sync, 0, response.data.total_objects );
+
+			if ( response.data.page_size ) {
+				app.PAGE_SIZE = response.data.page_size;
+			}
 
 			if ( 'all' == response.data.objects_to_sync ) {
 				app.syncAll();
@@ -66,7 +72,8 @@ window.PressSync = ( function( window, document, $ ) {
 
 		if ( request_time ) {
 			// Estimate time remaining.
-			var remaining_time = ( ( ( total_objects - total_objects_processed ) / 5 ) * request_time ) / 60 / 60;
+			var remaining_time = ( ( ( total_objects - total_objects_processed ) / app.PAGE_SIZE ) * request_time );
+			remaining_time = remaining_time / 60 / 60;
 			var time_left_suffix = 'hours';
 
 			// Shift to minutes.
