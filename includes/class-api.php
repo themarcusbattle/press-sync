@@ -249,6 +249,8 @@ class API extends \WP_REST_Controller {
 			return false;
 		}
 
+		$post_args = $this->clean_post_object_args( $post_args );
+
 		// Check to see if the post exists.
 		$local_post = $this->get_synced_post( $post_args );
 
@@ -381,8 +383,9 @@ class API extends \WP_REST_Controller {
 	 * @return int
 	 */
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
-		$attachment_id = false;
-		$import_id     = false;
+		$attachment_id   = false;
+		$import_id       = false;
+		$attachment_args = $this->clean_post_object_args( $attachment_args );
 
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
@@ -1247,5 +1250,25 @@ SQL;
 	 */
 	private function is_partial_term_sync( $terms ) {
 		return 2 == count( $terms );
+	}
+
+	/**
+	 * Cleans up post object arguments before syncing.
+	 *
+	 * @since NEXT
+	 * @param  array $args The post args to clean.
+	 * @return array
+	 */
+	private function clean_post_object_args( $args ) {
+		// Set post date to something WordPress won't overwrite if it's zeros.
+		if (
+			isset( $args['post_date'] )
+			&& '0000-00-00 00:00:00' === $args['post_date']
+			&& ! in_array( $args['post_status'], array( 'draft', 'pending' ) )
+		) {
+			$args['post_date'] = date( 'Y-m-d H:i:s', 0 );
+		}
+
+		return $args;
 	}
 }
