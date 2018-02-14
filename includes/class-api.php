@@ -1278,8 +1278,10 @@ SQL;
 
 		$new_count    = 0;
 		$update_count = 0;
+
 		foreach ( $object as $meta_key => $meta_value ) {
 			$meta_value    = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
+			$meta_value    = maybe_unserialize( $meta_value );
 			$update_result = update_post_meta( $post_id, $meta_key, $meta_value );
 
 			if ( is_numeric( $update_result ) ) {
