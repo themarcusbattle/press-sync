@@ -52,9 +52,16 @@ class Post implements CountInterface {
 
 		$posts = $query->get_posts();
 
+		// Sort posts by post ID.
+		usort( $posts, [ $this, 'sort_posts_by_id' ] );
+
 		wp_reset_postdata();
 
 		return $posts;
+	}
+
+	private function sort_posts_by_id( $a, $b ) {
+		return strcmp( $a->ID, $b->ID );
 	}
 
 	/**
@@ -89,6 +96,8 @@ class Post implements CountInterface {
 
 		$posts = $query->get_posts();
 
+		usort( $posts, [ $this, 'sort_posts_by_id' ] );
+
 		wp_reset_postdata();
 
 		return $this->format_sample_post_data( $posts );
@@ -112,8 +121,7 @@ class Post implements CountInterface {
 	 *
 	 * @return array
 	 */
-	public function get_comparison_post_terms( $ids ) {
-		// @TODO Implement this method.
+	public function get_comparison_terms( $ids ) {
 		return [];
 	}
 
