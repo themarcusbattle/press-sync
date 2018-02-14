@@ -1,10 +1,21 @@
-<?php
-if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
-    wp_die();
-}
-?>
 <div class="wrap about-wrap press-sync">
     <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
+	<?php if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) : ?>
+	<div class="feature-section one-col">
+		<div class="col">
+			<h2>Press Sync Advanced Features</h2>
+			<p>
+				Press Sync includes a number of advanced features that are usually not necessary, however, if you really
+				really know what you're doing and would like to check them out, add a filter somewhere in your code like
+				this:
+				<code>
+				add_filter( 'press_sync_show_advanced_options', '__return_true' );
+				</code>
+				and visit this page again. As always, when it comes to data, <strong>backup backup backup!</strong>
+			</p>
+		</div>
+	</div>
+	<?php else: ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-advanced' ); ?>
 		<?php do_settings_sections( 'press-sync-advanced' ); ?>
@@ -101,6 +112,7 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 		</table>
 		<?php submit_button(); ?>
 	</form>
+	<?php endif; ?>
 </div>
 <script>
 jQuery(document).ready(function(){
