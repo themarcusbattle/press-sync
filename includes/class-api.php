@@ -1327,8 +1327,6 @@ SQL;
 			'press_sync_key' => get_option( 'ps_remote_key')
         ) );
 
-		$url = API::get_remote_url( get_option( 'ps_remote_domain' ), $request, $args );
-
 		$url      = API::get_remote_url( get_option( 'ps_remote_domain' ), $request, $args );
 		$response = API::get_remote_response( $url, $args );
 
