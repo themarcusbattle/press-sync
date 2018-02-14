@@ -139,26 +139,61 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 *
 	 * Builds a table of true/false values for each data point that is compared.
 	 *
+	 * @TODO This has gotten messy. See comments and refactor.
+	 *
 	 * @param array $source Data from the source site.
 	 * @param $destination
 	 *
 	 * @return array
 	 */
 	private function compare_sample( $source, $destination ) {
+		/*
+		 * We ran into an issue where posts were not being properly compared because their indexes were out of sync
+		 * because destination results might not match source results. These blocks re-key the source and destination
+		 * data by post ID, then populates the destination array with empty data for each missing post. This allows
+		 * us to compare values correctly by looping through the source_index.
+		 */
+		$source_index      = array();
+		$destination_index = array();
+
+		foreach ( $source as $post ) {
+			$source_index[ $post['ID'] ] = $post;
+		}
+
+		foreach ( $destination as $post ) {
+			$destination_index[ $post['ID'] ] = $post;
+		}
+
+		foreach ( $source_index as $key => $source_post ) {
+			if ( ! isset( $destination_index[ $key ] ) ) {
+				$destination_index[ $key ] = array(
+					'ID'      => $key,
+					'type'    => null,
+					'author'  => null,
+					'content' => null,
+					'meta'    => null,
+				);
+			}
+		}
+
 		$comparison_output = array();
 
-		foreach ( $source as $index => $post_data ) {
+		foreach ( $source_index as $index => $post_data ) {
+			$post = array();
+
 			foreach ( $post_data as $key => $data ) {
 				if ( 'ID' === $key ) {
-					$comparison_output[ $index ]['post_id'] = $data;
+					$post[ 'post_id' ] = $data;
 
 					continue;
 				}
 
-				$result = $this->compare_sample_values( $key, $source[ $index ], $destination[ $index ] );
+				$result = $this->compare_sample_values( $key, $source_index[ $index ], $destination_index[ $index ] );
 
-				$comparison_output[ $index ][ $key ] = $result ? true : false;
+				$post[ $key ] = $result ? true : false;
 			}
+
+			$comparison_output[] = $post;
 		}
 
 		return $comparison_output;
