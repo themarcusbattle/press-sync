@@ -1,9 +1,10 @@
 <?php
 namespace Press_Sync\client\cli\command\validate;
 
+use Press_Sync\client\output\OutputInterface;
+use Press_Sync\client\output\PostRenderFactory;
 use Press_Sync\validators\PostValidator;
 use WP_CLI\ExitException;
-use WP_CLI\Formatter;
 
 /**
  * Class PostSubcommand
@@ -35,80 +36,25 @@ class PostSubcommand extends AbstractValidateSubcommand {
 	public function validate() {
 		$this->check_multisite_params();
 
-		$data = $this->validator->validate();
-		$data = $this->prepare_colorized_output( $data );
+		$data        = $this->validator->validate();
+		$output_data = array();
 
-		$this->output( $this->prepare_output( $data['source']['sample'] ) );
-		$this->output( $this->prepare_output( $data['destination']['sample'] ) );
-
-		if ( count( $data['source']['sample'] ) !== count( $data['destination']['sample'] ) ) {
-			\WP_CLI::warning( 'Destination sample missing posts from source.' );
-		}
-
-		$this->output( $this->prepare_output( $data['source']['count'] ), 'Local post counts by type and status:' );
-		$this->output( $this->prepare_output( $data['destination']['count'] ), 'Remote post counts by type and status:' );
-	}
-
-	/**
-	 * Output data to the CLI.
-	 *
-	 * @param array  $data    Array of post data.
-	 * @param string $message Optional message to print before the data table.
-	 *
-	 * @since NEXT
-	 */
-	private function output( $data, $message = '' ) {
-		if ( $message ) {
-			\WP_CLI::line( $message );
-		}
-
-		$format     = 'table';
-		$fields     = array_keys( $data[0] );
-		$assoc_args = compact( 'format', 'fields' );
-		$formatter  = new Formatter( $assoc_args );
-		$formatter->display_items( $data, true );
-	}
-
-	/**
-	 * Prepare data for output to the CLI.
-	 *
-	 * @param array $post_data Array of post data.
-	 *
-	 * @return array
-	 * @since NEXT
-	 */
-	private function prepare_output( $post_data ) {
-		$table_values = array();
-
-		foreach ( $post_data as $post_type => $post_status_count ) {
-			$new_array              = array();
-			$new_array['post_type'] = $post_type;
-
-			foreach ( $post_status_count as $status => $count ) {
-				$new_array[ $status ] = $count;
-			}
-
-			$table_values[] = $new_array;
-		}
-
-		return $table_values;
-	}
-
-	/**
-	 * Prepare colorized output of value differences on destination site.
-	 *
-	 * @param array $data Data to colorize.
-	 *
-	 * @return array
-	 * @since NEXT
-	 */
-	private function prepare_colorized_output( $data ) {
-		foreach ( $data['destination']['count'] as $post_type => $status ) {
-			foreach ( $status as $status_name => $count ) {
-				$data['destination']['count'][ $post_type ][ $status_name ] = \WP_CLI::colorize( $data['comparison']['count'][ $post_type ][ $status_name ] );
+		foreach ( $data as $data_location => $location ) {
+			foreach ( $location as $data_set => $values ) {
+				$output_data[ $data_set ][ $data_location ] = $values;
 			}
 		}
 
-		return $data;
+		foreach ( $output_data as $key => $datum ) {
+			/* @var $output OutputInterface */
+			$output_renderer = PostRenderFactory::create( $key, $datum );
+
+			if ( ! is_wp_error( $output_renderer ) ) {
+				$output_renderer->render();
+				continue;
+			}
+
+			\WP_CLI::error( $output_renderer->get_error_message() );
+		}
 	}
 }
