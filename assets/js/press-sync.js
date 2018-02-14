@@ -1,17 +1,81 @@
 window.PressSync = ( function( window, document, $ ) {
 
-	var app = {};
-
-	app.PAGE_SIZE = 1;
-
-	app.init = function() {
-		$(document).on( 'click', '.press-sync-button', app.pressSyncButton );
+	var app = {
+		PAGE_SIZE: 1,
+		LOG_LIMIT: 20, // Limit how many log entries to show, previous logs will be discarded.
+		log_index: 0, // Count how many logs have processed.
+		times: [], // Array of times used to calculate time remaining average more accurately.
+		elCache: {}
 	};
 
+	/**
+	 * Initialize the JS app for Press Sync.
+	 *
+	 * Handles registering elements to the element Cache and binding inital listeners.
+	 *
+	 * @since 0.1.0
+	 */
+	app.init = function() {
+		app.elCache.syncButton   = $('#press-sync-button');
+		app.elCache.cancelButton = $('#press-sync-cancel-button');
+		app.elCache.status       = $('.progress-stats');
+		app.elCache.bulkSettings = $('#press-sync-bulk-settings');
+		app.elCache.logView      = $('#press-sync-log-view' );
+		app.elCache.logs         = $('#press-sync-logs');
+		app.elCache.currentLog   = $('#press-sync-logs');
+
+		app.elCache.syncButton.on( 'click', app.pressSyncButton );
+		app.elCache.cancelButton.on( 'click', app.cancelSync );
+	};
+
+	/**
+	 * Handles the Press Sync "Sync" button.
+	 *
+	 * @since NEXT
+	 * @param Object click_event The click event from the listener.
+	 */
 	app.pressSyncButton = function( click_event ) {
+		app.running = true;
+
+		// @TODO probably should have this in a method similar to app.cleanup.
+		app.elCache.syncButton.hide();
+		app.elCache.cancelButton.show();
+		app.elCache.bulkSettings.hide();
+		app.elCache.logView.show();
+		app.elCache.currentLog.val('');
 		app.loadProgressBar();
 		return;
-	}
+	};
+
+	/**
+	 * Set the app.running flag to false to stop the current sync process.
+	 *
+	 * @since NEXT
+	 */
+	app.cancelSync = function() {
+		app.running = false;
+	};
+
+	/**
+	 * Update the timing array and smooth out timing samples.
+	 *
+	 * @since NEXT
+	 * @param Number remaining_time The most recent remaining time estimate.
+	 */
+	app.updateTiming = function( remaining_time ) {
+		app.times.push( remaining_time );
+
+		// Limit sample size.
+		if ( 100 < app.times.length ) {
+			app.times.shift();
+		}
+
+		app.times.map( function ( e ) {
+			return e += e;
+		} );
+
+		app.times = smooth( app.times, 0.85 );
+	};
 
 	app.loadProgressBar = function() {
 		$('.press-sync-button').hide();
@@ -72,24 +136,25 @@ window.PressSync = ( function( window, document, $ ) {
 
 		if ( request_time ) {
 			// Estimate time remaining.
-			var remaining_time = ( ( ( total_objects - total_objects_processed ) / app.PAGE_SIZE ) * request_time );
-			remaining_time = remaining_time / 60 / 60;
 			var time_left_suffix = 'hours';
+			var remaining_time   = ( ( ( total_objects - total_objects_processed ) / app.PAGE_SIZE ) * request_time );
+			app.updateTiming( remaining_time );
+			remaining_time = remaining_time / app.times.length;
+			remaining_time = remaining_time / 60 / 60;
 
 			// Shift to minutes.
 			if ( 1 > remaining_time ) {
-				remaining_time = remaining_time * 60;
+				remaining_time   = remaining_time * 60;
 				time_left_suffix = 'minutes';
 			}
 
 			// Round to two decimal places, mostly.
-			remaining_time = Math.round( remaining_time * 100 ) / 100;
-
-			progress_string += ' (' + [ 'Estimated time remaining:', remaining_time, time_left_suffix ].join(' ') + ')';
+			remaining_time   = Math.round( remaining_time * 100 ) / 100;
+			progress_string += ' (' + [ 'Estimated time remaining:', remaining_time, time_left_suffix ].join(' ') + ' )';
 		}
 
 		$('.progress-stats').text( progress_string );
-	}
+	};
 
 	/**
 	 * Syncs data to the remote site.
@@ -117,29 +182,111 @@ window.PressSync = ( function( window, document, $ ) {
 				objects_to_sync: objects_to_sync
 			}
 		}).done(function( response ) {
-			// Convert request time from milliseconds to seconds.
-			var request_time = ( new Date().getTime() - start_time ) / 1000;
+			if ( ! app.running ) {
+				app.cleanup( 'Sync canceled by user.' );
+				return;
+			}
 
-			app.updateProgressBar( response.data.objects_to_sync, response.data.total_objects_processed, response.data.total_objects, request_time );
+			app.updateProgressBar(
+				response.data.objects_to_sync,
+				response.data.total_objects_processed,
+				response.data.total_objects,
+				( new Date().getTime() - start_time ) / 1000 // Convert request time from milliseconds to seconds.
+			);
 
+			app.Log( response );
+
+			// Bail if we're done.
 			if ( response.data.total_objects_processed >= response.data.total_objects ) {
 				// Start the next batch at page 1.
 				if ( next_args && next_args.order_to_sync_all && next_args.order_to_sync_all.length ) {
 					return app.syncData( 1, null, next_args );
 				}
 
-				$('.press-sync-button').show();
-				$('.progress-stats').text('Sync completed!');
+				app.cleanup( 'Sync completed!' );
 				return;
 			}
 
 			app.syncData( response.data.next_page, response.data.objects_to_sync, next_args );
 		});
-
 	}
+
+	/**
+	 * Logs messages from the remote server to the log window.
+	 *
+	 * @since NEXT
+	 * @param Object response The response from the AJAX request.
+	 */
+	app.Log = function( response ) {
+		if ( ! response.data ) {
+			return;
+		}
+
+		var loglines = [];
+
+		try {
+			var logs = JSON.parse( response.data.log );
+			loglines.push("\n" + '---------------------------------');
+			for ( var i = 0; i < logs.length; i++) {
+				loglines.push( logs[i] );
+			}
+
+			app.elCache.currentLog.val( app.elCache.currentLog.val() + loglines.join("\n") );
+
+		} catch ( e ) {}
+	};
+
+	/**
+	 * Cleanup the view so it's back to a state similar to when we first
+	 * visit the page.
+	 *
+	 * @since NEXT
+	 * @param string message The message to display under the progress bar.
+	 */
+	app.cleanup = function( message ){
+		app.elCache.syncButton.show();
+		app.elCache.cancelButton.hide();
+		app.elCache.bulkSettings.show();
+		app.elCache.status.text( message );
+	};
 
 	$( document ).ready( app.init );
 
 	return app;
 
+	// Private methods.
+
+	/**
+	 * Smooth a set of values.
+	 *
+	 * We use this to smooth out the timings in the array of request times to give a more accurate
+	 * time estimation.
+	 *
+	 * Source: https://stackoverflow.com/q/32788836/1169389
+	 */
+	function smooth(values, alpha) {
+		var weighted = average(values) * alpha;
+		var smoothed = [];
+		for (var i in values) {
+			var curr = values[i];
+			var prev = smoothed[i - 1] || values[values.length - 1];
+			var next = curr || values[0];
+			var improved = Number(average([weighted, prev, curr, next]).toFixed(2));
+			smoothed.push(improved);
+		}
+		return smoothed;
+	}
+
+	/**
+	 * Gets the averate of a set of data.
+	 *
+	 * Source: https://stackoverflow.com/q/32788836/1169389
+	 */
+	function average(data) {
+		var sum = data.reduce(function(sum, value) {
+			return sum + value;
+		}, 0);
+		var avg = sum / data.length;
+		return avg;
+	}
 } )( window, document, jQuery );
