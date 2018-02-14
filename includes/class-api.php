@@ -1255,7 +1255,7 @@ SQL;
 	/**
 	 * Cleans up post object arguments before syncing.
 	 *
-	 * @since NEXT
+	 * @since 0.9.1
 	 * @param  array $args The post args to clean.
 	 * @return array
 	 */
