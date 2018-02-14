@@ -1241,7 +1241,7 @@ SQL;
 	/**
 	 * Determine if we're syncing partial terms with the post object.
 	 *
-	 * @since NEXT
+	 * @since 0.9.0
 	 * @param  array $terms The array of terms to test.
 	 * @return bool
 	 */

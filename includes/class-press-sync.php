@@ -16,7 +16,7 @@ class Press_Sync {
 	/**
 	 * Default page size for sync batches.
 	 *
-	 * @since NEXT
+	 * @since 0.9.0
 	 * @var int
 	 */
 	const PAGE_SIZE = 5;
