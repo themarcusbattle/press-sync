@@ -44,6 +44,8 @@ class Dashboard {
 		'ps_fix_terms',
 		'ps_delta_date',
 		'ps_content_threshold',
+		'ps_partial_terms',
+		'ps_page_size',
 	];
 
 	/**
@@ -189,8 +191,9 @@ class Dashboard {
 		$objects_to_sync = get_option( 'ps_objects_to_sync' );
 
 		wp_send_json_success( array(
-			'objects_to_sync'  => $objects_to_sync,
-			'total_objects'    => $this->plugin->count_objects_to_sync( $objects_to_sync ),
+			'objects_to_sync' => $objects_to_sync,
+			'total_objects'   => $this->plugin->count_objects_to_sync( $objects_to_sync ),
+			'page_size'       => $this->plugin::PAGE_SIZE,
 		) );
 	}
 
