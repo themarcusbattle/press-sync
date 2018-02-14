@@ -650,7 +650,7 @@ SQL;
 			}
 
 			if ( is_array( $meta_value ) ) {
-				$media['meta_input'][$meta_key] = serialize( $meta_value );
+				$media['meta_input'][$meta_key] = current( $meta_value );
 			}
 		}
 
