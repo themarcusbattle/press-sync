@@ -253,7 +253,7 @@ class API extends \WP_REST_Controller {
 		$local_post = $this->get_synced_post( $post_args );
 
 		// Check to see a non-synced duplicate of the post exists.
-		if ( 'sync' === $duplicate_action && ! $local_post ) {
+		if ( 'sync' === $duplicate_action && ! $local_post && ! $this->preserve_ids ) {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
@@ -1117,6 +1117,11 @@ SQL;
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
+				if ( $this->is_partial_term_sync( $terms ) ) {
+					wp_set_object_terms( $post_id, $terms['slug'], $terms['taxonomy'], true );
+					wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
+					continue;
+				}
 				$this->maybe_create_new_terms( $taxonomy, $terms );
 				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
@@ -1231,5 +1236,16 @@ SQL;
 				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
 			}
 		}
+	}
+
+	/**
+	 * Determine if we're syncing partial terms with the post object.
+	 *
+	 * @since NEXT
+	 * @param  array $terms The array of terms to test.
+	 * @return bool
+	 */
+	private function is_partial_term_sync( $terms ) {
+		return 2 == count( $terms );
 	}
 }
