@@ -216,7 +216,8 @@ class API extends \WP_REST_Controller {
 		// Trust the HTML we're syncing is clean.
 		remove_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
-		$responses = array();
+		$responses   = array();
+		$responses[] = date( DATE_RFC2822, time() ) . '(' . time() . ')';
 
 		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
 
@@ -250,8 +251,6 @@ class API extends \WP_REST_Controller {
 		}
 
 		$process_log = array();
-		#$process_log[] = 'Syncing post with args:';
-		#$process_log[] = var_export( $post_args, 1 );
 
 		// Check to see if the post exists.
 		$local_post = $this->get_synced_post( $post_args );
@@ -355,11 +354,10 @@ class API extends \WP_REST_Controller {
 
 		// Bail if the insert didn't work.
 		if ( is_wp_error( $local_post_id ) ) {
+			$process_log[] = $local_post_id->get_error_message();
+			$process_log[] = $local_post_id;
 			trigger_error( sprintf( 'Error inserting post: ', $local_post_id->get_error_message() ) );
-			return array(
-				'debug'       => $local_post_id,
-				'process_log' => $process_log,
-			);
+			return implode( "\n", $process_log );
 		}
 
 		// Attach featured image.
@@ -374,15 +372,14 @@ class API extends \WP_REST_Controller {
 		// Run any secondary commands.
 		do_action( 'press_sync_sync_post', $local_post_id, $post_args );
 
-		return array(
-			'debug' => array(
-				'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
-				'local_post_id'   => $local_post_id,
-				'message'         => __( 'The post has been synced with the remote site', 'press-sync' ),
-				'featured_result' => $featured_result,
-			),
-			'process_log' => $process_log,
-		);
+		$process_log[]  = var_export( array(
+			'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
+			'local_post_id'   => $local_post_id,
+			'message'         => __( 'The post has been synced with the remote site', 'press-sync' ),
+			'featured_result' => $featured_result,
+		), true );
+
+		return implode( "\n", $process_log );
 	}
 
 	/**
@@ -705,7 +702,7 @@ class API extends \WP_REST_Controller {
 
 		// Post does not have a featured image so bail early.
 		if ( empty( $post_args['featured_image'] ) ) {
-			return false;
+			return 'No featured image attached.';
 		}
 
 		// Allow download_url() to use an external request to retrieve featured images.
@@ -719,7 +716,7 @@ class API extends \WP_REST_Controller {
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
 
-		return $response ? '' : "Error attaching thumbnail {$thumbnail_id} to post {$post_id}";
+		return ( false === $response  ) ? "Error attaching thumbnail {$thumbnail_id} to post {$post_id}" : 'Thumbnail meta attached.';
 	}
 
 	/**
@@ -1082,6 +1079,9 @@ SQL;
 	 * @return string
 	 */
 	public function sync_taxonomy_term( $object_args ) {
+		$process_log   = array( 'Beginning Taxonomy Term batch.' );
+		$process_log[] = date( DATE_RFC2822, time() ) . '(' . time() . ')';
+
 		try {
 			if ( ! taxonomy_exists( $object_args['taxonomy'] ) ) {
 				throw new \Exception( sprintf( 'The taxonomy %s does not exist, cannot insert terms.', $object_args['taxonomy'] ) );
@@ -1108,18 +1108,14 @@ SQL;
 			if ( ! empty( $object_args['meta_input'] ) ) {
 				$this->maybe_update_term_meta( $term_ids['term_id'], $object_args['meta_input'] );
 			}
+
+			$message = __( 'The taxonomy term was succesfully added.', 'press-sync' );
 		} catch ( \Exception $e ) {
-			trigger_error( $e->getMessage() );
-			return array(
-				'debug' => $e->getMessage(),
-			);
+			$message = $e->getMessage();
+			trigger_error( $message );
 		}
 
-		return array(
-			'debug' => array(
-				'message' => __( 'The taxonomy term was succesfully added.', 'press-sync' ),
-			),
-		);
+		return $message;
 	}
 
 	/**
