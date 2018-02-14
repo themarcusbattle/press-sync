@@ -22,4 +22,17 @@ abstract class AbstractOutput implements OutputInterface {
 	public function __construct( $data ) {
 		$this->data = $data;
 	}
+
+	/**
+	 * Get an icon based on whether a result was (bool) true or not.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  bool $result The result to test.
+	 *
+	 * @return string
+	 */
+	protected function get_result_icon( $result ) {
+		return ( (bool) $result ) === true ? '✅' : '❌';
+	}
 }

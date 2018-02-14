@@ -49,7 +49,7 @@ class Validate extends AbstractCliCommand {
 	 * @param array $args       Command arguments.
 	 * @param array $assoc_args Command associative arguments.
 	 *
-	 * @synopsis <validation_entity> [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>]
+	 * @synopsis <validation_entity> [--remote_domain=<remote_domain>] [--remote_press_sync_key=<remote_press_sync_key>] [--count=<count>]
 	 * @since NEXT
 
 	 * @return void

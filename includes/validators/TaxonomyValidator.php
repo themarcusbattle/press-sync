@@ -53,7 +53,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @return array
 	 * @since NEXT
 	 */
-	public function compare_data( array $source, array $destination ) {
+	public function get_comparison_data( array $source, array $destination ) {
 		return array();
 	}
 }

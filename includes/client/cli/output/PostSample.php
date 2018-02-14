@@ -15,14 +15,15 @@ class PostSample extends AbstractOutput {
 	 * @return void
 	 */
 	public function render() {
-		\WP_CLI::line( 'Comparison of local vs. remote data:' );
-		$this->output( $this->prepare( $this->data['source'], $this->data['destination'] ) );
-
-		if ( count( $this->data['source'] ) !== count( $this->data['destination'] ) ) {
-			\WP_CLI::warning( 'Destination sample missing posts from source.' );
-		}
+		$this->output( $this->prepare( $this->data['comparison'] ), 'Sample comparison of local vs. remote data:' );
 	}
 
+	/**
+	 * Output the data in a table.
+	 *
+	 * @param array  $data Data to output.
+	 * @param string $message Message to display with the output.
+	 */
 	public function output( $data, $message = '' ) {
 		if ( $message ) {
 			\WP_CLI::line( $message );
@@ -38,26 +39,23 @@ class PostSample extends AbstractOutput {
 	/**
 	 * Prepare the table to be output in the CLI.
 	 *
-	 * @param $source_data
-	 * @param $destination_data
+	 * @param array $data Data to prepare for output.
 	 *
 	 * @return array
 	 */
-	public function prepare( $source_data, $destination_data ) {
-		$table_output = array();
-
-		foreach ( $source_data as $index => $post_data ) {
-			foreach ( $post_data as $key => $data ) {
-				if ( 'ID' === $key ) {
-					$table_output[ $index ]['post_id'] = $data;
+	public function prepare( array $data ) {
+		foreach ( $data as $index => $post_sample ) {
+			foreach ( $post_sample as $key => $value ) {
+				if ( 'post_id' === $key ) {
+					$data[ $index ][ $key ] = $value;
 
 					continue;
 				}
 
-				$table_output[ $index ][ $key ] = ( $source_data[ $index ][ $key ] === $destination_data[ $index ][ $key ] ) ? 'X' : 'O';
+				$data[ $index ][ $key ] = $this->get_result_icon( $value );
 			}
 		}
 
-		return $table_output;
+		return $data;
 	}
 }

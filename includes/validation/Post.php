@@ -14,10 +14,10 @@ class Post implements CountInterface {
 	 * @return array
 	 * @since NEXT
 	 */
-	public function get_data() {
+	public function get_data( $count ) {
 		return array(
 			'count'      => $this->get_count(),
-			'sample'     => $this->get_sample_posts_data(),
+			'sample'     => $this->get_sample_posts_data( $count ),
 			'sample_tax' => $this->get_sample_terms_data(),
 		);
 	}
@@ -38,6 +38,11 @@ class Post implements CountInterface {
 		return $posts;
 	}
 
+	/**
+	 * @param int $count
+	 *
+	 * @return array
+	 */
 	private function get_random_posts( $count = 5 ) {
 		$query = new \WP_Query( array(
 			'post_type'      => 'any',

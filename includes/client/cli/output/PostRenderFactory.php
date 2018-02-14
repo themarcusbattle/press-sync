@@ -1,8 +1,6 @@
 <?php
 namespace Press_Sync\client\output;
 
-use Press_Sync\client\PostCount;
-
 /**
  * Class PostRenderFactory
  *
@@ -23,6 +21,8 @@ class PostRenderFactory {
 				return new PostCount( $data );
 			case 'sample':
 				return new PostSample( $data );
+			case 'sample_tax':
+				return new PostSampleTax( $data );
 			default:
 				return new \WP_Error( 'data_not_found', 'Data provided for processing does not adhere to contract.' );
 		}

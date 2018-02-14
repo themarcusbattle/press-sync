@@ -64,7 +64,7 @@ abstract class AbstractValidator {
 	 * @param  array $destination The destination dataset.
 	 * @return array
 	 */
-	abstract public function compare_data( array $source, array $destination );
+	abstract public function get_comparison_data( array $source, array $destination );
 
 	/**
 	 * Determine if two values are the same and wrap them in appropriate formatting.

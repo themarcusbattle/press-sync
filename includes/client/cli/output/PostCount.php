@@ -1,7 +1,6 @@
 <?php
-namespace Press_Sync\client;
+namespace Press_Sync\client\output;
 
-use Press_Sync\client\output\AbstractOutput;
 use WP_CLI\Formatter;
 
 /**

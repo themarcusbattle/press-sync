@@ -29,7 +29,7 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 			'comparison'  => array(),
 		);
 
-		$return['comparison'] = $this->compare_data( $return['source'], $return['destination'] );
+		$return['comparison'] = $this->get_comparison_data( $return['source'], $return['destination'] );
 		return $return;
 	}
 
@@ -87,7 +87,7 @@ class UserValidator extends AbstractValidator implements ValidatorInterface {
 	 * @param  array $destination The destination dataset.
 	 * @return array
 	 */
-	public function compare_data( array $source, array $destination ) {
+	public function get_comparison_data( array $source, array $destination ) {
 		return array(
 			'count' => $this->compare_counts( $source['count'], $destination['count'] ),
 		);
