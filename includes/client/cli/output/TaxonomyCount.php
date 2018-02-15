@@ -13,7 +13,10 @@ class TaxonomyCount extends AbstractOutput {
 	 * @return mixed|void
 	 */
 	public function render() {
+		\WP_CLI::line();
 		$this->output( $this->prepare( $this->data['comparison'] ), 'Taxonomy terms count:' );
+		\WP_CLI::log( 'Number of unique taxonomies: ' . count( $this->data['comparison'] ) );
+		\WP_CLI::line();
 
 		// $this->output_comparison_statements( $this->data['source'], $this->data['destination'] );
 	}
