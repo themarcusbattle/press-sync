@@ -96,7 +96,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 				continue;
 			}
 
-			$data[ $taxonomy_name ]['destination_count'] = $count['number_of_terms'];
+			$data[ $taxonomy_name ]['destination_count'] = $this->apply_diff_to_values( $count['number_of_terms'], $data[ $taxonomy_name ]['term_count'] );
 			$data[ $taxonomy_name ]['migrated']          = true;
 		}
 
