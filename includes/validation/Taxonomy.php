@@ -28,15 +28,16 @@ class Taxonomy implements CountInterface {
 		$terms = [];
 
 		foreach ( get_taxonomies() as $name => $taxonomy ) {
+			$taxonomy_terms = get_terms(
+				array(
+					'taxonomy'   => $taxonomy,
+					'hide_empty' => false,
+				)
+			);
+
 			$terms[] = array(
 				'taxonomy_name'   => $name,
-				'number_of_terms' => count(
-					get_terms(
-						array(
-							'taxonomy'   => $taxonomy,
-							'hide_empty' => false,
-						)
-					) ),
+				'number_of_terms' => count( $taxonomy_terms ),
 			);
 		}
 
