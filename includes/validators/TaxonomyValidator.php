@@ -36,7 +36,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @since NEXT
 	 */
 	public function get_source_data() {
-		return ( new Taxonomy() )->get_count();
+		return ( new Taxonomy() )->get_data();
 	}
 
 	/**
