@@ -191,12 +191,13 @@ class Dashboard {
 	 */
 	public function get_objects_to_sync_count_via_ajax() {
 
+		$this->plugin->parse_sync_settings();
 		$objects_to_sync = get_option( 'ps_objects_to_sync' );
 
 		wp_send_json_success( array(
 			'objects_to_sync' => $objects_to_sync,
 			'total_objects'   => $this->plugin->count_objects_to_sync( $objects_to_sync ),
-			'page_size'       => $this->plugin::PAGE_SIZE,
+			'page_size'       => $this->plugin->settings['ps_page_size'],
 		) );
 	}
 

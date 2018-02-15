@@ -24,6 +24,12 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.9.1
+- [AOTECH-6793] - Post dates of "0000-00-00 00:00:00" are discarded by `wp_insert_post` - these dates will now be set
+  to the unix epoch before being inserted.
+- "Advanced" tab now shows for all users, however you get a blurb about how to enable the features if you don't have
+  the advanced features filter set in your code.
+
 ### v0.9.0
 - [AOTECH-6774] - Fix issue where incredibly large payloads were truncating data by adding ability to sync partial term
   data.
