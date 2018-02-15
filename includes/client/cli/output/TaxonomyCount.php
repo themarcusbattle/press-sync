@@ -13,10 +13,10 @@ class TaxonomyCount extends AbstractOutput {
 	 * @return mixed|void
 	 */
 	public function render() {
-		$this->output( $this->data['source']['count'], 'Local taxonomy data:' );
-		$this->output( $this->data['destination']['count'], 'Remote taxonomy data:' );
+		$this->output( $this->data['source'], 'Local taxonomy data:' );
+		$this->output( $this->data['destination'], 'Remote taxonomy data:' );
 
-		$this->output_comparison_statements( $this->data['source']['count'], $this->data['destination']['count'] );
+		$this->output_comparison_statements( $this->data['source'], $this->data['destination'] );
 	}
 
 	/**

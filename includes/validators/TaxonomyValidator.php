@@ -78,7 +78,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 		foreach ( $source['term_count_by_taxonomy'] as $taxonomy_name => $count ) {
 			$data[ $taxonomy_name ] = array(
 				'taxonomy_name'              => $taxonomy_name,
-				'source_tax_term_count'      => $count,
+				'source_tax_term_count'      => $count['number_of_terms'],
 				'destination_tax_term_count' => 0,
 				'migrated'                   => false,
 			);
@@ -89,7 +89,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 				$data[ $taxonomy_name ] = array(
 					'taxonomy_name'              => $taxonomy_name,
 					'source_tax_term_count'      => 0,
-					'destination_tax_term_count' => $count,
+					'destination_tax_term_count' => $count['number_of_terms'],
 					'migrated'                   => false,
 				);
 
