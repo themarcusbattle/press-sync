@@ -77,27 +77,27 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 
 		foreach ( $source['term_count_by_taxonomy'] as $taxonomy_name => $count ) {
 			$data[ $taxonomy_name ] = array(
-				'taxonomy_name'              => $taxonomy_name,
-				'source_tax_term_count'      => $count['number_of_terms'],
-				'destination_tax_term_count' => 0,
-				'migrated'                   => false,
+				'taxonomy_name'     => $taxonomy_name,
+				'term_count'        => $count['number_of_terms'],
+				'destination_count' => 0,
+				'migrated'          => false,
 			);
 		}
 
 		foreach ( $destination['term_count_by_taxonomy'] as $taxonomy_name => $count ) {
 			if ( ! isset( $data[ $taxonomy_name ] ) ) {
 				$data[ $taxonomy_name ] = array(
-					'taxonomy_name'              => $taxonomy_name,
-					'source_tax_term_count'      => 0,
-					'destination_tax_term_count' => $count['number_of_terms'],
-					'migrated'                   => false,
+					'taxonomy_name'     => $taxonomy_name,
+					'term_count'        => 0,
+					'destination_count' => $count['number_of_terms'],
+					'migrated'          => false,
 				);
 
 				continue;
 			}
 
-			$data[ $taxonomy_name ]['destination_tax_term_count'] = $count;
-			$data[ $taxonomy_name ]['migrated']                   = true;
+			$data[ $taxonomy_name ]['destination_count'] = $count['number_of_terms'];
+			$data[ $taxonomy_name ]['migrated']          = true;
 		}
 
 		return $data;
