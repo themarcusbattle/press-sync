@@ -46,14 +46,6 @@ class Press_Sync {
 	public $remote_domain = null;
 
 	/**
-	 * Sync posts modified after this date.
-	 *
-	 * @var string
-	 * @since 0.8.0
-	 */
-	private $delta_date = false;
-
-	/**
 	 * Initialize the class instance.
 	 *
 	 * @since 0.4.5
@@ -61,7 +53,6 @@ class Press_Sync {
 	public function __construct() {
 		// Initialize plugin classes.
 		$this->plugin_classes();
-		$this->delta_date = date( 'Y-m-d 00:00:00', strtotime( get_option( 'ps_delta_date' ) ) ) ?: false;
 	}
 
 	/**
@@ -90,6 +81,7 @@ class Press_Sync {
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
+		add_filter( 'press_sync_settings', [ $this, 'prepare_post_delta_date' ] );
 	}
 
 	/**
@@ -1602,6 +1594,23 @@ SQL;
 			return '';
 		}
 
-		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->delta_date );
+		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->settings['ps_delta_date'] );
+	}
+
+	/**
+	 * Prepare the value from the ps_delta_date option to something we can use to query against the posts table.
+	 *
+	 * @since NEXT
+	 * @param  array $settings The settings to be used for Press Sync.
+	 * @return array
+	 */
+	public function prepare_post_delta_date( $settings ) {
+		if ( ! isset( $settings['ps_delta_date'] ) ) {
+			return $settings;
+		}
+
+		// @TODO filter the settings before returning - this transformation would be part of that, for example.
+		$settings['ps_delta_date'] = date( 'y-m-d 00:00:00', strtotime( $settings['ps_delta_date'] ) ) ?: false;
+		return $settings;
 	}
 }
