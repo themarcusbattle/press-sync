@@ -80,7 +80,7 @@ class API extends \WP_REST_Controller {
 			'methods'             => array( 'GET' ),
 			'callback'            => array( $this, 'get_sync_progress' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
-			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
+			'args'                => array( 'post_type', 'press_sync_key', 'ps_preserve_ids' ),
 		) );
 
 		/*
@@ -918,7 +918,7 @@ class API extends \WP_REST_Controller {
                 $post_type = 'post';
             }
 
-            if ( (bool) $request->get_param( 'preserve_ids' ) ) {
+            if ( $this->preserve_ids ) {
                 $sql = <<<SQL
 SELECT DISTINCT
     ID
