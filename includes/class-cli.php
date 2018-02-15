@@ -235,6 +235,6 @@ class CLI {
 			\WP_CLI::line( sprintf( "Arg set: [%s] => %s", $key, $value ) );
 		}
 
-		return $assoc_args;
+		return $final_args;
 	}
 }
