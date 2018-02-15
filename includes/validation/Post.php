@@ -57,20 +57,7 @@ class Post implements CountInterface {
 
 		wp_reset_postdata();
 
-		return $posts;
-	}
-
-	private function sort_posts_by_id( $a, $b ) {
-		return strcmp( $a->ID, $b->ID );
-	}
-
-	/**
-	 * Get a sample number of posts.
-	 *
-	 * @param int $count
-	 */
-	public function get_sample_posts_data( $count = 5 ) {
-		return $this->format_sample_post_data( $this->get_random_posts( $count ) );
+		return $this->format_sample_post_data( $posts );
 	}
 
 	/**
@@ -84,6 +71,7 @@ class Post implements CountInterface {
 	 */
 	public function get_comparison_posts( array $ids ) {
 		$query = new \WP_Query( array(
+			'post_type'      => 'any',
 			'posts_per_page' => count( $ids ),
 			'post__in'       => $ids,
 		) );
@@ -96,6 +84,27 @@ class Post implements CountInterface {
 
 		return $this->format_sample_post_data( $posts );
 	}
+
+	/**
+	 * @param $a
+	 * @param $b
+	 *
+	 * @return int
+	 */
+	private function sort_posts_by_id( $a, $b ) {
+		return strcmp( $a->ID, $b->ID );
+	}
+
+	/**
+	 * Get a sample number of posts.
+	 *
+	 * @param int $count
+	 */
+	public function get_sample_posts_data( $count = 5 ) {
+		return $this->get_random_posts( $count );
+	}
+
+
 
 	/**
 	 * Get the taxonomy term assignments for a random sample of posts.
@@ -115,8 +124,8 @@ class Post implements CountInterface {
 	 *
 	 * @return array
 	 */
-	public function get_comparison_terms( $ids ) {
-		return [];
+	public function get_comparison_terms( array $ids ) {
+		return $this->format_sample_post_terms( $this->get_comparison_posts( $ids ) );
 	}
 
 	/**
@@ -149,15 +158,9 @@ class Post implements CountInterface {
 
 		foreach ( $posts as $key => $post ) {
 			$terms = array(
-				'ID'    => $post->ID,
-				'terms' => $this->get_post_terms( $post->ID ),
+				'ID'    => $post['ID'],
+				'terms' => $this->get_post_terms( $post['ID'] ),
 			);
-
-			$ps_id = get_post_meta( $post->ID, 'press_sync_post_id' );
-
-			if ( $ps_id ) {
-				$terms['press_sync_post_id'] = $ps_id[0];
-			}
 
 			$post_terms[] = $terms;
 		}
