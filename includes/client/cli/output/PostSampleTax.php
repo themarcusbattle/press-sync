@@ -51,8 +51,9 @@ class PostSampleTax extends AbstractOutput {
 		$source      = $data['source'];
 		$destination = $data['destination'];
 
-		var_dump( count( $source ) );
-		var_dump( count( $destination ) );
+		if ( $source ) {
+
+		}
 
 		// @TODO Fix source and destination as with post sample to ensure parity.
 

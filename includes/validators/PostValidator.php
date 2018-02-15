@@ -38,6 +38,9 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 		$this->source_data      = $this->get_source_data();
 		$this->destination_data = $this->get_destination_data();
 
+		$this->normalize_sample_for_comparison( 'sample', $this->source_data['sample'], $this->destination_data['sample'] );
+		$this->normalize_sample_for_comparison( 'sample_tax', $this->source_data['sample_tax'], $this->destination_data['sample_tax'] );
+
 		return array(
 			'source'      => $this->source_data,
 			'destination' => $this->destination_data,
@@ -146,41 +149,54 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 * data by post ID, then populates the destination array with empty data for each missing post. This allows
 	 * us to compare values correctly by looping through the source_index.
 	 *
-	 * @param array $source
-	 * @param array $destination
+	 * @param array $source      Local post data.
+	 * @param array $destination Remote post data.
 	 */
-	private function equalize_data_counts( $source, $destination ) {
-		$source_index      = array();
-		$destination_index = array();
-
-		foreach ( $source as $post ) {
-			$source_index[ $post['ID'] ] = $post;
-		}
-
-		foreach ( $destination as $post ) {
-			$destination_index[ $post['ID'] ] = $post;
-		}
+	private function normalize_sample_for_comparison( $data_index, $source, $destination ) {
+		$source_index      = $this->index_data_by_post_id( $source );
+		$destination_index = $this->index_data_by_post_id( $destination );
 
 		foreach ( $source_index as $key => $source_post ) {
 			$source_index[ $key ]['migrated'] = true;
 
-			if ( ! isset( $destination_index[ $key ] ) ) {
-				$destination_index[ $key ] = array(
-					'ID'       => $key,
-					'type'     => null,
-					'author'   => null,
-					'content'  => null,
-					'meta'     => null,
-					'migrated' => false,
-				);
+			if ( isset( $destination_index[ $key ] ) ) {
+				$destination_index[ $key ]['migrated'] = true;
 
 				continue;
 			}
 
-			$destination_index[ $key ]['migrated'] = true;
+			foreach ( $source_post as $index => $value ) {
+				if ( 'ID' === $index ) {
+					$destination_index[ $key ][ $index ] = $key;
+
+					continue;
+				}
+
+				$destination_index[ $key ][ $index ] = null;
+			}
+
+			$destination_index[ $key ]['migrated'] = false;
 		}
 
-		$this->destination_data = $destination_index;
+		$this->source_data[ $data_index ]      = $this->index_data_by_post_id( array_values( $source_index ) );
+		$this->destination_data[ $data_index ] = $this->index_data_by_post_id( array_values( $destination_index ) );
+	}
+
+	/**
+	 * Take an array of post data and update it to be an associative array indexed by post ID.
+	 *
+	 * @param array $post_data Array of post data.
+	 *
+	 * @return array
+	 */
+	private function index_data_by_post_id( $post_data ) {
+		$data = array();
+
+		foreach ( $post_data as $post ) {
+			$data[ $post['ID'] ] = $post;
+		}
+
+		return $data;
 	}
 
 	/**
@@ -196,41 +212,9 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 * @return array
 	 */
 	private function compare_sample( $source, $destination ) {
-		$source_index      = array();
-		$destination_index = array();
-
-		foreach ( $source as $post ) {
-			$source_index[ $post['ID'] ] = $post;
-		}
-
-		foreach ( $destination as $post ) {
-			$destination_index[ $post['ID'] ] = $post;
-		}
-
-		foreach ( $source_index as $key => $source_post ) {
-			$source_index[ $key ]['migrated'] = true;
-
-			if ( ! isset( $destination_index[ $key ] ) ) {
-				$destination_index[ $key ] = array(
-					'ID'       => $key,
-					'type'     => null,
-					'author'   => null,
-					'content'  => null,
-					'meta'     => null,
-					'migrated' => false,
-				);
-
-				continue;
-			}
-
-			$destination_index[ $key ]['migrated'] = true;
-		}
-
-		$this->destination_data = $destination_index;
-
 		$comparison_output = array();
 
-		foreach ( $source_index as $index => $post_data ) {
+		foreach ( $source as $index => $post_data ) {
 			$post = array();
 
 			foreach ( $post_data as $key => $data ) {
@@ -240,7 +224,7 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 					continue;
 				}
 
-				$result = $this->compare_sample_values( $key, $source_index[ $index ], $destination_index[ $index ] );
+				$result = $this->compare_sample_values( $key, $source[ $index ], $destination[ $index ] );
 
 				$post[ $key ] = $result ? true : false;
 			}
