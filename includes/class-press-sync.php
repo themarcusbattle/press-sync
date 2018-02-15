@@ -1064,25 +1064,44 @@ SQL;
 	 * @return array $settings
 	 */
 	public function parse_sync_settings( $settings = array() ) {
-
-		$this->settings = wp_parse_args( $settings, array(
-			'remote_domain'        => get_option( 'ps_remote_domain' ),
-			'ps_remote_key'        => get_option( 'ps_remote_key' ),
-			'sync_method'          => get_option( 'ps_sync_method' ),
-			'objects_to_sync'      => get_option( 'ps_objects_to_sync' ),
-			'duplicate_action'     => get_option( 'ps_duplicate_action' ),
-			'force_update'         => get_option( 'ps_force_update', false ),
-			'skip_assets'          => get_option( 'ps_skip_assets', false ),
-			'options'              => get_option( 'ps_options_to_sync' ),
+		static $default_settings = array(
+			'ps_remote_domain'     => null,
+			'ps_sync_method'       => null,
+			'ps_objects_to_sync'   => null,
+			'ps_duplicate_action'  => null,
+			'ps_force_update'      => false,
+			'ps_skip_assets'       => false,
+			'ps_options_to_sync'   => null,
+			'ps_preserve_ids'      => false,
+			'ps_fix_terms'         => false,
+			'ps_remote_key'        => null,
+			'ps_content_threshold' => false,
+			'ps_partial_terms'     => false,
+			'ps_page_size'         => self::PAGE_SIZE,
+			'ps_delta_date'        => null,
+			'ps_testing_post'      => null,
 			'local_folder'         => '',
-			'preserve_ids'         => get_option( 'ps_preserve_ids', false ),
-			'fix_terms'            => get_option( 'ps_fix_terms', false ),
-			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
-			'ps_partial_terms'     => get_option( 'ps_partial_terms', false ),
-			'ps_page_size'         => get_option( 'ps_page_size', self::PAGE_SIZE ),
-		) );
+			'verbose'              => false,
+		);
 
-		return $this->settings;
+		$from_options = array();
+
+		foreach ( $default_settings as $option => $default ) {
+			$from_options[ $option ] = get_option( $option, $default );
+		}
+
+		$this->settings = wp_parse_args( $settings, $from_options );
+
+		/**
+		 * Filter the settings for Press Sync.
+		 *
+		 * Allows filtering the settings before they are passed along for processing data.
+		 *
+		 * @since NEXT
+		 * @param  array $settings The settings array after parsing options.
+		 * @return array
+		 */
+		return apply_filters( 'press_sync_settings', $this->settings );
 	}
 
 	/**
