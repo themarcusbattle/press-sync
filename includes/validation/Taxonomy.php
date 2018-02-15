@@ -108,9 +108,11 @@ class Taxonomy implements CountInterface {
 	 */
 	public function get_count() {
 		return array(
-			'unique_taxonomies'      => $this->get_unique_taxonomy_count(),
-			'term_count_by_taxonomy' => $this->get_term_count_by_taxonomy(),
-			'post_terms'             => $this->get_post_count_by_taxonomy_term(),
+			'count' => array(
+				'unique_taxonomies'      => $this->get_unique_taxonomy_count(),
+				'term_count_by_taxonomy' => $this->get_term_count_by_taxonomy(),
+				'post_terms'             => $this->get_post_count_by_taxonomy_term(),
+			),
 		);
 	}
 

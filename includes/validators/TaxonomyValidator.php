@@ -19,14 +19,16 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @since NEXT
 	 */
 	public function validate() {
-		$this->source_data = $this->get_source_data();
+		$this->source_data      = $this->get_source_data();
 		$this->destination_data = $this->get_destination_data();
 
 		return array(
-			'source'      => $this->get_source_data(),
-			'destination' => $this->get_destination_data(),
+			'source'      => $this->source_data,
+			'destination' => $this->destination_data,
+			'comparison'  => $this->get_comparison_data( $this->source_data, $this->destination_data ),
 		);
 	}
+
 	/**
 	 * Get taxonomy data from the local WordPress installation.
 	 *
@@ -57,6 +59,8 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @since NEXT
 	 */
 	public function get_comparison_data( array $source, array $destination ) {
-		return array();
+		return array(
+			'count' => array(),//$this->compare_count( $source['count'], $destination['count'] )
+		);
 	}
 }
