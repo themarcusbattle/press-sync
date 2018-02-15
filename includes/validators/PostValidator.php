@@ -112,8 +112,9 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 */
 	public function get_comparison_data( array $source, array $destination ) {
 		return array(
-			'count'  => $this->compare_count( $source['count'], $destination['count'] ),
-			'sample' => $this->compare_sample( $source['sample'], $destination['sample'] ),
+			'count'      => $this->compare_count( $source['count'], $destination['count'] ),
+			'sample'     => $this->compare_sample( $source['sample'], $destination['sample'] ),
+			'sample_tax' => $this->compare_sample_tax( $source['sample_tax'], $destination['sample_tax'] ),
 		);
 	}
 
@@ -269,5 +270,61 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 		}
 
 		return $valid_meta;
+	}
+
+	/**
+	 * Compare taxonomy data for individual posts.
+	 *
+	 * @param array $source      Source data.
+	 * @param array $destination Destination data.
+	 *
+	 * @return array
+	 */
+	public function compare_sample_tax( $source, $destination ) {
+		$data = array();
+
+		foreach ( $source as $post_id => $post_data ) {
+			foreach ( $post_data['terms'] as $taxonomy_key => $taxonomy ) {
+				$data[] = array(
+					'post_id'        => $post_id,
+					'taxonomy'       => $taxonomy_key,
+					'terms_migrated' => $this->check_all_terms(
+						$source[ $post_id ]['terms'],
+						$destination[ $post_id ]['terms']
+					),
+				);
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Compare source and destination terms for a particular post to confirm whether all terms have been migrated.
+	 *
+	 * @param array $source Source data.
+	 * @param array $destination Destination data.
+	 *
+	 * @return bool
+	 */
+	private function check_all_terms( $source, $destination ) {
+		if ( is_null( $destination ) ) {
+			return false;
+		}
+
+		if ( count( $source ) !== count( $destination ) ) {
+			return false;
+		}
+
+		foreach ( $source as $taxonomy_key => $taxonomy ) {
+			foreach ( $taxonomy as $term_key => $term ) {
+				if ( ! isset( $destination[ $taxonomy_key ][ $term_key ] )
+					|| $destination[ $taxonomy_key ][ $term_key ] !== $source[ $taxonomy_key ][ $term_key ] ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 }

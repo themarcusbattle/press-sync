@@ -15,9 +15,7 @@ class PostSampleTax extends AbstractOutput {
 	 * @return mixed|void
 	 */
 	public function render() {
-		$this->prepare( $this->data );
-		// $this->output( $this->data, 'Post taxonomies and entities:' );
-		\WP_CLI::line( 'Ran post sample taxonomies' );
+		$this->output( $this->prepare( $this->data['comparison'] ), 'Sample post taxonomy comparison:' );
 	}
 
 	/**
@@ -47,27 +45,11 @@ class PostSampleTax extends AbstractOutput {
 	 *
 	 * @return array $data
 	 */
-	public function prepare( array $data ) {
-		$source      = $data['source'];
-		$destination = $data['destination'];
-
-		if ( $source ) {
-
+	public function prepare( $data ) {
+		foreach ( $data as $key => $post_tax_data ) {
+			$data[ $key ]['terms_migrated'] = $this->get_result_icon( $post_tax_data['terms_migrated'] );
 		}
 
-		// @TODO Fix source and destination as with post sample to ensure parity.
-
-		/*
-		 * Return an array with all the data the source has: post ID, taxonomy name, term, and whether the destination has it.
-		 *
-		 * Each array would contain an array:
-		 * [
-		 *     'post_id' => ID,
-		 *     'taxonomy_name' => taxonomy
-		 *     'term'=> 'term',
-		 *     'migrated' => X or O
-		 * ]
-		 */
-
+		return $data;
 	}
 }
