@@ -56,15 +56,12 @@ class Taxonomy implements CountInterface {
 
 		foreach ( get_taxonomies() as $name => $taxonomy ) {
 			$taxonomies[ $name ] = array();
+			$taxonomy_terms      = get_terms( array(
+				'taxonomy'   => $taxonomy,
+				'hide_empty' => false,
+			) );
 
-			foreach (
-				get_terms(
-					array(
-						'taxonomy'   => $taxonomy,
-						'hide_empty' => false,
-					)
-				) as $term
-			) {
+			foreach ( $taxonomy_terms as $term ) {
 				$query = new \WP_Query(
 					array(
 						'fields'         => 'ids',
