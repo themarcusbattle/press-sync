@@ -21,20 +21,28 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	protected $source_data = array();
 
 	/**
+	 * Destination data.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	protected $destination_data = array();
+
+	/**
 	 * Validate the Post data.
 	 *
 	 * @return array
 	 * @since NEXT
 	 */
 	public function validate() {
-		$data = array(
-			'source'      => $this->get_source_data(),
-			'destination' => $this->get_destination_data(),
+		$this->source_data      = $this->get_source_data();
+		$this->destination_data = $this->get_destination_data();
+
+		return array(
+			'source'      => $this->source_data,
+			'destination' => $this->destination_data,
+			'comparison'  => $this->get_comparison_data( $this->source_data, $this->destination_data ),
 		);
-
-		$data['comparison'] = $this->get_comparison_data( $data['source'], $data['destination'] );
-
-		return $data;
 	}
 
 	/**
@@ -44,9 +52,7 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 * @since NEXT
 	 */
 	public function get_source_data() {
-		$this->source_data = ( new Post() )->get_data( $this->args['sample_count'] );
-
-		return $this->source_data;
+		return ( new Post() )->get_data( $this->args['sample_count'] );
 	}
 
 	/**
@@ -135,24 +141,15 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	}
 
 	/**
-	 * Compare the sample data between the source and destination sites.
+	 * We ran into an issue where posts were not being properly compared because their indexes were out of sync
+	 * because destination results might not match source results. These blocks re-key the source and destination
+	 * data by post ID, then populates the destination array with empty data for each missing post. This allows
+	 * us to compare values correctly by looping through the source_index.
 	 *
-	 * Builds a table of true/false values for each data point that is compared.
-	 *
-	 * @TODO This has gotten messy. See comments and refactor.
-	 *
-	 * @param array $source Data from the source site.
-	 * @param $destination
-	 *
-	 * @return array
+	 * @param array $source
+	 * @param array $destination
 	 */
-	private function compare_sample( $source, $destination ) {
-		/*
-		 * We ran into an issue where posts were not being properly compared because their indexes were out of sync
-		 * because destination results might not match source results. These blocks re-key the source and destination
-		 * data by post ID, then populates the destination array with empty data for each missing post. This allows
-		 * us to compare values correctly by looping through the source_index.
-		 */
+	private function equalize_data_counts( $source, $destination ) {
 		$source_index      = array();
 		$destination_index = array();
 
@@ -182,6 +179,54 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 
 			$destination_index[ $key ]['migrated'] = true;
 		}
+
+		$this->destination_data = $destination_index;
+	}
+
+	/**
+	 * Compare the sample data between the source and destination sites.
+	 *
+	 * Builds a table of true/false values for each data point that is compared.
+	 *
+	 * @TODO This has gotten messy. See comments and refactor.
+	 *
+	 * @param array $source Data from the source site.
+	 * @param $destination
+	 *
+	 * @return array
+	 */
+	private function compare_sample( $source, $destination ) {
+		$source_index      = array();
+		$destination_index = array();
+
+		foreach ( $source as $post ) {
+			$source_index[ $post['ID'] ] = $post;
+		}
+
+		foreach ( $destination as $post ) {
+			$destination_index[ $post['ID'] ] = $post;
+		}
+
+		foreach ( $source_index as $key => $source_post ) {
+			$source_index[ $key ]['migrated'] = true;
+
+			if ( ! isset( $destination_index[ $key ] ) ) {
+				$destination_index[ $key ] = array(
+					'ID'       => $key,
+					'type'     => null,
+					'author'   => null,
+					'content'  => null,
+					'meta'     => null,
+					'migrated' => false,
+				);
+
+				continue;
+			}
+
+			$destination_index[ $key ]['migrated'] = true;
+		}
+
+		$this->destination_data = $destination_index;
 
 		$comparison_output = array();
 
