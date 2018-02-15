@@ -16,6 +16,22 @@ abstract class AbstractValidator {
 	protected $args = array();
 
 	/**
+	 * Data from the source site.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	protected $source_data;
+
+	/**
+	 * Data from the destination site.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	protected $destination_data;
+
+	/**
 	 * Gets all validation and comparison data.
 	 *
 	 * @since NEXT

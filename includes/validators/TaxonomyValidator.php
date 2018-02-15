@@ -19,6 +19,9 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @since NEXT
 	 */
 	public function validate() {
+		$this->source_data = $this->get_source_data();
+		$this->destination_data = $this->get_destination_data();
+
 		return array(
 			'source'      => $this->get_source_data(),
 			'destination' => $this->get_destination_data(),

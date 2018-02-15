@@ -13,22 +13,6 @@ use Press_Sync\validation\Post;
  */
 class PostValidator extends AbstractValidator implements ValidatorInterface {
 	/**
-	 * Source data.
-	 *
-	 * @var array
-	 * @since NEXT
-	 */
-	protected $source_data = array();
-
-	/**
-	 * Destination data.
-	 *
-	 * @var array
-	 * @since NEXT
-	 */
-	protected $destination_data = array();
-
-	/**
 	 * Validate the Post data.
 	 *
 	 * @return array
