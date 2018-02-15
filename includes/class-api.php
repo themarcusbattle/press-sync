@@ -247,11 +247,13 @@ class API {
 			return false;
 		}
 
+		$post_args = $this->clean_post_object_args( $post_args );
+
 		// Check to see if the post exists.
 		$local_post = $this->get_synced_post( $post_args );
 
 		// Check to see a non-synced duplicate of the post exists.
-		if ( 'sync' === $duplicate_action && ! $local_post ) {
+		if ( 'sync' === $duplicate_action && ! $local_post && ! $this->preserve_ids ) {
 			$local_post = $this->get_non_synced_duplicate( $post_args );
 		}
 
@@ -379,8 +381,9 @@ class API {
 	 * @return int
 	 */
 	public function sync_attachment( $attachment_args, $duplicate_action = 'skip', $force_update = false ) {
-		$attachment_id = false;
-		$import_id     = false;
+		$attachment_id   = false;
+		$import_id       = false;
+		$attachment_args = $this->clean_post_object_args( $attachment_args );
 
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
@@ -1115,6 +1118,11 @@ SQL;
 		// Set taxonomies for custom post type.
 		if ( isset( $post_args['tax_input'] ) ) {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
+				if ( $this->is_partial_term_sync( $terms ) ) {
+					wp_set_object_terms( $post_id, $terms['slug'], $terms['taxonomy'], true );
+					wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
+					continue;
+				}
 				$this->maybe_create_new_terms( $taxonomy, $terms );
 				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
@@ -1332,5 +1340,36 @@ SQL;
 		}
 
 		return $response['body'];
+	}
+
+	/**
+	 * Determine if we're syncing partial terms with the post object.
+	 *
+	 * @since 0.9.0
+	 * @param  array $terms The array of terms to test.
+	 * @return bool
+	 */
+	private function is_partial_term_sync( $terms ) {
+		return 2 == count( $terms );
+	}
+
+	/**
+	 * Cleans up post object arguments before syncing.
+	 *
+	 * @since 0.9.1
+	 * @param  array $args The post args to clean.
+	 * @return array
+	 */
+	private function clean_post_object_args( $args ) {
+		// Set post date to something WordPress won't overwrite if it's zeros.
+		if (
+			isset( $args['post_date'] )
+			&& '0000-00-00 00:00:00' === $args['post_date']
+			&& ! in_array( $args['post_status'], array( 'draft', 'pending' ) )
+		) {
+			$args['post_date'] = date( 'Y-m-d H:i:s', 0 );
+		}
+
+		return $args;
 	}
 }

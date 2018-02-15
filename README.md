@@ -24,6 +24,20 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.9.1
+- [AOTECH-6793] - Post dates of "0000-00-00 00:00:00" are discarded by `wp_insert_post` - these dates will now be set
+  to the unix epoch before being inserted.
+- "Advanced" tab now shows for all users, however you get a blurb about how to enable the features if you don't have
+  the advanced features filter set in your code.
+
+### v0.9.0
+- [AOTECH-6774] - Fix issue where incredibly large payloads were truncating data by adding ability to sync partial term
+  data.
+- [AOTECH-6776] - Fix bad serialization of metadata for featured images.
+- [feature/dashboard-updates] - Cleans up the Dashboard to remove "Advanced Import/Export" and replace with a combined
+  "Advanced" tab. Moving forward, settings should be defined on the source site and propagated to the remote site,
+  regardless of whether the option applies on the sender or receiver.
+
 ### v0.8.0
 - [AOTECH-6700] - Preserve proper taxonomy terms and meta when syncing posts.
 - [AOTECH-6704] - Fixes author lookups for multisite migrations.

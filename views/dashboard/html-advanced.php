@@ -1,10 +1,21 @@
-<?php
-if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
-    wp_die();
-}
-?>
 <div class="wrap about-wrap press-sync">
     <?php \Press_Sync\Press_Sync::init()->include_page( 'dashboard/nav' ); ?>
+	<?php if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) : ?>
+	<div class="feature-section one-col">
+		<div class="col">
+			<h2>Press Sync Advanced Features</h2>
+			<p>
+				Press Sync includes a number of advanced features that are usually not necessary, however, if you really
+				really know what you're doing and would like to check them out, add a filter somewhere in your code like
+				this:
+				<code>
+				add_filter( 'press_sync_show_advanced_options', '__return_true' );
+				</code>
+				and visit this page again. As always, when it comes to data, <strong>backup backup backup!</strong>
+			</p>
+		</div>
+	</div>
+	<?php else: ?>
 	<form class="form" method="post" action="options.php">
 		<?php settings_fields( 'press-sync-advanced' ); ?>
 		<?php do_settings_sections( 'press-sync-advanced' ); ?>
@@ -46,6 +57,23 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row">Partial Terms</th>
+				<td>
+					<input type="checkbox" name="ps_partial_terms" <?php checked( get_option( 'ps_partial_terms' ) ); ?> value="1" />
+					<span>
+					If you've already synced terms and taxonomies to the remote site, this option can speed up the transfer of posts and mitigate
+					syncing problems associated with one-to-many post-term relationships and larger-than-average post bodies.
+					</span>
+				</td>
+			</tr>
+            <tr>
+                <th scope="row">Page Size</th>
+                <td>
+                    <input type="number" name="ps_page_size" min="1" max="100" value="<?php echo esc_attr( get_option( 'ps_page_size' ) ); ?>" />
+                    <p>The size of each batch sent, default and recommendd is 5.</p>
+                </td>
+            </tr>
+			<tr valign="top">
 				<td colspan="2">
                     <p><strong>Settings below this line may affect performance if altered.</strong></p>
 				</td>
@@ -84,6 +112,7 @@ if ( ! apply_filters( 'press_sync_show_advanced_options', false ) ) {
 		</table>
 		<?php submit_button(); ?>
 	</form>
+	<?php endif; ?>
 </div>
 <script>
 jQuery(document).ready(function(){
