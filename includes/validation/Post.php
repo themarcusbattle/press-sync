@@ -11,14 +11,18 @@ class Post implements CountInterface {
 	/**
 	 * Get all of the Post data for validation.
 	 *
+	 * @param int $count Number of posts for which to get data.
+	 *
 	 * @return array
 	 * @since NEXT
 	 */
 	public function get_data( $count ) {
+		$posts = $this->get_sample_posts_data( $count );
+
 		return array(
 			'count'      => $this->get_count(),
-			'sample'     => $this->get_sample_posts_data( $count ),
-			'sample_tax' => $this->get_sample_terms_data(),
+			'sample'     => $posts,
+			'sample_tax' => $this->get_sample_terms_data( $posts ),
 		);
 	}
 
@@ -100,12 +104,12 @@ class Post implements CountInterface {
 	/**
 	 * Get the taxonomy term assignments for a random sample of posts.
 	 *
-	 * @param int $count Number of posts to retrieve.
+	 * @param array $posts
 	 *
 	 * @return array
 	 */
-	public function get_sample_terms_data( $count = 5 ) {
-		return $this->format_sample_post_terms( $this->get_random_posts( $count ) );
+	public function get_sample_terms_data( array $posts ) {
+		return $this->format_sample_post_terms( $posts );
 	}
 
 	/**
