@@ -165,15 +165,22 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 		}
 
 		foreach ( $source_index as $key => $source_post ) {
+			$source_index[ $key ]['migrated'] = true;
+
 			if ( ! isset( $destination_index[ $key ] ) ) {
 				$destination_index[ $key ] = array(
-					'ID'      => $key,
-					'type'    => null,
-					'author'  => null,
-					'content' => null,
-					'meta'    => null,
+					'ID'       => $key,
+					'type'     => null,
+					'author'   => null,
+					'content'  => null,
+					'meta'     => null,
+					'migrated' => false,
 				);
+
+				continue;
 			}
+
+			$destination_index[ $key ]['migrated'] = true;
 		}
 
 		$comparison_output = array();
