@@ -9,7 +9,7 @@ use Press_Sync\validation\Taxonomy;
  * Class TaxonomyValidator
  *
  * @package Press_Sync\validators
- * @since NEXT
+ * @since   NEXT
  */
 class TaxonomyValidator extends AbstractValidator implements ValidatorInterface {
 	/**
@@ -46,7 +46,9 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @since NEXT
 	 */
 	public function get_destination_data() {
-		return API::get_remote_data( 'validation/taxonomy/count' );
+		return array(
+			'count' => API::get_remote_data( 'validation/taxonomy/count' ),
+		);
 	}
 
 	/**
@@ -60,7 +62,44 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 */
 	public function get_comparison_data( array $source, array $destination ) {
 		return array(
-			'count' => array(),//$this->compare_count( $source['count'], $destination['count'] )
+			'count' => $this->compare_count( $source['count'], $destination['count'] ),
 		);
+	}
+
+	/**
+	 * @param $source
+	 * @param $destination
+	 *
+	 * @return array
+	 */
+	private function compare_count( $source, $destination ) {
+		$data = array();
+
+		foreach ( $source['term_count_by_taxonomy'] as $taxonomy_name => $count ) {
+			$data[ $taxonomy_name ] = array(
+				'taxonomy_name'              => $taxonomy_name,
+				'source_tax_term_count'      => $count,
+				'destination_tax_term_count' => 0,
+				'migrated'                   => false,
+			);
+		}
+
+		foreach ( $destination['term_count_by_taxonomy'] as $taxonomy_name => $count ) {
+			if ( ! isset( $data[ $taxonomy_name ] ) ) {
+				$data[ $taxonomy_name ] = array(
+					'taxonomy_name'              => $taxonomy_name,
+					'source_tax_term_count'      => 0,
+					'destination_tax_term_count' => $count,
+					'migrated'                   => false,
+				);
+
+				continue;
+			}
+
+			$data[ $taxonomy_name ]['destination_tax_term_count'] = $count;
+			$data[ $taxonomy_name ]['migrated']                   = true;
+		}
+
+		return $data;
 	}
 }

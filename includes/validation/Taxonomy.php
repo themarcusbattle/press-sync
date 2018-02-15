@@ -9,6 +9,18 @@ namespace Press_Sync\validation;
  */
 class Taxonomy implements CountInterface {
 	/**
+	 * Get all of the Taxonomy data for validation.
+	 *
+	 * @return array
+	 * @since NEXT
+	 */
+	public function get_data() {
+		return array(
+			'count' => $this->get_count(),
+		);
+	}
+
+	/**
 	 * Get the number of unique taxonomies in this WordPress installation.
 	 *
 	 * @return int
@@ -35,8 +47,7 @@ class Taxonomy implements CountInterface {
 				)
 			);
 
-			$terms[] = array(
-				'taxonomy_name'   => $name,
+			$terms[ $name ] = array(
 				'number_of_terms' => count( $taxonomy_terms ),
 			);
 		}

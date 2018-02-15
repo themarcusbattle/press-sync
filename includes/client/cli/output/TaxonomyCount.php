@@ -1,6 +1,8 @@
 <?php
 namespace Press_Sync\client\output;
 
+use WP_CLI\Formatter;
+
 /**
  * Class TaxonomyCount
  *
@@ -29,9 +31,19 @@ class TaxonomyCount extends AbstractOutput {
 			\WP_CLI::line( $message );
 		}
 
-		\WP_CLI\Utils\format_items( 'table', $data['term_count_by_taxonomy'], array( 'taxonomy_name', 'number_of_terms' ) );
-		\WP_CLI\Utils\format_items( 'table', $data['post_terms'], array( 'taxonomy', 'term', 'post_count' ) );
-		\WP_CLI::line( "Unique taxonomies: {$data['unique_taxonomies']}" );
+		if ( $message ) {
+			\WP_CLI::line( $message );
+		}
+
+		$format     = 'table';
+		$fields     = array_keys( $data[0] );
+		$assoc_args = compact( 'format', 'fields' );
+		$formatter  = new Formatter( $assoc_args );
+		$formatter->display_items( $data, true );
+
+		// \WP_CLI\Utils\format_items( 'table', $data['term_count_by_taxonomy'], array( 'taxonomy_name', 'number_of_terms' ) );
+		// \WP_CLI\Utils\format_items( 'table', $data['post_terms'], array( 'taxonomy', 'term', 'post_count' ) );
+		// \WP_CLI::line( "Unique taxonomies: {$data['unique_taxonomies']}" );
 	}
 
 
