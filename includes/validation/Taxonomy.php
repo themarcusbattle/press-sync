@@ -123,28 +123,11 @@ class Taxonomy implements CountInterface {
 
 		foreach ( get_taxonomies() as $taxonomy ) {
 			$terms                          = get_terms( array( 'taxonomy' => $taxonomy ) );
-			$data[ $taxonomy ]['terms']     = $this->get_term_slugs( $terms );
+			$data[ $taxonomy ]['terms']     = wp_list_pluck( $terms, 'slug' );
 			$data[ $taxonomy ]['term_meta'] = $this->get_taxonomy_term_meta( $terms );
 		}
 
 		return $data;
-	}
-
-	/**
-	 * Get the term slugs from an array of terms.
-	 *
-	 * @param array $terms Term objects.
-	 *
-	 * @return array
-	 */
-	private function get_term_slugs( $terms ) {
-		$slugs = array();
-
-		foreach ( $terms as $term ) {
-			$slugs[] = $term->slug;
-		}
-
-		return $slugs;
 	}
 
 	/**
