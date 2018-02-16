@@ -74,8 +74,7 @@ class Taxonomy implements CountInterface {
 		$data = array();
 
 		foreach ( $terms as $term ) {
-			$data[ $term->term_id ] = array(
-				'term_id' => $term->term_id,
+			$data[ $term->slug . '-' . $term->taxonomy ] = array(
 				'taxonomy' => $term->taxonomy,
 				'count'    => $term->count,
 				'slug'     => $term->slug,

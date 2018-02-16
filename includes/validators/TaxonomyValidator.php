@@ -118,7 +118,6 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 
 		foreach ( $source as $key => $term_data ) {
 			$data[ $key ] = array(
-				'term_id'           => $term_data['term_id'],
 				'term'              => $term_data['slug'],
 				'taxonomy'          => $term_data['taxonomy'],
 				'count'             => $term_data['count'],
@@ -129,7 +128,6 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 		foreach ( $destination as $key => $term_data ) {
 			if ( ! isset( $data[ $key ] ) ) {
 				$data[ $key ] = array(
-					'term_id'           => $term_data['term_id'],
 					'term'              => $term_data['slug'],
 					'taxonomy'          => $term_data['taxonomy'],
 					'count'             => 0,
@@ -168,16 +166,11 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 		$sample_size     = $array_size >= $this->args['sample_count'] ? $this->args['sample_count'] : $array_size;
 		$random_keys     = array_rand( $data, $sample_size );
 		$randomized_data = array_filter( $data, function ( $term ) use ( $random_keys ) {
-			return in_array( $term['term_id'], $random_keys, true );
+			$key = $term['term'] . '-' . $term['taxonomy'];
+			return in_array( $key, $random_keys, true );
 		} );
 
-		usort( $randomized_data, function ( $a, $b ) {
-			if ( $a['term_id'] === $b['term_id'] ) {
-				return 0;
-			}
-
-			return $a['term_id'] < $b['term_id'] ? -1 : 1;
-		});
+		ksort( $randomized_data );
 
 		return $randomized_data;
 	}
