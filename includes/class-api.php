@@ -175,14 +175,13 @@ class API extends \WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function sync_objects( $request ) {
-
 		$objects_to_sync         = $request->get_param( 'ps_objects_to_sync' );
 		$objects                 = $request->get_param( 'objects' );
 		$duplicate_action        = $request->get_param( 'ps_duplicate_action' ) ? $request->get_param( 'ps_duplicate_action' ) : 'skip';
 		$force_update            = $request->get_param( 'ps_force_update' );
-		$this->skip_assets       = 'true' == $request->get_param( 'ps_skip_assets' );
-		$this->preserve_ids      = 'true' == $request->get_param( 'ps_preserve_ids' );
-		$this->fix_terms         = 'true' == $request->get_param( 'ps_fix_terms' );
+		$this->skip_assets       = (bool) $request->get_param( 'ps_skip_assets' );
+		$this->preserve_ids      = (bool) $request->get_param( 'ps_preserve_ids' );
+		$this->fix_terms         = (bool) $request->get_param( 'ps_fix_terms' );
 		$this->content_threshold = absint( $request->get_param( 'ps_content_threshold' ) );
 
 		if ( ! $objects_to_sync ) {
