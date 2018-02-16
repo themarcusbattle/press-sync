@@ -271,9 +271,13 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 				$data[] = array(
 					'post_id'        => $post_id,
 					'taxonomy'       => $taxonomy_key,
-					'terms_migrated' => $this->check_all_terms(
+					'terms_migrated' => $this->apply_diff_to_values(
 						$source[ $post_id ]['terms'],
-						$destination[ $post_id ]['terms']
+						$destination[ $post_id ]['terms'],
+						$this->check_all_terms(
+							$source[ $post_id ]['terms'],
+							$destination[ $post_id ]['terms']
+						)
 					),
 				);
 			}
@@ -292,22 +296,22 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 	 */
 	private function check_all_terms( $source, $destination ) {
 		if ( is_null( $destination ) ) {
-			return false;
+			return 'no';
 		}
 
 		if ( count( $source ) !== count( $destination ) ) {
-			return false;
+			return 'no';
 		}
 
 		foreach ( $source as $taxonomy_key => $taxonomy ) {
 			foreach ( $taxonomy as $term_key => $term ) {
 				if ( ! isset( $destination[ $taxonomy_key ][ $term_key ] )
 					|| $destination[ $taxonomy_key ][ $term_key ] !== $source[ $taxonomy_key ][ $term_key ] ) {
-					return false;
+					return 'no';
 				}
 			}
 		}
 
-		return true;
+		return 'yes';
 	}
 }

@@ -47,7 +47,7 @@ class PostSampleTax extends AbstractOutput {
 	 */
 	public function prepare( $data ) {
 		foreach ( $data as $key => $post_tax_data ) {
-			$data[ $key ]['terms_migrated'] = $this->get_result_icon( $post_tax_data['terms_migrated'] );
+			$data[ $key ]['terms_migrated'] = \WP_CLI::colorize( $data[ $key ]['terms_migrated'] );
 		}
 
 		return $data;
