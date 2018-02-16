@@ -32,7 +32,7 @@ class PostSampleTax extends AbstractOutput {
 		}
 
 		$format     = 'table';
-		$fields     = array_keys( $data[0] );
+		$fields     = array_keys( current( $data ) );
 		$assoc_args = compact( 'format', 'fields' );
 		$formatter  = new Formatter( $assoc_args );
 		$formatter->display_items( $data, true );
