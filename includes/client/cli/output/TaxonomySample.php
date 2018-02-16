@@ -16,7 +16,7 @@ class TaxonomySample extends AbstractOutput {
 	 */
 	public function render() {
 		\WP_CLI::line();
-		$this->output( $this->prepare( $this->data['comparison'] ), 'Post counts by taxonomy term:' );
+		$this->output( $this->prepare( $this->data['comparison'] ), 'Post counts by sample taxonomy term:' );
 		\WP_CLI::line();
 	}
 
