@@ -16,7 +16,8 @@ class Taxonomy implements CountInterface {
 	 */
 	public function get_data() {
 		return array(
-			'count' => $this->get_count(),
+			'count'      => $this->get_count(),
+			'post_terms' => $this->get_post_count_by_taxonomy_term(),
 		);
 	}
 
@@ -67,29 +68,15 @@ class Taxonomy implements CountInterface {
 		$taxonomies = array();
 
 		foreach ( get_taxonomies() as $name => $taxonomy ) {
-			$taxonomies[ $name ] = array();
-			$taxonomy_terms      = get_terms( array(
-				'taxonomy'   => $taxonomy,
+			$term_query = new \WP_Term_Query( array(
+				'taxonomy'   => $name,
 				'hide_empty' => false,
 			) );
 
-			foreach ( $taxonomy_terms as $term ) {
-				$query = new \WP_Query(
-					array(
-						'fields'         => 'ids',
-						'post_type'      => 'any',
-						'posts_per_page' => - 1,
-						'tax_query'      => array(
-							array(
-								'taxonomy' => $taxonomy,
-								'field'    => 'slug',
-								'terms'    => $term->slug,
-							),
-						),
-					)
-				);
+			$terms = $term_query->get_terms();
 
-				$taxonomies[ $name ][ $term->slug ] = count( $query->get_posts() );
+			foreach ( $terms as $term ) {
+				$taxonomies[ $name ][ $term->slug ] = $term->count;
 
 				wp_reset_postdata();
 			}
@@ -97,13 +84,11 @@ class Taxonomy implements CountInterface {
 
 		$indexed_array = array();
 
-		foreach ( $taxonomies as $tax_name => $taxonomy ) {
+		foreach ( $taxonomies as $taxonomy_name => $taxonomy ) {
+			$indexed_array[ $taxonomy_name ] = array();
+
 			foreach ( $taxonomy as $term_name => $post_count ) {
-				$indexed_array[] = array(
-					'taxonomy'   => $tax_name,
-					'term'       => $term_name,
-					'post_count' => $post_count,
-				);
+				$indexed_array[ $taxonomy_name ][ $term_name ] = $post_count;
 			}
 		}
 
@@ -121,7 +106,6 @@ class Taxonomy implements CountInterface {
 		return array(
 			'unique_taxonomies'      => $this->get_unique_taxonomy_count(),
 			'term_count_by_taxonomy' => $this->get_term_count_by_taxonomy(),
-			'post_terms'             => $this->get_post_count_by_taxonomy_term(),
 		);
 	}
 

@@ -19,6 +19,8 @@ class TaxonomyRenderFactory {
 		switch ( $key ) {
 			case 'count':
 				return new TaxonomyCount( $data );
+			case 'post_terms':
+				return new TaxonomySample( $data );
 			default:
 				return new \WP_Error( 'data_not_found', 'Taxonomy data provided for processing does not adhere to contract.' );
 		}
