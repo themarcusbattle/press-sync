@@ -46,19 +46,19 @@ class CLI {
 	 *
 	 * [--<field>=<value>]
 	 * : May be any valid Press Sync option - unspecified options will be parsed from the database options.
-	 * - ps_remote_domain     - The domain of the remote site.
-	 * - ps_remote_key        - The remote site Press Sync key.
-	 * - ps_sync_method       - The sync method (push or pull).
-	 * - ps_duplicate_action  - Action to take for duplicate posts.
-	 * - ps_force_update      - Whether or not to force update of posts.
-	 * - ps_skip_assets       - Whether to skip full attachment uploads.
-	 * - ps_options_to_sync   - Comma-separated list of wp_options to sync.
-	 * - ps_preserve_ids      - Whether to preserve the IDs of post-type objects.
-	 * - ps_content_threshold - Set to a number > 0 to compare duplicates based on content.
-	 * - ps_partial_terms     - Set true if terms are already synced, allows for smaller post payloads.
-	 * - ps_page_size         - The number of objects to sync in a batch.
+	 * - ps-remote-domain     - The domain of the remote site.
+	 * - ps-remote-key        - The remote site Press Sync key.
+	 * - ps-sync-method       - The sync method (push or pull).
+	 * - ps-duplicate-action  - Action to take for duplicate posts.
+	 * - ps-force-update      - Whether or not to force update of posts.
+	 * - ps-skip-assets       - Whether to skip full attachment uploads.
+	 * - ps-options-to-sync   - Comma-separated list of wp_options to sync.
+	 * - ps-preserve-ids      - Whether to preserve the IDs of post-type objects.
+	 * - ps-content-threshold - Set to a number > 0 to compare duplicates based on content.
+	 * - ps-partial-terms     - Set true if terms are already synced, allows for smaller post payloads.
+	 * - ps-page-size         - The number of objects to sync in a batch.
 	 *
-	 * [--local_folder=<local_folder>]
+	 * [--local-folder=<local_folder>]
 	 * : The local folder of JSON data to read instead of the source database.
 	 *
 	 * [--verbose]
@@ -69,7 +69,7 @@ class CLI {
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis [--<field>=<value>] [--local_folder=<local_folder>] [--verbose]
+	 * @synopsis [--<field>=<value>] [--local-folder=<local_folder>] [--verbose]
 	 */
 	public function sync_all( $args, $assoc_args ) {
 		$assoc_args = $this->parse_assoc_args( $assoc_args );
@@ -93,26 +93,26 @@ class CLI {
 	 *
 	 * [--<field>=<value>]
 	 * : May be any valid Press Sync option - unspecified options will be parsed from the database options.
-	 * - ps_remote_domain     - The domain of the remote site.
-	 * - ps_remote_key        - The remote site Press Sync key.
-	 * - ps_sync_method       - The sync method (push or pull).
-	 * - ps_duplicate_action  - Action to take for duplicate posts.
-	 * - ps_force_update      - Whether or not to force update of posts.
-	 * - ps_skip_assets       - Whether to skip full attachment uploads.
-	 * - ps_options_to_sync   - Comma-separated list of wp_options to sync.
-	 * - ps_preserve_ids      - Whether to preserve the IDs of post-type objects.
-	 * - ps_fix_terms         - Whether terms should be repaired instead of doing a normal sync.
-	 * - ps_content_threshold - Set to a number > 0 to compare duplicates based on content.
-	 * - ps_partial_terms     - Set true if terms are already synced, allows for smaller post payloads.
-	 * - ps_page_size         - The number of objects to sync in a batch.
+	 * - ps-remote-domain     - The domain of the remote site.
+	 * - ps-remote-key        - The remote site Press Sync key.
+	 * - ps-sync-method       - The sync method (push or pull).
+	 * - ps-duplicate-action  - Action to take for duplicate posts.
+	 * - ps-force-update      - Whether or not to force update of posts.
+	 * - ps-skip-assets       - Whether to skip full attachment uploads.
+	 * - ps-options-to-sync   - Comma-separated list of wp_options to sync.
+	 * - ps-preserve-ids      - Whether to preserve the IDs of post-type objects.
+	 * - ps-fix-terms         - Whether terms should be repaired instead of doing a normal sync.
+	 * - ps-content-threshold - Set to a number > 0 to compare duplicates based on content.
+	 * - ps-partial-terms     - Set true if terms are already synced, allows for smaller post payloads.
+	 * - ps-page-size         - The number of objects to sync in a batch.
 	 *
-	 * [--local_folder=<local_folder>]
+	 * [--local-folder=<local_folder>]
 	 * : The local folder of JSON data to read instead of the source database.
 	 *
 	 * [--verbose]
 	 * : Display logs from the remote server during processing.
 	 *
-	 * @synopsis [--local_folder=<local_folder>] [--<field>=<value>]
+	 * @synopsis [--local-folder=<local_folder>] [--<field>=<value>]
 	 *
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
@@ -213,23 +213,28 @@ class CLI {
 	 * @return array
 	 */
 	private function parse_assoc_args( $assoc_args ) {
-		$valid_keys   = array_keys( $this->plugin->parse_sync_settings() );
-		$valid_keys[] = 'verbose';
+		$valid_keys    = array_keys( $this->plugin->parse_sync_settings() );
+		$valid_keys[]  = 'verbose';
+		$prepared_args = [];
 
-		foreach ( $assoc_args as $key => $value ) {
+		foreach ( $assoc_args as $key => $arg ) {
+			$prepared_args[ strtr( $key, [ '-' => '_' ] ) ] = $arg;
+		}
+
+		foreach ( $prepared_args as $key => $value ) {
 			if ( in_array( $key, $valid_keys ) ){
 				continue;
 			}
 
-			unset( $assoc_args[ $key ] );
+			unset( $prepared_args[ $key ] );
 		}
 
-		$final_args = $this->plugin->parse_sync_settings( $assoc_args );
+		$final_args = $this->plugin->parse_sync_settings( $prepared_args );
 
 		foreach ( $final_args as $key => $value ) {
 			\WP_CLI::line( sprintf( "Arg set: [%s] => %s", $key, $value ) );
 		}
 
-		return $assoc_args;
+		return $final_args;
 	}
 }
