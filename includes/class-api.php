@@ -2,10 +2,14 @@
 
 namespace Press_Sync;
 
+use Press_Sync\api\route\Validation;
+
 /**
  * The Press_Sync_API class.
  */
-class API extends \WP_REST_Controller {
+class API {
+
+	const NAMESPACE = 'press-sync/v1';
 
 	/**
 	 * Parent plugin class.
@@ -49,6 +53,9 @@ class API extends \WP_REST_Controller {
 	 * @since  0.1.0
 	 */
 	public function hooks() {
+		$validation = new Validation();
+		$validation->register_routes();
+
 		add_action( 'rest_api_init', array( $this, 'register_api_endpoints' ) );
 		add_action( 'press_sync_sync_post', array( $this, 'add_p2p_connections' ), 10, 2 );
 	}
@@ -60,37 +67,28 @@ class API extends \WP_REST_Controller {
 	 */
 	public function register_api_endpoints() {
 
-		register_rest_route( 'press-sync/v1', '/status', array(
-			'methods' => 'GET',
+		register_rest_route( self::NAMESPACE, '/status', array(
+			'methods'  => 'GET',
 			'callback' => array( $this, 'get_connection_status_via_api' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/status/(?P<id>\d+)', array(
-			'methods' => 'GET',
+		register_rest_route( self::NAMESPACE, '/status/(?P<id>\d+)', array(
+			'methods'  => 'GET',
 			'callback' => array( $this, 'get_post_sync_status_via_api' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/sync', array(
-			'methods' => array( 'GET', 'POST' ),
-			'callback' => array( $this, 'sync_objects' ),
+		register_rest_route( self::NAMESPACE, '/sync', array(
+			'methods'             => array( 'GET', 'POST' ),
+			'callback'            => array( $this, 'sync_objects' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 		) );
 
-		register_rest_route( 'press-sync/v1', '/progress/', array(
+		register_rest_route( self::NAMESPACE, '/progress/', array(
 			'methods'             => array( 'GET' ),
 			'callback'            => array( $this, 'get_sync_progress' ),
 			'permission_callback' => array( $this, 'validate_sync_key' ),
 			'args'                => array( 'post_type', 'press_sync_key', 'preserve_ids' ),
 		) );
-
-		/*
-		@todo Complete the individual post syncing.
-		register_rest_route( 'press-sync/v1', '/sync/(?P<id>\d+)', array(
-			'methods' => array( 'GET', 'POST' ),
-			'callback' => array( $this, 'sync_objects' ),
-		) );
-		 */
-
 	}
 
 	/**
@@ -1239,6 +1237,107 @@ SQL;
 				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
 			}
 		}
+	}
+
+	/**
+	 * Gets the remote site URL and appends query parameters.
+	 *
+	 * @since 0.5.1
+	 *
+	 * @param  string $url      A URL other than the stored remote URL to use.
+	 * @param  string $endpoint The remote site endpoint.
+	 *
+	 * @since 0.7.0
+	 * @param  array  $args     (Optional) Array of query parameters.
+	 *
+	 * @return string
+	 */
+	public static function get_remote_url( $url, $endpoint = 'status', $args = array() ) {
+		if ( ! $url ) {
+			$url = get_option( 'ps_remote_domain' );
+		}
+
+		$url        = trailingslashit( $url );
+		$endpoint   = ltrim( $endpoint, '/' );
+		$query_args = wp_parse_args( $args, array(
+			'press_sync_key' => get_option( 'ps_remote_key' ),
+		) );
+
+		$remote_args = get_option( 'ps_remote_query_args' );
+
+		if ( ! empty( $remote_args ) ) {
+			$remote_args = ltrim( $remote_args, '?' );
+			parse_str( $remote_args, $remote_args_array );
+			$query_args = array_merge( $query_args, $remote_args_array );
+		}
+
+		$namespace = self::NAMESPACE;
+		return  "{$url}wp-json/{$namespace}/{$endpoint}?" . http_build_query( $query_args );
+	}
+
+	/**
+	 * Gets a remote server's response.
+	 *
+	 * Returns a response array on success-ish, or null on bad request method.
+	 *
+	 * @since NEXT
+	 *
+	 * @param  string $url    The remote server URL.
+	 * @param  array  $args   (Optional) The arguments to pass to wp_remote_* methods.
+	 * @param  string $method (Optional) Set the request method, defaults to 'GET'.
+	 * @return mixed
+	 */
+	public static function get_remote_response( $url, $args = array(), $method = 'GET' ) {
+		$args = wp_parse_args( $args, array(
+			'timeout' => 30,
+		) );
+
+		$data         = array();
+		$data['body'] = '';
+
+		switch ( strtoupper( $method ) ) {
+			case 'GET':
+				$data['raw_response'] = wp_remote_get( $url, $args );
+				break;
+
+			case 'POST':
+				$data['raw_response'] = wp_remote_post( $url, $args );
+				break;
+
+			default:
+				trigger_error( sprintf( __( 'Unsupported HTTP method %s.', 'press-sync' ), $method ), E_USER_WARNING );
+				return;
+		}
+
+		$data['code'] = wp_remote_retrieve_response_code( $data['raw_response'] );
+
+		if ( 200 === $data['code'] ) {
+			$data['body'] = json_decode( wp_remote_retrieve_body( $data['raw_response'] ), true );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get remote data from an API request.
+	 *
+	 * @since NEXT
+	 * @param  string $request The requested datapoint.
+	 * @return array
+	 */
+	public static function get_remote_data( $request, $args = array() ) {
+		$args = wp_parse_args( $args, array(
+			'press_sync_key' => get_option( 'ps_remote_key')
+        ) );
+
+		$url      = API::get_remote_url( get_option( 'ps_remote_domain' ), $request, $args );
+		$response = API::get_remote_response( $url, $args );
+
+		if ( empty( $response['body'] ) ) {
+			return array();
+		}
+
+		return $response['body'];
 	}
 
 	/**
