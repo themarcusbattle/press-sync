@@ -48,7 +48,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	public function get_destination_data() {
 		return array(
 			'count'      => API::get_remote_data( 'validation/taxonomy/count' ),
-			'post_terms' => API::get_remote_data( 'validation/taxonomy/sample' ),
+			'post_terms' => API::get_remote_data( 'validation/taxonomy/post_terms' ),
 		);
 	}
 
@@ -105,9 +105,78 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 		return $data;
 	}
 
+	/**
+	 * Build array of source and destination post count data.
+	 *
+	 * @param array $source Source data.
+	 * @param array $destination Destination data.
+	 *
+	 * @return array
+	 */
 	private function compare_post_terms( $source, $destination ) {
 		$data = array();
 
-		return $data;
+		foreach ( $source as $key => $term_data ) {
+			$data[ $key ] = array(
+				'term_id'           => $term_data['term_id'],
+				'term'              => $term_data['slug'],
+				'taxonomy'          => $term_data['taxonomy'],
+				'count'             => $term_data['count'],
+				'destination_count' => 0,
+				'migrated'          => false,
+			);
+		}
+
+		foreach ( $destination as $key => $term_data ) {
+			if ( ! isset( $data[ $key ] ) ) {
+				$data[ $key ] = array(
+					'term_id'           => $term_data['term_id'],
+					'term'              => $term_data['slug'],
+					'taxonomy'          => $term_data['taxonomy'],
+					'count'             => 0,
+					'destination_count' => $term_data['count'],
+					'migrated'          => false,
+				);
+
+				continue;
+			}
+
+			$data[ $key ]['destination_count'] = $destination[ $key ]['count'];
+			$data[ $key ]['migrated']               = true;
+		}
+
+		$random_terms = $this->get_random_terms( $data );
+
+		foreach ( $random_terms as $key => $term ) {
+			$random_terms[ $key ]['destination_count'] = $this->apply_diff_to_values( $term['count'], $term['destination_count'] );
+		}
+
+		return $random_terms;
+	}
+
+	/**
+	 * Reduce the full array set to a random set of terms for output.
+	 *
+	 * @param array $data Data to select random terms from.
+	 *
+	 * @return array
+	 */
+	private function get_random_terms( array $data ) {
+		$array_size      = count( $data );
+		$sample_size     = $array_size >= $this->args['sample_count'] ? $this->args['sample_count'] : $array_size;
+		$random_keys     = array_rand( $data, $sample_size );
+		$randomized_data = array_filter( $data, function ( $term ) use ( $random_keys ) {
+			return in_array( $term['term_id'], $random_keys, true );
+		} );
+
+		usort( $randomized_data, function ( $a, $b ) {
+			if ( $a['term_id'] === $b['term_id'] ) {
+				return 0;
+			}
+
+			return $a['term_id'] < $b['term_id'] ? -1 : 1;
+		});
+
+		return $randomized_data;
 	}
 }

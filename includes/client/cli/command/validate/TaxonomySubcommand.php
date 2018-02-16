@@ -22,7 +22,8 @@ class TaxonomySubcommand extends AbstractValidateSubcommand {
 	public function __construct( $args ) {
 		$this->args      = $args;
 		$this->validator = new TaxonomyValidator( array(
-			'format' => $this->get_data_output_format(),
+			'sample_count' => $args['count'] ?? 5,
+			'format'       => $this->get_data_output_format(),
 		) );
 	}
 	/**

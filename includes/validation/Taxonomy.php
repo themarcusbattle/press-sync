@@ -65,34 +65,26 @@ class Taxonomy implements CountInterface {
 	 * @since NEXT
 	 */
 	public function get_post_count_by_taxonomy_term() {
-		$taxonomies = array();
+		$term_query = new \WP_Term_Query( array(
+			'hide_empty' => false,
+		) );
 
-		foreach ( get_taxonomies() as $name => $taxonomy ) {
-			$term_query = new \WP_Term_Query( array(
-				'taxonomy'   => $name,
-				'hide_empty' => false,
-			) );
+		$terms = $term_query->get_terms();
 
-			$terms = $term_query->get_terms();
+		$data = array();
 
-			foreach ( $terms as $term ) {
-				$taxonomies[ $name ][ $term->slug ] = $term->count;
-
-				wp_reset_postdata();
-			}
+		foreach ( $terms as $term ) {
+			$data[ $term->term_id ] = array(
+				'term_id' => $term->term_id,
+				'taxonomy' => $term->taxonomy,
+				'count'    => $term->count,
+				'slug'     => $term->slug,
+			);
 		}
 
-		$indexed_array = array();
+		wp_reset_postdata();
 
-		foreach ( $taxonomies as $taxonomy_name => $taxonomy ) {
-			$indexed_array[ $taxonomy_name ] = array();
-
-			foreach ( $taxonomy as $term_name => $post_count ) {
-				$indexed_array[ $taxonomy_name ][ $term_name ] = $post_count;
-			}
-		}
-
-		return $indexed_array;
+		return $data;
 	}
 
 
