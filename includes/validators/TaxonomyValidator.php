@@ -46,14 +46,9 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 * @since NEXT
 	 */
 	public function get_destination_data() {
-		$count = API::get_remote_data( 'validation/taxonomy/count' );
-
 		return array(
-			'count' => array(
-				'unique_taxonomies'      => $count['unique_taxonomies'],
-				'term_count_by_taxonomy' => $count['term_count_by_taxonomy'],
-			),
-			'post_terms' => $count['post_terms'],
+			'count'      => API::get_remote_data( 'validation/taxonomy/count' ),
+			'post_terms' => API::get_remote_data( 'validation/taxonomy/sample' ),
 		);
 	}
 
@@ -68,7 +63,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 	 */
 	public function get_comparison_data( array $source, array $destination ) {
 		return array(
-			'count' => $this->compare_count( $source['count'], $destination['count'] ),
+			'count'      => $this->compare_count( $source['count'], $destination['count'] ),
 			'post_terms' => $this->compare_post_terms( $source['post_terms'], $destination['post_terms'] ),
 		);
 	}

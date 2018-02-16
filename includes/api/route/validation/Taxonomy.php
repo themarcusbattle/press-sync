@@ -30,6 +30,9 @@ class Taxonomy extends AbstractRoute {
 			'count'  => array(
 				'callback' => array( $this->data_source, 'get_count' ),
 			),
+			'post_terms' => array(
+				'callback' => array( $this->data_source, 'get_post_count_by_taxonomy_term' ),
+			),
 			'sample' => array(
 				'callback' => array( $this, 'get_sample' ),
 				'args'     => array(

@@ -11,11 +11,11 @@ class TaxonomySample extends AbstractOutput {
 	 * Render data to the client.
 	 *
 	 * @since NEXT
-	 * @return mixed
 	 */
 	public function render() {
 		$this->output( $this->data['comparison'], 'Post counts by taxonomy term:' );
 	}
+
 	/**
 	 * @param array  $data
 	 * @param string $message
