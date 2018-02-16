@@ -86,20 +86,24 @@ abstract class AbstractValidator {
 	 * Determine if two values are the same and wrap them in appropriate formatting.
 	 *
 	 * @since NEXT
-	 * @param  mixed    $count   The first count to compare.
-	 * @param  mixed    $compare The count to compare against the first.
+	 *
+	 * @param  mixed $count             The first count to compare.
+	 * @param  mixed $compare           The count to compare against the first.
+	 * @param mixed  $value_to_colorize Optional alternate value to colorize.
+	 *
 	 * @return string
 	 */
-	protected function apply_diff_to_values( $count, $compare ) {
-		$format = $this->args['format'];
-		$pre    = $format['match_open_wrap'];
-		$post   = $format['match_close_wrap'];
+	protected function apply_diff_to_values( $count, $compare, $value_to_colorize = null ) {
+		$format            = $this->args['format'];
+		$pre               = $format['match_open_wrap'];
+		$post              = $format['match_close_wrap'];
+		$value_to_colorize = $value_to_colorize ? $value_to_colorize : $compare;
 
 		if ( $count !== $compare ) {
 			$pre  = $format['mismatch_open_wrap'];
 			$post = $format['mismatch_close_wrap'];
 		}
 
-		return "{$pre}{$compare}{$post}";
+		return "{$pre}{$value_to_colorize}{$post}";
 	}
 }
