@@ -38,9 +38,6 @@ class TaxonomyCount extends AbstractOutput {
 		$assoc_args = compact( 'format', 'fields' );
 		$formatter  = new Formatter( $assoc_args );
 		$formatter->display_items( $data, true );
-
-		// \WP_CLI\Utils\format_items( 'table', $data['post_terms'], array( 'taxonomy', 'term', 'post_count' ) );
-		// \WP_CLI::line( "Unique taxonomies: {$data['unique_taxonomies']}" );
 	}
 
 	/**
@@ -53,12 +50,8 @@ class TaxonomyCount extends AbstractOutput {
 	public function prepare( array $data ) {
 		foreach ( $data as $taxonomy_name => $taxonomy ) {
 			foreach ( $taxonomy as $index => $value ) {
-				if ( 'destination_count' === $index ) {
+				if ( 'destination_count' === $index || 'migrated' === $index ) {
 					$data[ $taxonomy_name ][ $index ] = \WP_CLI::colorize( $value );
-				}
-
-				if ( 'migrated' === $index ) {
-					$data[ $taxonomy_name ][ $index ] = $this->get_result_icon( $value );
 				}
 			}
 		}

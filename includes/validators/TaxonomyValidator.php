@@ -82,7 +82,7 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 				'taxonomy_name'     => $taxonomy_name,
 				'term_count'        => $count['number_of_terms'],
 				'destination_count' => 0,
-				'migrated'          => false,
+				'migrated'          => 'yes',
 			);
 		}
 
@@ -92,14 +92,14 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 					'taxonomy_name'     => $taxonomy_name,
 					'term_count'        => 0,
 					'destination_count' => $count['number_of_terms'],
-					'migrated'          => false,
+					'migrated'          => 'no',
 				);
 
 				continue;
 			}
 
 			$data[ $taxonomy_name ]['destination_count'] = $this->apply_diff_to_values( $count['number_of_terms'], $data[ $taxonomy_name ]['term_count'] );
-			$data[ $taxonomy_name ]['migrated']          = true;
+			$data[ $taxonomy_name ]['migrated']          = $this->apply_diff_to_values( $count['number_of_terms'], $data[ $taxonomy_name ]['term_count'], $data[ $taxonomy_name ]['migrated'] );
 		}
 
 		return $data;
