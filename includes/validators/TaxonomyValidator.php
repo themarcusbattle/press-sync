@@ -123,7 +123,6 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 				'taxonomy'          => $term_data['taxonomy'],
 				'count'             => $term_data['count'],
 				'destination_count' => 0,
-				'migrated'          => false,
 			);
 		}
 
@@ -135,14 +134,17 @@ class TaxonomyValidator extends AbstractValidator implements ValidatorInterface 
 					'taxonomy'          => $term_data['taxonomy'],
 					'count'             => 0,
 					'destination_count' => $term_data['count'],
-					'migrated'          => false,
+					'migrated'          => true,
 				);
 
 				continue;
 			}
 
 			$data[ $key ]['destination_count'] = $destination[ $key ]['count'];
-			$data[ $key ]['migrated']               = true;
+		}
+
+		foreach ( $data as $key => $term ) {
+			$data[ $key ]['migrated'] = $data[ $key ]['count'] === $data[ $key ]['destination_count'];
 		}
 
 		$random_terms = $this->get_random_terms( $data );
