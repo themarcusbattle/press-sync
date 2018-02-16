@@ -1103,7 +1103,7 @@ SQL;
 		 *
 		 * Allows filtering the settings before they are passed along for processing data.
 		 *
-		 * @since NEXT
+		 * @since 0.9.2
 		 * @param  array $settings The settings array after parsing options.
 		 * @return array
 		 */
@@ -1625,7 +1625,7 @@ SQL;
 	/**
 	 * Prepare the value from the ps_delta_date option to something we can use to query against the posts table.
 	 *
-	 * @since NEXT
+	 * @since 0.9.2
 	 * @param  array $settings The settings to be used for Press Sync.
 	 * @return array
 	 */

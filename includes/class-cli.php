@@ -223,7 +223,7 @@ class CLI {
 	 * This will also output the arguments that are being used in the current sync process and a confirmation dialog.
 	 * You can also pass the --yes argument to skip the confirmation.
 	 *
-	 * @since NEXT
+	 * @since 0.9.2
 	 * @param  array $assoc_args The associative args from the command line.
 	 * @return array
 	 */
