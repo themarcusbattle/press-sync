@@ -44,11 +44,7 @@ class TaxonomySample extends AbstractOutput {
 	public function prepare( array $data ) {
 		foreach ( $data as $index => $post_sample ) {
 			foreach ( $post_sample as $key => $value ) {
-				if ( 'migrated' === $key ) {
-					$data[ $index ][ $key ] = $this->get_result_icon( $value );
-				}
-
-				if ( 'destination_count' === $key ) {
+				if ( 'destination_count' === $key || 'migrated' === $key ) {
 					$data[ $index ][ $key ] = \WP_CLI::colorize( $value );
 				}
 			}
