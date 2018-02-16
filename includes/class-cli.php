@@ -64,12 +64,15 @@ class CLI {
 	 * [--verbose]
 	 * : Display logs from the remote server during processing.
 	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt after displaying sync settings.
+	 *
 	 * @since 0.6.1
 	 *
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
 	 *
-	 * @synopsis [--<field>=<value>] [--local-folder=<local_folder>] [--verbose]
+	 * @synopsis [--<field>=<value>] [--local-folder=<local_folder>] [--verbose] [--yes]
 	 */
 	public function sync_all( $args, $assoc_args ) {
 		$assoc_args = $this->parse_assoc_args( $assoc_args );
@@ -112,10 +115,13 @@ class CLI {
 	 * [--verbose]
 	 * : Display logs from the remote server during processing.
 	 *
-	 * @synopsis [--local-folder=<local_folder>] [--<field>=<value>]
+	 * [--yes]
+	 * : Skip the confirmation prompt after displaying sync settings.
 	 *
 	 * @param array $args       The arguments.
 	 * @param array $assoc_args The associative arugments.
+	 *
+	 * @synopsis [--local-folder=<local_folder>] [--<field>=<value>] [--yes]
 	 */
 	public function sync_posts( $args, $assoc_args ) {
 		$assoc_args = $this->parse_assoc_args( $assoc_args );
@@ -234,6 +240,8 @@ class CLI {
 		foreach ( $final_args as $key => $value ) {
 			\WP_CLI::line( sprintf( "Arg set: [%s] => %s", $key, $value ) );
 		}
+
+		\WP_CLI::confirm( 'Sync with these settings?', $assoc_args );
 
 		return $final_args;
 	}
