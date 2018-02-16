@@ -15,7 +15,9 @@ class PostSample extends AbstractOutput {
 	 * @return void
 	 */
 	public function render() {
-		$this->output( $this->prepare( $this->data['comparison'] ), 'Sample comparison of local vs. remote data:' );
+		\WP_CLI::line();
+		$this->output( $this->prepare( $this->data['comparison'] ), 'Sample destination post data matches local?' );
+		\WP_CLI::line();
 	}
 
 	/**
@@ -52,7 +54,7 @@ class PostSample extends AbstractOutput {
 					continue;
 				}
 
-				$data[ $index ][ $key ] = $this->get_result_icon( $value );
+				$data[ $index ][ $key ] = \WP_CLI::colorize( $value );
 			}
 		}
 

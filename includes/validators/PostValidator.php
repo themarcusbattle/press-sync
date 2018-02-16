@@ -142,10 +142,10 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 		$destination_index = $this->index_data_by_post_id( $destination );
 
 		foreach ( $source_index as $key => $source_post ) {
-			$source_index[ $key ]['migrated'] = true;
+			$source_index[ $key ]['migrated'] = 'yes';
 
 			if ( isset( $destination_index[ $key ] ) ) {
-				$destination_index[ $key ]['migrated'] = true;
+				$destination_index[ $key ]['migrated'] = 'yes';
 
 				continue;
 			}
@@ -160,7 +160,7 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 				$destination_index[ $key ][ $index ] = null;
 			}
 
-			$destination_index[ $key ]['migrated'] = false;
+			$destination_index[ $key ]['migrated'] = 'no';
 		}
 
 		$this->source_data[ $data_index ]      = $this->index_data_by_post_id( array_values( $source_index ) );
@@ -204,14 +204,13 @@ class PostValidator extends AbstractValidator implements ValidatorInterface {
 
 			foreach ( $post_data as $key => $data ) {
 				if ( 'ID' === $key ) {
-					$post[ 'post_id' ] = $data;
+					$post['post_id'] = $data;
 
 					continue;
 				}
 
-				$result = $this->compare_sample_values( $key, $source[ $index ], $destination[ $index ] );
-
-				$post[ $key ] = $result ? true : false;
+				$post [ $key ] = $this->compare_sample_values( $key, $source[ $index ], $destination[ $index ] ) ? 'yes' : 'no';
+				$post[ $key ]  = $this->apply_diff_to_values( $source[ $index ][ $key ], $destination[ $index ][ $key ], $post[ $key ] );
 			}
 
 			$comparison_output[] = $post;
