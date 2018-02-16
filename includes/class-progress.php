@@ -47,13 +47,17 @@ class Progress {
 	/**
 	 * Update the progress that some objects have been processed.
 	 */
-	public function tick() {
+	public function tick( $message = '' ) {
 
 		if ( ! $this->cli_enabled ) {
 			return;
 		}
 
 		$this->progress->tick();
+
+		if ( $this->plugin->settings['verbose'] ) {
+			\WP_CLI::line( $message );
+		}
 	}
 
 	/**

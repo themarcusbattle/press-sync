@@ -46,14 +46,6 @@ class Press_Sync {
 	public $remote_domain = null;
 
 	/**
-	 * Sync posts modified after this date.
-	 *
-	 * @var string
-	 * @since 0.8.0
-	 */
-	private $delta_date = false;
-
-	/**
 	 * Initialize the class instance.
 	 *
 	 * @since 0.4.5
@@ -61,7 +53,6 @@ class Press_Sync {
 	public function __construct() {
 		// Initialize plugin classes.
 		$this->plugin_classes();
-		$this->delta_date = date( 'Y-m-d 00:00:00', strtotime( get_option( 'ps_delta_date' ) ) ) ?: false;
 	}
 
 	/**
@@ -90,6 +81,7 @@ class Press_Sync {
 		add_filter( 'press_sync_after_prepare_post_args_to_sync', array( $this, 'maybe_remove_post_id' ) );
 
 		add_filter( 'press_sync_get_taxonomy_term_where', array( $this, 'maybe_get_terms_for_post' ) );
+		add_filter( 'press_sync_settings', [ $this, 'prepare_post_delta_date' ] );
 	}
 
 	/**
@@ -273,7 +265,7 @@ class Press_Sync {
 		$where_clause .= $this->get_synced_object_clause( $objects_to_sync );
 		$where_clause .= $this->get_posts_delta( $objects_to_sync );
 
-		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
+		if ( $testing_post_id = absint( $this->settings['ps_testing_post'] ) ) {
 			$id_where_clause = ' AND ID = %d ';
 			$where_clause   .= $wpdb->prepare( $id_where_clause, $testing_post_id );
 		}
@@ -459,7 +451,7 @@ SQL;
 		}
 
 		// If it's just one post return only 1.
-		if ( $testing_post_id = absint( get_option( 'ps_testing_post' ) ) ) {
+		if ( $testing_post_id = absint( $this->settings['ps_testing_post'] ) ) {
 			return 1;
 		}
 
@@ -974,9 +966,9 @@ SQL;
 	 */
 	public function sync_object( $content_type = 'post', $settings = array(), $next_page = 1, $is_batch = false, $cli_enabled = false ) {
 
-		$do_run                      = true;
-		$settings                    = $this->parse_sync_settings( $settings );
-		$settings['objects_to_sync'] = $content_type;
+		$do_run                         = true;
+		$settings                       = $this->parse_sync_settings( $settings );
+		$settings['ps_objects_to_sync'] = $content_type;
 
 		$this->progress->start( 'Syncing ' . $content_type . 's', $this->count_objects_to_sync( $content_type ) );
 
@@ -991,7 +983,7 @@ SQL;
 				$do_run = false;
 			}
 
-			$this->progress->tick();
+			$this->progress->tick( var_export( $response, 1 ) );
 		}
 
 		$this->progress->finish();
@@ -1023,14 +1015,14 @@ SQL;
 		$next_page = $this->change_the_next_page( $next_page );
 
 		// Initialize the connection credentials.
-		$this->init_connection( $settings['remote_domain'] );
+		$this->init_connection( $settings['ps_remote_domain'] );
 
 		// Build out the url and send the data to the remote site.
 		$url  = $this->get_remote_url( '', 'sync' );
 		$logs = $this->send_data_to_remote_site( $url, $objects_args );
 
 		return array(
-			'objects_to_sync'         => $content_type,
+			'ps_objects_to_sync'      => $content_type,
 			'total_objects'           => $total_objects,
 			'total_objects_processed' => ( $next_page * $this->settings['ps_page_size'] ) - ( $this->settings['ps_page_size'] - count( $objects ) ),
 			'next_page'               => $next_page + 1,
@@ -1072,25 +1064,50 @@ SQL;
 	 * @return array $settings
 	 */
 	public function parse_sync_settings( $settings = array() ) {
-
-		$this->settings = wp_parse_args( $settings, array(
-			'remote_domain'        => get_option( 'ps_remote_domain' ),
-			'ps_remote_key'        => get_option( 'ps_remote_key' ),
-			'sync_method'          => get_option( 'ps_sync_method' ),
-			'objects_to_sync'      => get_option( 'ps_objects_to_sync' ),
-			'duplicate_action'     => get_option( 'ps_duplicate_action' ),
-			'force_update'         => get_option( 'ps_force_update', false ),
-			'skip_assets'          => get_option( 'ps_skip_assets', false ),
-			'options'              => get_option( 'ps_options_to_sync' ),
+		static $default_settings = array(
+			'ps_remote_domain'     => null,
+			'ps_sync_method'       => null,
+			'ps_objects_to_sync'   => null,
+			'ps_duplicate_action'  => null,
+			'ps_force_update'      => false,
+			'ps_skip_assets'       => false,
+			'ps_options_to_sync'   => null,
+			'ps_preserve_ids'      => false,
+			'ps_fix_terms'         => false,
+			'ps_remote_key'        => null,
+			'ps_content_threshold' => false,
+			'ps_partial_terms'     => false,
+			'ps_page_size'         => self::PAGE_SIZE,
+			'ps_delta_date'        => null,
+			'ps_testing_post'      => null,
 			'local_folder'         => '',
-			'preserve_ids'         => get_option( 'ps_preserve_ids', false ),
-			'fix_terms'            => get_option( 'ps_fix_terms', false ),
-			'ps_content_threshold' => get_option( 'ps_content_threshold', false ),
-			'ps_partial_terms'     => get_option( 'ps_partial_terms', false ),
-			'ps_page_size'         => get_option( 'ps_page_size', self::PAGE_SIZE ),
-		) );
+			'verbose'              => false,
+		);
 
-		return $this->settings;
+		$from_options = array();
+
+		foreach ( $default_settings as $option => $default ) {
+			$value = get_option( $option, $default );
+
+			if ( 'false' === $value ) {
+				$value = false;
+			}
+
+			$from_options[ $option ] = $value;
+		}
+
+		$this->settings = wp_parse_args( $settings, $from_options );
+
+		/**
+		 * Filter the settings for Press Sync.
+		 *
+		 * Allows filtering the settings before they are passed along for processing data.
+		 *
+		 * @since NEXT
+		 * @param  array $settings The settings array after parsing options.
+		 * @return array
+		 */
+		return apply_filters( 'press_sync_settings', $this->settings );
 	}
 
 	/**
@@ -1106,7 +1123,7 @@ SQL;
 	public function prepare_objects_to_sync( $objects = array(), $settings = array() ) {
 
 		// Select the proper sync function for the object to sync.
-		$sync_function = $this->get_sync_function_name( $settings['objects_to_sync'] );
+		$sync_function = $this->get_sync_function_name( $settings['ps_objects_to_sync'] );
 
 		if ( empty( $objects ) ) {
 			return $settings;
@@ -1396,8 +1413,8 @@ SQL;
 		}
 
 		$url = $this->get_remote_url( '', 'progress', array(
-			'post_type'    => $objects_to_sync,
-            'preserve_ids' => (bool) get_option( 'ps_preserve_ids' ),
+			'post_type'       => $objects_to_sync,
+			'ps_preserve_ids' => (bool) get_option( 'ps_preserve_ids' ),
 		) );
 
 		$remote_get_args = array(
@@ -1566,7 +1583,7 @@ SQL;
 	 * @return string
 	 */
 	public function maybe_get_terms_for_post( $where ) {
-		if ( ! get_option( 'ps_testing_post' ) ) {
+		if ( ! absint( $this->settings['ps_testing_post'] ) ) {
 			return $where;
 		}
 
@@ -1580,7 +1597,7 @@ AND tt.term_taxonomy_id IN (
 		object_id = %d
 )
 SQL;
-		$where = $GLOBALS['wpdb']->prepare( $where, get_option( 'ps_testing_post' ) );
+		$where = $GLOBALS['wpdb']->prepare( $where, $this->settings['ps_testing_post'] );
 		return $where;
 	}
 
@@ -1593,7 +1610,7 @@ SQL;
 	 * @return string
 	 */
 	protected function get_posts_delta( $objects_to_sync ) {
-		if ( ! $this->delta_date ) {
+		if ( ! $this->settings['ps_delta_date'] ) {
 			return '';
 		}
 
@@ -1602,6 +1619,23 @@ SQL;
 			return '';
 		}
 
-		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->delta_date );
+		return $GLOBALS['wpdb']->prepare( ' AND post_modified >= %s ', $this->settings['ps_delta_date'] );
+	}
+
+	/**
+	 * Prepare the value from the ps_delta_date option to something we can use to query against the posts table.
+	 *
+	 * @since NEXT
+	 * @param  array $settings The settings to be used for Press Sync.
+	 * @return array
+	 */
+	public function prepare_post_delta_date( $settings ) {
+		if ( ! isset( $settings['ps_delta_date'] ) ) {
+			return $settings;
+		}
+
+		// @TODO filter the settings before returning - this transformation would be part of that, for example.
+		$settings['ps_delta_date'] = date( 'y-m-d 00:00:00', strtotime( $settings['ps_delta_date'] ) ) ?: false;
+		return $settings;
 	}
 }
