@@ -214,6 +214,15 @@ class CLI {
 	/**
 	 * Parse the associative arguments with the Press Sync settings.
 	 *
+	 * Things that are covered here:
+	 * - Converts dashes "-" to underscore "_" for option names.
+	 * - Checks against a list of "valid arguments" from the main plugin class to avoid unexpected arguments coming in.
+	 * - Parses the associative args array with the settings in the main plugin, so that CLI args and options from the
+	 * database are merged.
+	 *
+	 * This will also output the arguments that are being used in the current sync process and a confirmation dialog.
+	 * You can also pass the --yes argument to skip the confirmation.
+	 *
 	 * @since NEXT
 	 * @param  array $assoc_args The associative args from the command line.
 	 * @return array
