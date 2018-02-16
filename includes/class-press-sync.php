@@ -1087,7 +1087,13 @@ SQL;
 		$from_options = array();
 
 		foreach ( $default_settings as $option => $default ) {
-			$from_options[ $option ] = get_option( $option, $default );
+			$value = get_option( $option, $default );
+
+			if ( 'false' === $value ) {
+				$value = false;
+			}
+
+			$from_options[ $option ] = $value;
 		}
 
 		$this->settings = wp_parse_args( $settings, $from_options );
