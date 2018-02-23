@@ -1539,7 +1539,7 @@ SQL;
 {$joins}
 {$where}
 ORDER BY t.term_id ASC
-LIMIT {$offset}, $this->settings['ps_page_size']
+LIMIT {$offset}, {$this->settings['ps_page_size']}
 SQL;
 
 		return $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );

@@ -10,9 +10,7 @@ namespace Press_Sync;
 		<a href="?page=press-sync&amp;tab=bulk-sync" class="nav-tab bulk-sync <?php echo active_tab( 'bulk-sync' ); ?>" data-div-name="bulk-sync-tab">Bulk Sync</a>
 		<a href="?page=press-sync&amp;tab=credentials" class="nav-tab credentials <?php echo active_tab( 'credentials' ); ?>" data-div-name="credentials-tab">Credentials</a>
 		<a href="?page=press-sync&amp;tab=help" class="nav-tab help <?php echo active_tab( 'help' ); ?>" data-div-name="help-tab">Help</a>
-        <?php if ( apply_filters( 'press_sync_show_advanced_options', false ) ) : ?>
-            <a href="?page=press-sync&amp;tab=advanced" class="nav-tab advanced <?php echo active_tab( 'advanced' ); ?> " data-div-name="advanced-tab">Advanced</a>
-        <?php endif; ?>
+		<a href="?page=press-sync&amp;tab=advanced" class="nav-tab advanced <?php echo active_tab( 'advanced' ); ?> " data-div-name="advanced-tab">Advanced</a>
 	</h2>
 <?php
 
