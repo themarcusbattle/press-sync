@@ -233,6 +233,10 @@ class Press_Sync {
 			$objects = $this->get_taxonomy_term_to_sync( $next_page );
 			break;
 
+		case 'meta':
+			$objects = $this->get_meta_to_sync( $next_page );
+			break;
+
 		default:
 			$objects = $this->get_posts_to_sync( $objects_to_sync, $next_page, $taxonomies, $where_clause );
 			break;
@@ -448,6 +452,10 @@ SQL;
 
 		if ( 'taxonomy_term' === $objects_to_sync ) {
 			return $this->count_taxonomy_term_to_sync();
+		}
+
+		if ( 'meta' === $objects_to_sync ) {
+			return $this->count_meta_to_sync();
 		}
 
 		// If it's just one post return only 1.
@@ -1162,6 +1170,7 @@ SQL;
 			'attachment'    => __( 'Media', 'press-sync' ),
 			'page'          => __( 'Pages', 'press-sync' ),
 			'post'          => __( 'Posts', 'press-sync' ),
+			'meta'          => __( 'Post Meta', 'press-sync' ),
 			'user'          => __( 'Users', 'press-sync' ),
 			'option'        => __( 'Options', 'press-sync' ),
 		);
@@ -1349,7 +1358,7 @@ SQL;
 	 * @return string $wp_object
 	 */
 	public function get_sync_function_name( $objects_to_sync = '' ) {
-		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
+		$wp_object = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term', 'meta' ), true ) ? $objects_to_sync : 'post';
 		return "prepare_{$wp_object}_args_to_sync";
 	}
 
@@ -1637,5 +1646,73 @@ SQL;
 		// @TODO filter the settings before returning - this transformation would be part of that, for example.
 		$settings['ps_delta_date'] = date( 'y-m-d 00:00:00', strtotime( $settings['ps_delta_date'] ) ) ?: false;
 		return $settings;
+	}
+
+	/**
+	 * Gets a count of meta rows to sync.
+	 *
+	 * @since NEXT
+	 * @return int
+	 */
+	public function count_meta_to_sync() {
+		$query = <<<SQL
+SELECT DISTINCT
+	post_id
+FROM
+	{$GLOBALS['wpdb']->postmeta} pm
+JOIN
+	{$GLOBALS['wpdb']->posts} p ON ( p.ID = pm.post_id )
+WHERE
+	p.post_status NOT IN ( 'auto-draft', 'trash' )
+SQL;
+
+		$results = $GLOBALS['wpdb']->get_results( $query );
+		return count( $results );
+	}
+
+	/**
+	 * Gets the meta data to sync.
+	 *
+	 * @since NEXT
+	 * @param  int   $next_page The page to get meta for.
+	 * @return array
+	 */
+	public function get_meta_to_sync( $next_page ) {
+		$offset = ( $next_page * $this->settings['ps_page_size'] ) - $this->settings['ps_page_size'];
+
+		$query = <<<SQL
+SELECT DISTINCT
+	post_id
+FROM
+	{$GLOBALS['wpdb']->postmeta} pm
+JOIN
+	{$GLOBALS['wpdb']->posts} p ON ( p.ID = pm.post_id )
+WHERE
+	p.post_status NOT IN ( 'auto-draft', 'trash' )
+LIMIT
+	{$offset}, {$this->settings['ps_page_size']}
+SQL;
+
+		$results = $GLOBALS['wpdb']->get_results( $query, ARRAY_A );
+
+		$meta = array();
+		foreach ( $results as $row ) {
+			$meta_row               = get_post_meta( $row['post_id'] );
+			$meta_row['_import_id'] = $row['post_id'];
+			$meta[]                 = $meta_row;
+		}
+
+		return $meta;
+	}
+
+	/**
+	 * Prepare meta to sync. Nothing to do here for now, just stubbed for compatibility.
+	 *
+	 * @since NEXT
+	 * @param  array $meta The incoming meta array.
+	 * @return array
+	 */
+	public function prepare_meta_args_to_sync( $meta ) {
+		return $meta;
 	}
 }

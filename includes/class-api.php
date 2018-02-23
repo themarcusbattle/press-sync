@@ -217,7 +217,7 @@ class API extends \WP_REST_Controller {
 
 		$responses = array();
 
-		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
+		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term', 'meta' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
@@ -1249,6 +1249,57 @@ SQL;
 	 */
 	private function is_partial_term_sync( $terms ) {
 		return 2 == count( $terms );
+    }
+
+    /**
+	 * Sync meta for a post.
+	 *
+	 * @since NEXT
+	 * @param array $object The meta args from the request.
+	 *
+	 * @return array
+	 */
+	public function sync_meta( $object ) {
+		if ( ! $this->preserve_ids ) {
+			return array(
+				'debug' => array(
+					'message' => 'Meta syncing only works if you are using preserved IDs.',
+				),
+			);
+		}
+		if ( ! isset( $object['_import_id'] ) ) {
+			return array(
+				'debug' => array(
+					'message' => 'No _import_id sent with post meta.',
+				),
+			);
+		}
+
+		$post_id = absint( $object['_import_id'] );
+		unset( $object['_import_id'] );
+
+		$new_count    = 0;
+		$update_count = 0;
+
+		foreach ( $object as $meta_key => $meta_value ) {
+			$meta_value    = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
+			$meta_value    = maybe_unserialize( $meta_value );
+			$update_result = update_post_meta( $post_id, $meta_key, $meta_value );
+
+			if ( is_numeric( $update_result ) ) {
+				$new_count++;
+			}
+
+			if ( true === $update_result ) {
+				$update_count++;
+			}
+		}
+
+		return array(
+			'debug' => array(
+				'message' => sprintf( 'Created %d meta, updated %d meta, for post %d', $new_count, $update_count, $post_id ),
+			),
+		);
 	}
 
 	/**
