@@ -166,7 +166,9 @@ class API extends \WP_REST_Controller {
 		$press_sync_key = get_option( 'ps_key' );
 
 		if ( ! $press_sync_key || ( $press_sync_key_from_remote !== $press_sync_key ) ) {
-			return false;
+			wp_send_json_error( array(
+				'message' => __( 'Invalid Press Sync key.', 'press-sync' ),
+			) );
 		}
 
 		return true;
