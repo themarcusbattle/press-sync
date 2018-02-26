@@ -24,6 +24,12 @@ For support, email marcus@marcusbattle.com
 
 ## Changelog.
 
+### v0.9.2
+- [AOTECH-6795] Adds the ability to pass in any Press Sync options to the command line for syncing "All" and "Posts",
+  see the CLI section "Setting Arbitrary Options" below.
+- Press Sync settings can be filtered using the `press_sync_settings` hook, which is executed immediately before the
+  parsed settings are passed to the application.
+
 ### v0.9.1
 - [AOTECH-6793] - Post dates of "0000-00-00 00:00:00" are discarded by `wp_insert_post` - these dates will now be set
   to the unix epoch before being inserted.
@@ -163,6 +169,20 @@ Some commands take optional parameters.
 
 - `wp press-sync options`
   - `--options` - A comma-separated list of option fields to sync.
+
+#### Setting Arbitrary Options
+
+For the `All` and `Posts` sync commands, any number of arbitrary options may be passed in that are valid Press Sync
+options. For example, the database option for preserving post-type object IDs can be set at runtime with
+`--ps-preserve-ids=1`, e.g.
+
+```
+wp press-sync posts --ps-date-delta="2017/06/23" --ps-fix-terms=false --ps-batch-size=8
+```
+
+This command would sync posts modified after June 23, 2017, would not attempt to fix term relationships (overriding any
+value set in the database), and specifies a batch size of 8. Note that advanced options are still usable here, even if
+the `press_sync_show_advanced_options` filter is not set to return true.
 
 #### Importing Local JSON
 
