@@ -39,6 +39,7 @@
 						<span style="color: green;">Connected</span>
 					<?php else : ?>
 						Not connected. Please check your remote secret key and domain for incorrect spellings.
+						<?php echo \Press_Sync\Press_Sync::get_connection_error(); ?>
 					<?php endif; ?>
 				</td>
 			</tr>
