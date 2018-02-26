@@ -30,7 +30,8 @@
 			[e]: Error message
 		</code>
 		<textarea readonly="readonly" id="press-sync-logs" rows="10" style="width:100%;font-family:monospace;overflow:scroll"></textarea>
-		<hr/>
+		<br/>
+		<a download="press-sync-log.txt" id="press-sync-download-log" class="hidden">Download Log</a>
 	</div>
 	<div id="press-sync-bulk-settings">
 		<h3>Bulk Sync Settings</h3>

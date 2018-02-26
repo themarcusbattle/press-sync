@@ -5,7 +5,8 @@ window.PressSync = ( function( window, document, $ ) {
 		LOG_LIMIT: 20, // Limit how many log entries to show, previous logs will be discarded.
 		log_index: 0, // Count how many logs have processed.
 		times: [], // Array of times used to calculate time remaining average more accurately.
-		elCache: {}
+		elCache: {},
+		logFileURL: null
 	};
 
 	/**
@@ -22,10 +23,11 @@ window.PressSync = ( function( window, document, $ ) {
 		app.elCache.bulkSettings = $('#press-sync-bulk-settings');
 		app.elCache.logView      = $('#press-sync-log-view' );
 		app.elCache.logs         = $('#press-sync-logs');
-		app.elCache.currentLog   = $('#press-sync-logs');
+		app.elCache.downloadLog  = $('#press-sync-download-log');
 
 		app.elCache.syncButton.on( 'click', app.pressSyncButton );
 		app.elCache.cancelButton.on( 'click', app.cancelSync );
+		app.elCache.downloadLog.on( 'click', app.downloadLog );
 	};
 
 	/**
@@ -42,7 +44,7 @@ window.PressSync = ( function( window, document, $ ) {
 		app.elCache.cancelButton.show();
 		app.elCache.bulkSettings.hide();
 		app.elCache.logView.show();
-		app.elCache.currentLog.val('');
+		app.elCache.logs.val('');
 		app.loadProgressBar();
 		return;
 	};
@@ -231,7 +233,7 @@ window.PressSync = ( function( window, document, $ ) {
 			}
 
 			loglines.push("\n---BATCH END ---\n");
-			app.elCache.currentLog.val( app.elCache.currentLog.val() + loglines.join("\n") );
+			app.elCache.logs.val( app.elCache.logs.val() + loglines.join("\n") );
 		} catch ( e ) {
 			console.warn( "Could not log data, response: " + e );
 			console.warn( response.data );
@@ -250,6 +252,17 @@ window.PressSync = ( function( window, document, $ ) {
 		app.elCache.cancelButton.hide();
 		app.elCache.bulkSettings.show();
 		app.elCache.status.text( message );
+		createLogFile();
+		app.elCache.downloadLog.show();
+	};
+
+	/**
+	 * Click handler to download the log file.
+	 *
+	 * @since NEXT
+	 */
+	app.downloadLog = function() {
+		app.elCache.downloadLog.attr( 'href', app.logFileURL );
 	};
 
 	$( document ).ready( app.init );
@@ -290,5 +303,16 @@ window.PressSync = ( function( window, document, $ ) {
 		}, 0);
 		var avg = sum / data.length;
 		return avg;
+	}
+
+	function createLogFile() {
+		var text = app.elCache.logs.val();
+		var data = new Blob([text], {type: 'text/plain'});
+
+		if ( null !== app.logFileURL ) {
+			window.URL.revokeObjectURL( app.logFileURL );
+		}
+
+		app.logFileURL = window.URL.createObjectURL(data);
 	}
 } )( window, document, jQuery );
