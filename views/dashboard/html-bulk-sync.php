@@ -21,6 +21,17 @@
 		</div>
 	</div>
 	<hr />
+	<div id="press-sync-log-view" class="hidden">
+		<h3>Logs</h3>
+		<code>
+		Legend:
+			[i]: Informational message
+			[d]: Debug message
+			[e]: Error message
+		</code>
+		<textarea readonly="readonly" id="press-sync-logs" rows="10" style="width:100%;font-family:monospace;overflow:scroll"></textarea>
+		<hr/>
+	</div>
 	<div id="press-sync-bulk-settings">
 		<h3>Bulk Sync Settings</h3>
 		<form class="form" method="post" action="options.php">
@@ -104,11 +115,6 @@
 				</tr>
 			</table>
 			<?php submit_button( 'Save Bulk Settings' ); ?>
-		<hr />
 		</form>
-	</div>
-	<div id="press-sync-log-view">
-		<h3>Logs</h3>
-		<textarea readonly="readonly" id="press-sync-logs" rows="10" style="width:100%;font-family:monospace;overflow:scroll"></textarea>
 	</div>
 </div>
