@@ -185,7 +185,6 @@ class API extends \WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function sync_objects( $request ) {
-
 		$objects_to_sync         = $request->get_param( 'objects_to_sync' );
 		$objects                 = $request->get_param( 'objects' );
 		$duplicate_action        = $request->get_param( 'duplicate_action' ) ? $request->get_param( 'duplicate_action' ) : 'skip';
@@ -226,20 +225,25 @@ class API extends \WP_REST_Controller {
 		// Trust the HTML we're syncing is clean.
 		remove_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
-		$responses   = array();
-		$responses[] = date( DATE_RFC2822, time() ) . '(' . time() . ')';
+		$responses = array();
+		$this->log( date( DATE_RFC2822, time() ) . '(' . time() . ')' );
 
 		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
+			$this->log( '=====================================' );
+			$this->log( sprintf( __( 'Syncing next object with method "%s".', 'press-sync' ), $sync_method ) );
+			$this->log( '-------------------------------------' );
 			$responses[] = $this->$sync_method( $object, $duplicate_action, $force_update );
 		}
 
 		add_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
-		return $responses;
+		// Remove empty lines and reset array indexes.
+		$log = array_values( array_filter( $this->get_log() ) );
 
+		return compact( 'responses', 'log' );
 	}
 
 	/**
