@@ -32,6 +32,14 @@ class API extends \WP_REST_Controller {
 	private $fix_terms = false;
 
 	/**
+	 * Array of log messages to return with API responses.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	private $logs = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
@@ -1281,5 +1289,57 @@ SQL;
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Log a message.
+	 *
+	 * @since NEXT
+	 * @param string $message The message to add to the logs.
+	 * @param string $prefix  This prefix will be prepended to the log message to denote the log type.
+	 */
+	public function log( $message, $prefix = 'i' ) {
+		$this->logs[] = "[{$prefix}] {$message}";
+	}
+
+	/**
+	 * Log an error message with a severity level.
+	 *
+	 * @since NEXT
+	 * @param string $message The error message to add to the logs.
+	 * @param int    $level   The log level to use (must be one of E_USER_NOTICE, E_USER_WARNING, or E_USER_ERROR).
+	 */
+	public function error_log( $message, $level = E_USER_NOTICE ) {
+		trigger_error( $message, $level );
+		$this->log( $message, 'e' );
+	}
+
+	/**
+	 * Log a debugging message and debugging information.
+	 *
+	 * @since NEXT
+	 * @param string $message The debugging message to add to the logs.
+	 * @param mixed  $extra   If supplied, this variable will be cleaned up and printed as a string in the logs.
+	 */
+	public function debug_log( $message, $extra = null ) {
+		$this->log( $message, 'd' );
+
+		if ( $extra ) {
+			$extra = print_r( $extra, 1 );
+			$extra = trim( $extra );
+			$extra = strtr( $extra, [ "\n" => ' ' ] );
+			$extra = preg_replace( '/\s+/', ' ', $extra );
+			$this->log( $extra, 'd' );
+		}
+	}
+
+	/**
+	 * Get the internal $logs property.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
+	public function get_log() {
+		return $this->logs;
 	}
 }
