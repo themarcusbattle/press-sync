@@ -1293,7 +1293,7 @@ SQL;
 	 * @return bool
 	 */
 	private function is_partial_term_sync( $terms ) {
-		return 2 == count( $terms );
+		return 2 == count( $terms ) && ! is_array( current( $terms ) );
 	}
 
 	/**
