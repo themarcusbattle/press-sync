@@ -305,6 +305,11 @@ window.PressSync = ( function( window, document, $ ) {
 		return avg;
 	}
 
+	/**
+	 * Creates a downloadable file using the Javascript Blob object.
+	 *
+	 * Source: https://stackoverflow.com/a/21016088/1169389
+	 */
 	function createLogFile() {
 		var text = app.elCache.logs.val();
 		var data = new Blob([text], {type: 'text/plain'});
