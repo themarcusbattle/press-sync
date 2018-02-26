@@ -225,15 +225,17 @@ window.PressSync = ( function( window, document, $ ) {
 		var loglines = [];
 
 		try {
-			var logs = JSON.parse( response.data.log );
-			loglines.push("\n" + '---------------------------------');
+			var logs = response.data.log;
 			for ( var i = 0; i < logs.length; i++) {
 				loglines.push( logs[i] );
 			}
 
+			loglines.push("\n---BATCH END ---\n");
 			app.elCache.currentLog.val( app.elCache.currentLog.val() + loglines.join("\n") );
-
-		} catch ( e ) {}
+		} catch ( e ) {
+			console.warn( "Could not log data, response: " + e );
+			console.warn( response.data );
+		}
 	};
 
 	/**
