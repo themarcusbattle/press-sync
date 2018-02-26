@@ -360,7 +360,7 @@ class API extends \WP_REST_Controller {
 		// Insert/update the post.
 		$local_post_id = wp_insert_post( $post_args, true );
 
-		$this->log( sprintf( __( 'Inserted new post with ID "%d", post type "%s", title "%s".', 'press-sync' ), 
+		$this->log( sprintf( __( 'Inserted new post with ID "%d", post type "%s", title "%s".', 'press-sync' ),
 			$local_post_id,
 			$post_args['post_type'],
 			$post_args['post_title']
