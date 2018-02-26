@@ -188,7 +188,7 @@ window.PressSync = ( function( window, document, $ ) {
 			}
 
 			app.updateProgressBar(
-				response.data.objects_to_sync,
+				response.data.ps_objects_to_sync,
 				response.data.total_objects_processed,
 				response.data.total_objects,
 				( new Date().getTime() - start_time ) / 1000 // Convert request time from milliseconds to seconds.
@@ -207,7 +207,7 @@ window.PressSync = ( function( window, document, $ ) {
 				return;
 			}
 
-			app.syncData( response.data.next_page, response.data.objects_to_sync, next_args );
+			app.syncData( response.data.next_page, response.data.ps_objects_to_sync, next_args );
 		});
 	}
 
