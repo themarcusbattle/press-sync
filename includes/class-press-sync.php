@@ -441,7 +441,17 @@ SQL;
 			$sql   = $GLOBALS['wpdb']->prepare( $sql, $object_id );
 			$terms = $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
 
-			return $terms;
+			$final_terms = [];
+
+			foreach ( $terms as $term ) {
+				if ( ! isset( $final_terms[ $term['taxonomy'] ] ) ) {
+					$final_terms[ $term['taxonomy'] ] = [];
+				}
+
+				$final_terms[ $term['taxonomy'] ][] = $term['slug'];
+			}
+
+			return $final_terms;
 		}
 
 		foreach ( $taxonomies as $key => $taxonomy ) {
