@@ -1444,7 +1444,7 @@ SQL;
 		if ( 0 < $page_offset && 1 === absint( $next_page ) ) {
 
 			$page_offset = floor( $page_offset / $this->settings['ps_page_size'] );
-			$next_page  += ( $page_offset - 1);
+			$next_page  += ( $page_offset - 1 );
 
 			error_log( '----NP: ' . $next_page );
 		}
@@ -1495,7 +1495,7 @@ SQL;
 		update_option( $option_name, $response_body['data']['synced'] );
 
 		return $response_body['data']['synced'];
-    }
+	}
 
 	/**
 	 * Removes post IDs if the option to preserve them isn't active.
@@ -1558,7 +1558,7 @@ SQL;
 	 * Gets the next set of taxonomies/terms to sync.
 	 *
 	 * @since 0.7.0
-	 * @param  int   $next_page The page of results to get.
+	 * @param  int $next_page The page of results to get.
 	 * @return array
 	 */
 	public function get_taxonomy_term_to_sync( $next_page ) {
@@ -1655,6 +1655,7 @@ AND tt.term_taxonomy_id IN (
 		object_id = %d
 )
 SQL;
+
 		$where = $GLOBALS['wpdb']->prepare( $where, $this->settings['ps_testing_post'] );
 		return $where;
 	}
