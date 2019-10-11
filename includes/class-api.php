@@ -32,6 +32,14 @@ class API extends \WP_REST_Controller {
 	private $fix_terms = false;
 
 	/**
+	 * Array of log messages to return with API responses.
+	 *
+	 * @var array
+	 * @since NEXT
+	 */
+	private $logs = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
@@ -158,7 +166,9 @@ class API extends \WP_REST_Controller {
 		$press_sync_key = get_option( 'ps_key' );
 
 		if ( ! $press_sync_key || ( $press_sync_key_from_remote !== $press_sync_key ) ) {
-			return false;
+			wp_send_json_error( array(
+				'message' => __( 'Invalid Press Sync key.', 'press-sync' ),
+			) );
 		}
 
 		return true;
@@ -216,18 +226,24 @@ class API extends \WP_REST_Controller {
 		remove_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
 		$responses = array();
+		$this->log( date( DATE_RFC2822, time() ) . '(' . time() . ')' );
 
 		$objects_to_sync = in_array( $objects_to_sync, array( 'attachment', 'comment', 'user', 'option', 'taxonomy_term' ), true ) ? $objects_to_sync : 'post';
 
 		foreach ( $objects as $object ) {
 			$sync_method = "sync_{$objects_to_sync}";
+			$this->log( '=====================================' );
+			$this->log( sprintf( __( 'Syncing next object with method "%s".', 'press-sync' ), $sync_method ) );
+			$this->log( '-------------------------------------' );
 			$responses[] = $this->$sync_method( $object, $duplicate_action, $force_update );
 		}
 
 		add_filter( 'content_save_pre', 'wp_filter_post_kses' );
 
-		return $responses;
+		// Remove empty lines and reset array indexes.
+		$log = array_values( array_filter( $this->get_log() ) );
 
+		return compact( 'responses', 'log' );
 	}
 
 	/**
@@ -260,67 +276,68 @@ class API extends \WP_REST_Controller {
 
 		if ( $this->fix_terms ) {
 			if ( ! $local_post ) {
-				return array(
-					'debug' => array(
-						'message' => __( 'Could not find a local post to attach the terms to.', 'press-sync' ),
-					),
-				);
+				return $this->error_log( __( 'Could not find a local post to attach the terms to.', 'press-sync' ) );
 			}
+
 			return $this->fix_term_relationships( $local_post['ID'], $post_args );
 		}
 
 		$post_args['ID'] = isset( $local_post['ID'] ) ? $local_post['ID'] : 0;
+		$this->log( sprintf( __( 'Final post_args["ID"] = %d', 'press-sync' ), $post_args['ID'] ) );
 
 		// Replace embedded media.
 		if ( isset( $post_args['embedded_media'] ) ) {
-
 			foreach ( $post_args['embedded_media'] as $attachment_args ) {
+				$this->log( __( 'Attempting addition of embedded media.', 'press-sync' ) );
 
-				$attachment_id = $this->sync_attachment( $attachment_args );
-
-				if ( abinst( $attachment_id ) ) {
-
-					$sync_source = $post_args['meta_input']['press_sync_source'];
-					$attachment_url = str_ireplace( $sync_source, home_url(), $attachment_args['attachment_url'] );
-
+				if ( abinst( $attachment_id = $this->sync_attachment( $attachment_args ) ) ) {
+					$sync_source               = $post_args['meta_input']['press_sync_source'];
+					$attachment_url            = str_ireplace( $sync_source, home_url(), $attachment_args['attachment_url'] );
 					$post_args['post_content'] = str_ireplace( $attachment_args['attachment_url'], $attachment_url, $post_args['post_content'] );
 				}
 			}
 		}
 
+		$this->log( sprintf( __( 'Incoming author: %s', 'press-sync' ), $post_args['post_author'] ) );
+
 		// Set the correct post author.
 		$post_args['post_author'] = $this->get_press_sync_author_id( $post_args['post_author'] );
+
+		$this->log( sprintf( __( 'Matched author: %s', 'press-sync' ), $post_args['post_author'] ) );
 
 		// Check for post parent and update IDs accordingly.
 		if ( ! $this->preserve_ids && isset( $post_args['post_parent'] ) && $post_parent_id = $post_args['post_parent'] ) {
 
-			$post_parent_args['post_type'] = $post_args['post_type'];
-			$post_parent_args['meta_input']['press_sync_post_id'] = $post_parent_id;
+			$this->log( __( 'Attempting connection to parent post.', 'press-sync' ) );
+			$post_parent_args = array(
+				'post_type'  =>  $post_args['post_type'],
+				'meta_input' =>  $post_parent_id,
+			);
 
 			$parent_post = $this->get_synced_post( $post_parent_args, false );
+			$found       = $parent_post ? __( 'Found', 'press-sync' ) : __( 'Not found.', 'press-sync' );
+			$this->log( sprintf( __( 'Result of search for valid post_parent: %s', 'press-sync' ), $found ) );
 
 			$post_args['post_parent'] = ( $parent_post ) ? $parent_post['ID'] : 0;
 		}
 
 		// Keep the ID because we found a regular ol' duplicate.
 		if ( $this->preserve_ids && ! $local_post && ! empty( $post_args['ID'] ) ) {
+			$this->log( __( 'Preserving original post-type object ID.', 'press-sync' ) );
 			$post_args['import_id'] = $post_args['ID'];
 			unset( $post_args['ID'] );
 		}
 
 		// Determine which content is newer, local or remote.
 		if ( ! $force_update && $local_post && ( strtotime( $local_post['post_modified'] ) >= strtotime( $post_args['post_modified'] ) ) ) {
-
 			// If we're here, then we need to keep our local version.
 			$response['remote_post_id'] = $post_args['meta_input']['press_sync_post_id'];
 			$response['local_post_id']  = $local_post['ID'];
-			$response['message']        = __( 'Local version is newer than remote version', 'press-sync' );
+			$this->log( __( 'Local version is newer than remote version.', 'press-sync' ) );
 
 			// Assign a press sync ID.
 			$this->add_press_sync_id( $local_post['ID'], $post_args );
-
-			return array( 'debug' => $response );
-
+			return $response;
 		}
 
 		// Add categories.
@@ -329,6 +346,7 @@ class API extends \WP_REST_Controller {
 			require_once( ABSPATH . '/wp-admin/includes/taxonomy.php' );
 
 			foreach ( $post_args['tax_input']['category'] as $category ) {
+				$this->log( sprintf( __( 'Creating new category "%s".', 'press-sync' ), $category['name'] ) );
 				wp_insert_category( array(
 					'cat_name'             => $category['name'],
 					'category_description' => $category['description'],
@@ -342,31 +360,33 @@ class API extends \WP_REST_Controller {
 		// Insert/update the post.
 		$local_post_id = wp_insert_post( $post_args, true );
 
+		$this->log( sprintf( __( 'Inserted new post with ID "%d", post type "%s", title "%s".', 'press-sync' ),
+			$local_post_id,
+			$post_args['post_type'],
+			$post_args['post_title']
+		) );
+
 		// Bail if the insert didn't work.
 		if ( is_wp_error( $local_post_id ) ) {
-			trigger_error( sprintf( 'Error inserting post: ', $local_post_id->get_error_message() ) );
-			return array( 'debug' => $local_post_id );
+			return $this->error_log( sprintf( __( 'Error inserting post: %s', 'press-sync' ), $local_post_id->get_error_message() ) );
 		}
 
 		// Attach featured image.
-		$featured_result = $this->attach_featured_image( $local_post_id, $post_args );
+		$this->attach_featured_image( $local_post_id, $post_args );
 
 		// Attach any comments.
 		$comments = isset( $post_args['comments'] ) ? $post_args['comments'] : array();
 		$this->attach_comments( $local_post_id, $comments );
-
 		$this->attach_terms( $local_post_id, $post_args );
 
 		// Run any secondary commands.
 		do_action( 'press_sync_sync_post', $local_post_id, $post_args );
 
+		$this->log( __( 'The post has been synced with the remote site', 'press-sync' ) );
 		return array(
-			'debug' => array(
-				'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
-				'local_post_id'   => $local_post_id,
-				'message'         => __( 'The post has been synced with the remote site', 'press-sync' ),
-				'featured_result' => $featured_result,
-			),
+			'remote_post_id'  => $post_args['meta_input']['press_sync_post_id'],
+			'local_post_id'   => $local_post_id,
+			'featured_result' => $featured_result,
 		);
 	}
 
@@ -385,10 +405,11 @@ class API extends \WP_REST_Controller {
 		$attachment_id   = false;
 		$import_id       = false;
 		$attachment_args = $this->clean_post_object_args( $attachment_args );
+		$error_message = null;
 
 		// Attachment URL does not exist so bail early.
 		if ( ! $this->skip_assets && ! array_key_exists( 'attachment_url', $attachment_args ) ) {
-			return false;
+			return $this->error_log( __( 'Attachment data missing "attachment_url" parameter!', 'press-sync' ) );
 		}
 
 		if ( isset( $attachment_args['ID'] ) ) {
@@ -401,6 +422,7 @@ class API extends \WP_REST_Controller {
 
 				// ID will only be set if we find the attachment is already here.
 				if ( ! isset( $attachment['ID'] ) ) {
+					$this->log( __( 'Inserting a new attachment.', 'press-sync' ) );
 					$filename = $attachment['filename'];
 					unset( $attachment['filename'] );
 
@@ -434,10 +456,10 @@ class API extends \WP_REST_Controller {
 			if ( $attachment_id && $import_id ) {
 				update_post_meta( $attachment_id, 'press_sync_post_id', $import_id );
 			}
-		}
-		catch( \Exception $e ) {
-			// @TODO log it more!
-			error_log( $e->getMessage() );
+
+			$this->log( sprintf( __( 'Successfully uploaded a new attachment with ID "%d".', 'press-sync' ), $attachment_id ) );
+		} catch( \Exception $e ) {
+			$this->error_log( $e->getMessage() );
 		}
 
 		return $attachment_id;
@@ -455,27 +477,30 @@ class API extends \WP_REST_Controller {
 	 * @return array
 	 */
 	public function sync_user( $user_args, $duplicate_action, $force_update = false ) {
-
 		$username = isset( $user_args['user_login'] ) ? $user_args['user_login'] : '';
+
+		$this->log( sprintf( __( 'Attempting sync of user with login "%s"', 'press-sync' ), $username ) );
 
 		// Check to see if the user exists.
 		$user = get_user_by( 'login', $username );
 
 		if ( ! $user ) {
-
+			$this->log( __( 'Creating new user.', 'press-sync' ) );
 			$user_id = wp_insert_user( $user_args );
 
 			if ( is_wp_error( $user_id ) ) {
-				return wp_send_json_error();
+				return $this->error_log( sprintf( __( 'There was an error creating this user: "%s".', 'press-sync' ), $user_id->get_error_message() ) );
 			}
 
 			$user = get_user_by( 'id', $user_id );
-
+			$this->log( sprintf( __( 'New user created with ID "%d".', 'press-sync' ), $user_id ) );
 		} else {
 			$user_id = $user->ID;
+			$this->log( sprintf( __( 'Found existing user with ID "%d".', 'press-sync' ), $user_id ) );
 		}
 
 		// Update the meta.
+		$this->debug_log( __( 'Attaching user metadata.', 'press-sync' ), $user_args['meta_input'] );
 		foreach ( $user_args['meta_input'] as $usermeta_key => $usermeta_value ) {
 			if ( 0 === strpos( $usermeta_key, 'press_sync_' ) ) {
 				$usermeta_key = $this->maybe_make_multisite_key( $usermeta_key );
@@ -486,13 +511,13 @@ class API extends \WP_REST_Controller {
 
 		// Asign user role.
 		$user->add_role( $user_args['role'] );
+		$this->log( sprintf( __( 'Assigning user role of "%s".', 'press-sync' ), $user_args['role'] ) );
 
 		// Prepare response.
 		$response['user_id'] = $user_id;
 		$response['blog_id'] = get_current_blog_id();
 
 		return $response;
-
 	}
 
 	/**
@@ -510,11 +535,18 @@ class API extends \WP_REST_Controller {
 		$option_value = isset( $option_args['option_value'] ) ? $option_args['option_value'] : '';
 
 		if ( empty( $option_value ) || empty( $option_name ) ) {
-			return false;
+			return $this->error_log( __( 'Attempted syncing option, but missing arg of "option_name" or "option_value"!', 'press-sync' ) );
 		}
 
+		$this->log( sprintf( __( 'Syncing option "%s" with value "%s".', 'press-sync' ), $option_name, $option_value ) );
 		$response['option_id'] = update_option( $option_name, $option_value, $option_args['autoload'] );
 
+		$result = __( 'Updated', 'press-sync' );
+		if ( false === $response['option_id'] ) {
+			$result = __( 'Not updated.', 'press-sync' );
+		}
+
+		$this->log( sprintf( __( 'Update result: "%s".', 'press-sync' ), $result ) );
 		return $response;
 	}
 
@@ -549,9 +581,13 @@ class API extends \WP_REST_Controller {
 		}
 
 		$sql .= ' LIMIT 1';
-
 		$prepared_sql = $wpdb->prepare( $sql, $prepare_args );
-		$post         = $wpdb->get_row( $prepared_sql, ARRAY_A );
+
+		$this->debug_log( __( 'Attempting to find a synced post with SQL: ', 'press-sync' ), $prepared_sql );
+
+		$post = $wpdb->get_row( $prepared_sql, ARRAY_A );
+
+		$this->log( sprintf( __( 'Synced post search result: %s.', 'press-sync' ), ( $post ? 'Found' : 'Not found' ) ) );
 
 		return ( $post ) ? $post : false;
 
@@ -594,7 +630,6 @@ class API extends \WP_REST_Controller {
 	 * @return boolean
 	 */
 	public function comment_exists( $comment_args = array() ) {
-
 		$press_sync_comment_id = isset( $comment_args['meta_input']['press_sync_comment_id'] ) ? $comment_args['meta_input']['press_sync_comment_id'] : 0;
 		$press_sync_source     = isset( $comment_args['meta_input']['press_sync_source'] ) ? $comment_args['meta_input']['press_sync_source'] : 0;
 
@@ -617,6 +652,7 @@ class API extends \WP_REST_Controller {
 		$comment = get_comments( $query_args );
 
 		if ( $comment ) {
+			$this->log( __( 'Comment already exists, skipping.', 'press-sync' ) );
 			return (array) $comment[0];
 		}
 
@@ -669,11 +705,12 @@ class API extends \WP_REST_Controller {
 
 		global $wpdb;
 
-		$usermeta_key = $this->maybe_make_multisite_key( 'press_sync_user_id' );
-		$sql          = "SELECT user_id AS ID FROM {$wpdb->usermeta} WHERE meta_key = '{$usermeta_key}' AND meta_value = %d";
-		$prepared_sql = $wpdb->prepare( $sql, $user_id );
-
+		$usermeta_key       = $this->maybe_make_multisite_key( 'press_sync_user_id' );
+		$sql                = "SELECT user_id AS ID FROM {$wpdb->usermeta} WHERE meta_key = '{$usermeta_key}' AND meta_value = %d";
+		$prepared_sql       = $wpdb->prepare( $sql, $user_id );
 		$press_sync_user_id = $wpdb->get_var( $prepared_sql );
+
+		$this->debug_log( __( 'Attempted finding an author for this object with SQL: ', 'press-sync' ), $prepared_sql );
 
 		return ( $press_sync_user_id ) ? $press_sync_user_id : 1;
 
@@ -691,7 +728,7 @@ class API extends \WP_REST_Controller {
 
 		// Post does not have a featured image so bail early.
 		if ( empty( $post_args['featured_image'] ) ) {
-			return false;
+			return $this->log( __( 'No featured image attached.', 'press-sync' ) );
 		}
 
 		// Allow download_url() to use an external request to retrieve featured images.
@@ -705,7 +742,11 @@ class API extends \WP_REST_Controller {
 		// Remove filter that allowed an external request to be made via download_url().
 		remove_filter( 'http_request_host_is_external', array( $this, 'allow_sync_external_host' ) );
 
-		return $response ? '' : "Error attaching thumbnail {$thumbnail_id} to post {$post_id}";
+		if ( false === $response ) {
+			return $this->error_log( sprintf( __( 'Error attaching thumbnail "%d" to post "%d"', 'press-sync'), $thumbnail_id, $post_id ) );
+		}
+
+		return $this->log( __( 'Thumbnail meta attached.', 'press-sync' ) );
 	}
 
 	/**
@@ -733,18 +774,18 @@ class API extends \WP_REST_Controller {
 	 * @param array   $comments The WP Comments.
 	 */
 	public function attach_comments( $post_id, $comments ) {
-
 		if ( empty( $post_id ) || ! $comments ) {
+			$this->log( __( 'No comments to attach.', 'press-sync' ) );
 			return;
 		}
 
 		foreach ( $comments as $comment_args ) {
-
 			// Check to see if the comment already exists.
 			if ( $comment = $this->comment_exists( $comment_args ) ) {
 				continue;
 			}
 
+			$this->log( __( 'Attaching new comment.', 'press-sync' ) );
 			// Set Comment Post ID to correct local Post ID.
 			$comment_args['comment_post_ID'] = $post_id;
 
@@ -753,11 +794,14 @@ class API extends \WP_REST_Controller {
 
 			$comment_id = wp_insert_comment( $comment_args );
 
-			if ( ! is_wp_error( $comment_id ) ) {
+			if ( is_wp_error( $comment_id ) ) {
+				$this->error_log( sprintf( __( 'Error inserting comment: "%s"', 'press-sync' ), $comment_id->get_error_message() ) );
+				continue;
+			}
 
-				foreach ( $comment_args['meta_input'] as $meta_key => $meta_value ) {
-					update_comment_meta( $comment_id, $meta_key, $meta_value );
-				}
+			$this->debug_log( __( 'Updating comment metadata.', 'press-sync' ), $comment_args['meta_input'] );
+			foreach ( $comment_args['meta_input'] as $meta_key => $meta_value ) {
+				update_comment_meta( $comment_id, $meta_key, $meta_value );
 			}
 		}
 	}
@@ -854,6 +898,8 @@ class API extends \WP_REST_Controller {
 		if ( ! empty( $post_args['post_name'] ) ) {
 			global $wpdb;
 
+			$this->log( sprintf( __( 'Looking for non-synced duplicate using post_name of "%s".', 'press-sync' ), $post_args['post_name'] ) );
+
             $sql          = "SELECT ID, post_title, post_content, post_type, post_modified FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s";
             $prepared_sql = $wpdb->prepare( $sql, $post_args['post_name'], $post_args['post_type'] );
 
@@ -865,6 +911,7 @@ class API extends \WP_REST_Controller {
 		$content_threshold = $this->content_threshold;
 
 		if ( $duplicate_post && false !== $content_threshold && 0 !== absint( $content_threshold ) ) {
+			$this->log( sprintf( __( 'Looking for non-synced duplicate using post_content comparison threshold of %d%%.', 'press-sync' ), $content_threshold ) );
 			$content_threshold = absint( $content_threshold );
 
 			// Calculate how similar the post contents are (is?).
@@ -874,6 +921,8 @@ class API extends \WP_REST_Controller {
 				$duplicate_post = false;
 			}
 		}
+
+		$this->log( sprintf( __( 'Result of search for non-synced duplicate: %s.', 'press-sync' ), ( $duplicate_post ? 'Found' : 'Not found' ) ) );
 
 		return $duplicate_post;
 	}
@@ -961,18 +1010,22 @@ SQL;
 	}
 
 	private function maybe_upload_remote_attachment( $attachment_args ) {
+		$this->log( __( 'Attempting to upload remote attachment.', 'press-sync' ) );
+
 		$attachment_url       = isset( $attachment_args['details']['url'] ) ? $attachment_args['details']['url'] : $attachment_args['attachment_url'];
 		$attachment_post_date = isset( $attachment_args['details']['post_date'] ) ? $attachment_args['details']['post_date'] : $attachment_args['post_date'];
 		$attachment_title     = isset( $attachment_args['post_title'] ) ? $attachment_args['post_title'] : '';
 		$attachment_name      = isset( $attachment_args['post_name'] ) ? $attachment_args['post_name'] : '';
 
+		$this->debug_log( __( 'Incoming attachment arguments: ', 'press-sync' ), $attachment_args );
+
 		// Check to see if the file already exists.
 		if ( $attachment_id = $this->plugin->file_exists( $attachment_url, $attachment_post_date ) ) {
+			$this->log( sprintf( __( 'Found existing attachment with ID "%d"', 'press-sync' ), $attachment_id ) );
 			return array( 'ID' => $attachment_id );
 		}
 
-		$attachment_metadata = $this->get_attachment_metadata_from_request( $attachment_args );
-		$temp_file           = false;
+		$temp_file = false;
 
 		require_once( ABSPATH . '/wp-admin/includes/image.php' );
 		require_once( ABSPATH . '/wp-admin/includes/file.php' );
@@ -1041,22 +1094,14 @@ SQL;
 	private function update_post_meta_array( $post_id, $meta_data = array() ) {
 		foreach ( $meta_data as $field => $values ) {
 			if ( is_array( $values ) ) {
-				update_post_meta( $post_id, $field, current( $values ) );
-				continue;
-
-				// Handle $values as an array.
-				if ( 1 === count( $values ) ) {
-					update_post_meta( $post_id, $field, maybe_unserialize( current( $values ) ) );
-				} else {
-					// Also handle multiple keys by removing and re-adding.
-					delete_post_meta( $post_id, $field );
-					foreach ( $values as $value ) {
-						add_post_meta( $post_id, $field, maybe_unserialize( $value ) );
-					}
-				}
+				$value = current( $values );
 			} else {
-				update_post_meta( $post_id, $field, maybe_unserialize( $values ) );
+				$value = maybe_unserialize( $values );
 			}
+
+			update_post_meta( $post_id, $field, $value );
+
+			$this->log( sprintf( __( 'Attempted update of post meta field "%s" with value "%s".', 'press-sync' ), $field, $values ) );
 		}
 	}
 
@@ -1091,21 +1136,14 @@ SQL;
 				}
 			}
 
+			$this->log( sprintf( __( 'Added term "%s" to taxonomy "%s".', 'press-sync' ), $object_args['name'], $object_args['taxonomy'] ) );
+
 			if ( ! empty( $object_args['meta_input'] ) ) {
 				$this->maybe_update_term_meta( $term_ids['term_id'], $object_args['meta_input'] );
 			}
 		} catch ( \Exception $e ) {
-			trigger_error( $e->getMessage() );
-			return array(
-				'debug' => $e->getMessage(),
-			);
+			$this->error_log( $e->getMessage() );
 		}
-
-		return array(
-			'debug' => array(
-				'message' => __( 'The taxonomy term was succesfully added.', 'press-sync' ),
-			),
-		);
 	}
 
 	/**
@@ -1120,10 +1158,12 @@ SQL;
 		if ( isset( $post_args['tax_input'] ) ) {
 			foreach ( $post_args['tax_input'] as $taxonomy => $terms ) {
 				if ( $this->is_partial_term_sync( $terms ) ) {
+					$this->log( sprintf( __( 'Doing partial term sync for term "%s" in taxonomy "%s".' , 'press-sync' ), $terms['slug'], $terms['taxonomy'] ) );
 					wp_set_object_terms( $post_id, $terms['slug'], $terms['taxonomy'], true );
 					wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
 					continue;
 				}
+
 				$this->maybe_create_new_terms( $taxonomy, $terms );
 				wp_set_object_terms( $post_id, wp_list_pluck( $terms, 'slug' ), $taxonomy, false );
 			}
@@ -1140,11 +1180,7 @@ SQL;
 	 */
 	private function fix_term_relationships( $post_id, $post_args ) {
 		$this->attach_terms( $post_id, $post_args );
-		return array(
-			'debug' => array(
-				'message' => __( 'Fixed term relationships.', 'press-sync' ),
-			),
-		);
+		return $this->log( __( 'Fixed term relationships.', 'press-sync' ) );
 	}
 
 	/**
@@ -1186,6 +1222,7 @@ SQL;
 	private function maybe_create_new_terms( $taxonomy, $terms ) {
 		foreach ( $terms as $term ) {
 			if ( term_exists( $term['slug'], $taxonomy ) ) {
+				$this->log( sprintf( __( 'Term "%s" already exists for taxonomy "%s".', 'press-sync' ), $term['name'], $taxonomy ) );
 				continue;
 			}
 
@@ -1206,13 +1243,14 @@ SQL;
 	 * @param string $taxonomy The taxonomy to attach the term to.
 	 */
 	private function create_term( $term, $taxonomy ) {
+		$this->log( sprintf( __( 'Creating new term "%s" for taxonomy "%s".', 'press-sync' ), $term['name'], $taxonomy ) );
 		$term_result = wp_insert_term( $term['name'], $taxonomy, array(
 			'slug'        => $term['slug'],
 			'description' => $term['description'],
 		) );
 
 		if ( is_wp_error( $term_result ) ) {
-			trigger_error( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_result->get_error_message() ) );
+			$this->error_log( sprintf( __( 'Could not insert new term "%s": %s.', 'press-sync' ), $term['name'], $term_result->get_error_message() ) );
 		}
 
 		return $term_result['term_id'];
@@ -1228,14 +1266,21 @@ SQL;
 	private function maybe_update_term_meta( $term_id, $term_meta ) {
 		foreach ( $term_meta as $meta_key => $meta_value ) {
 			$meta_value  = is_array( $meta_value ) ? current( $meta_value ) : $meta_value;
+
+			delete_term_meta( $term_id, $meta_key );
 			$meta_result = update_term_meta( $term_id, $meta_key, $meta_value );
 
-			if ( is_wp_error( $meta_result ) ) {
-				trigger_error( sprintf( __( 'Error updating term meta, ambiguous term ID: %s', 'press-sync' ), $meta_result->get_error_message() ) );
-			}
+			switch( true ) {
+			case is_wp_error( $meta_result ):
+				$this->error_log( sprintf( __( 'Error updating term meta, ambiguous term ID: %s', 'press-sync' ), $meta_result->get_error_message() ) );
+				break;
 
-			if ( false === $meta_result ) {
-				trigger_error( sprintf( __( 'Could not add term meta for term %d.', 'press-sync' ), $term_id ) );
+			case false === $meta_result:
+				$this->error_log( sprintf( __( 'Could not add term meta for term %d, it is possible the term meta has not changed.', 'press-sync' ), $term_id ) );
+				break;
+
+			default:
+				$this->log( sprintf( __( 'Updated term meta, added "%s" with value "%s".', 'press-sync' ), $meta_key, var_export( $meta_value, 1 ) ) );
 			}
 		}
 	}
@@ -1248,7 +1293,7 @@ SQL;
 	 * @return bool
 	 */
 	private function is_partial_term_sync( $terms ) {
-		return 2 == count( $terms );
+		return 2 == count( $terms ) && ! is_array( current( $terms ) );
 	}
 
 	/**
@@ -1265,9 +1310,62 @@ SQL;
 			&& '0000-00-00 00:00:00' === $args['post_date']
 			&& ! in_array( $args['post_status'], array( 'draft', 'pending' ) )
 		) {
+			$this->log( __( 'Giving post a date of the Unix Epoch (incoming date was (0000-00-00 00:00:00").', 'press-sync' ) );
 			$args['post_date'] = date( 'Y-m-d H:i:s', 0 );
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Log a message.
+	 *
+	 * @since NEXT
+	 * @param string $message The message to add to the logs.
+	 * @param string $prefix  This prefix will be prepended to the log message to denote the log type.
+	 */
+	public function log( $message, $prefix = 'i' ) {
+		$this->logs[] = "[{$prefix}] {$message}";
+	}
+
+	/**
+	 * Log an error message with a severity level.
+	 *
+	 * @since NEXT
+	 * @param string $message The error message to add to the logs.
+	 * @param int    $level   The log level to use (must be one of E_USER_NOTICE, E_USER_WARNING, or E_USER_ERROR).
+	 */
+	public function error_log( $message, $level = E_USER_NOTICE ) {
+		trigger_error( $message, $level );
+		$this->log( $message, 'e' );
+	}
+
+	/**
+	 * Log a debugging message and debugging information.
+	 *
+	 * @since NEXT
+	 * @param string $message The debugging message to add to the logs.
+	 * @param mixed  $extra   If supplied, this variable will be cleaned up and printed as a string in the logs.
+	 */
+	public function debug_log( $message, $extra = null ) {
+		$this->log( $message, 'd' );
+
+		if ( $extra ) {
+			$extra = print_r( $extra, 1 );
+			$extra = trim( $extra );
+			$extra = strtr( $extra, [ "\n" => ' ' ] );
+			$extra = preg_replace( '/\s+/', ' ', $extra );
+			$this->log( $extra, 'd' );
+		}
+	}
+
+	/**
+	 * Get the internal $logs property.
+	 *
+	 * @since NEXT
+	 * @return array
+	 */
+	public function get_log() {
+		return $this->logs;
 	}
 }

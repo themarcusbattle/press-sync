@@ -128,6 +128,13 @@ class Dashboard {
 
 		wp_enqueue_script( 'press-sync', $press_sync_js, true );
 		wp_localize_script( 'press-sync', 'press_sync', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+
+		// jQuery UI datepicker support.
+		wp_enqueue_script( 'jquery-ui-datepicker' );
+
+		// Get the styles for the datepicker.
+		wp_register_style('jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css');
+		wp_enqueue_style( 'jquery-ui' );
 	}
 
 	/**

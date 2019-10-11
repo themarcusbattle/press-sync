@@ -46,6 +46,22 @@ class Press_Sync {
 	public $remote_domain = null;
 
 	/**
+	 * Sync posts modified after this date.
+	 *
+	 * @var string
+	 * @since 0.8.0
+	 */
+	private $delta_date = false;
+
+	/**
+	 * The last connection error when attempting to contact the remote site.
+	 *
+	 * @var string
+	 * @since NEXT
+	 */
+	private $last_connection_error = '';
+
+	/**
 	 * Initialize the class instance.
 	 *
 	 * @since 0.4.5
@@ -185,7 +201,6 @@ class Press_Sync {
 	 * @return boolean
 	 */
 	public function check_connection( $url = '' ) {
-
 		$url = $this->get_remote_url( $url );
 
 		$remote_get_args = array(
@@ -194,15 +209,36 @@ class Press_Sync {
 
 		$response      = wp_remote_get( $url, $remote_get_args );
 		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_body = null;
+		$success       = false;
 
-		if ( 200 === $response_code ) {
-			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+		try {
+			if ( 200 === absint( $response_code ) ) {
+				$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+				$success       = isset( $response_body['success'] ) ? $response_body['success'] : false;
 
-			return isset( $response_body['success'] ) ? $response_body['success'] : false;
+				if ( ! $success ) {
+					$message = var_export( $response, 1 );
+
+					if ( ! empty( $response_body['data']['message'] ) ) {
+						$message = $response_body['data']['message'];
+					}
+
+					throw new \Exception( $message );
+				}
+			}
+
+			if ( is_wp_error( $response ) ) {
+				throw new \Exception( $response->get_error_message() );
+			}
+
+		} catch ( \Exception $e ) {
+			$error = __( '<br/>Got response code: "%d". <br/>Got response: "%s"', 'press-sync' );
+			$message = $e->getMessage();
+			$this->last_connection_error = sprintf( $error, $response_code, $message );
 		}
 
-		return false;
-
+		return $success;
 	}
 
 	/**
@@ -405,7 +441,17 @@ SQL;
 			$sql   = $GLOBALS['wpdb']->prepare( $sql, $object_id );
 			$terms = $GLOBALS['wpdb']->get_results( $sql, ARRAY_A );
 
-			return $terms;
+			$final_terms = [];
+
+			foreach ( $terms as $term ) {
+				if ( ! isset( $final_terms[ $term['taxonomy'] ] ) ) {
+					$final_terms[ $term['taxonomy'] ] = [];
+				}
+
+				$final_terms[ $term['taxonomy'] ][] = $term['slug'];
+			}
+
+			return $final_terms;
 		}
 
 		foreach ( $taxonomies as $key => $taxonomy ) {
@@ -1018,8 +1064,19 @@ SQL;
 		$this->init_connection( $settings['ps_remote_domain'] );
 
 		// Build out the url and send the data to the remote site.
-		$url  = $this->get_remote_url( '', 'sync' );
-		$logs = $this->send_data_to_remote_site( $url, $objects_args );
+		$url      = $this->get_remote_url( '', 'sync' );
+		$response = $this->send_data_to_remote_site( $url, $objects_args );
+
+		$response      = json_decode( $response, true );
+		$object_status = $logs = array();
+
+		if ( isset( $response['responses'] ) ) {
+			$object_status = $response['responses'];
+		}
+
+		if ( isset( $response['log'] ) ) {
+			$logs = $response['log'];
+		}
 
 		return array(
 			'ps_objects_to_sync'      => $content_type,
@@ -1027,6 +1084,7 @@ SQL;
 			'total_objects_processed' => ( $next_page * $this->settings['ps_page_size'] ) - ( $this->settings['ps_page_size'] - count( $objects ) ),
 			'next_page'               => $next_page + 1,
 			'log'                     => $logs,
+			'status'                  => $object_status,
 		);
 	}
 
@@ -1386,7 +1444,7 @@ SQL;
 		if ( 0 < $page_offset && 1 === absint( $next_page ) ) {
 
 			$page_offset = floor( $page_offset / $this->settings['ps_page_size'] );
-			$next_page  += ( $page_offset - 1);
+			$next_page  += ( $page_offset - 1 );
 
 			error_log( '----NP: ' . $next_page );
 		}
@@ -1437,7 +1495,7 @@ SQL;
 		update_option( $option_name, $response_body['data']['synced'] );
 
 		return $response_body['data']['synced'];
-    }
+	}
 
 	/**
 	 * Removes post IDs if the option to preserve them isn't active.
@@ -1500,7 +1558,7 @@ SQL;
 	 * Gets the next set of taxonomies/terms to sync.
 	 *
 	 * @since 0.7.0
-	 * @param  int   $next_page The page of results to get.
+	 * @param  int $next_page The page of results to get.
 	 * @return array
 	 */
 	public function get_taxonomy_term_to_sync( $next_page ) {
@@ -1597,6 +1655,7 @@ AND tt.term_taxonomy_id IN (
 		object_id = %d
 )
 SQL;
+
 		$where = $GLOBALS['wpdb']->prepare( $where, $this->settings['ps_testing_post'] );
 		return $where;
 	}
@@ -1637,5 +1696,15 @@ SQL;
 		// @TODO filter the settings before returning - this transformation would be part of that, for example.
 		$settings['ps_delta_date'] = date( 'y-m-d 00:00:00', strtotime( $settings['ps_delta_date'] ) ) ?: false;
 		return $settings;
+	}
+
+	/**
+	 * Gets the last connection error.
+	 *
+	 * @since NEXT
+	 * @return string
+	 */
+	public function get_connection_error() {
+		return $this->last_connection_error;
 	}
 }
